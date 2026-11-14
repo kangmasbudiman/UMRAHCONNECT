@@ -31,6 +31,7 @@ class AuthController extends Controller
 
     public function register(Request $request): JsonResponse
     {
+        \App\Support\BotGuard::check($request);
         if ($request->filled('phone')) {
             $request->merge(['phone' => OtpService::normalizePhone($request->input('phone'))]);
         }
@@ -280,6 +281,26 @@ class AuthController extends Controller
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
+        $this->rememberDevice($request, $user);
+    }
+
+    /** Catat perangkat; bila perangkat baru (dan bukan login pertama), kirim pemberitahuan keamanan. */
+    private function rememberDevice(Request $request, User $user): void
+    {
+        $ua = $request->userAgent();
+        $fp = \App\Support\Device::fingerprint($ua);
+        $label = \App\Support\Device::label($ua);
+        $known = DB::table('user_devices')->where('user_id', $user->id)->where('fingerprint', $fp)->exists();
+        $hasAny = $known || DB::table('user_devices')->where('user_id', $user->id)->exists();
+        DB::table('user_devices')->upsert([['user_id' => $user->id, 'fingerprint' => $fp, 'label' => $label, 'last_ip' => $request->ip(), 'first_seen_at' => now(), 'last_seen_at' => now()]],
+            ['user_id', 'fingerprint'], ['last_ip', 'last_seen_at', 'label']);
+        if (! $known && $hasAny) {
+            $when = now('Asia/Jakarta')->translatedFormat('j F Y H:i');
+            app(\App\Services\NotificationService::class)->send($user, 'security.new_device', [
+                'body' => "Akun Anda baru saja masuk dari perangkat baru: {$label} (IP {$request->ip()}) pada {$when} WIB. Bila ini bukan Anda, segera ganti kata sandi dan keluarkan perangkat lain dari halaman Akun.",
+                'url' => '/akun#perangkat',
+            ], null, true);
+        }
     }
 
     private function throwLocked(User $user): never

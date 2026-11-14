@@ -3815,6 +3815,71 @@ paths:
       responses:
         '201': { description: Created }
         '4XX': { $ref: '#/components/responses/Error' }
+  /health:
+    get:
+      tags: [Public]
+      operationId: health
+      summary: Pemantauan uptime (database, cache, penjadwal, backup); 503 bila database/cache bermasalah
+      security: []
+      responses:
+        '200': { description: OK }
+        '503': { description: Layanan bermasalah }
+  /me/data-export:
+    post:
+      tags: [Me]
+      operationId: exportMyData
+      summary: Unduh seluruh data pribadi (UU PDP Pasal 7); wajib kata sandi (+ kode 2FA bila aktif)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [password], properties: { password: { type: string, format: password }, two_factor_code: { type: [string, 'null'] } } }
+      responses:
+        '200': { description: 'Berkas JSON (Content-Disposition: attachment)' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/account/deletion:
+    get:
+      tags: [Me]
+      operationId: accountDeletionCheck
+      summary: Alasan akun belum bisa dihapus (mis. masih Owner, booking berjalan, komisi belum dibayar)
+      responses:
+        '200': { description: 'OK: data.blockers[]' }
+  /me/account/delete:
+    post:
+      tags: [Me]
+      operationId: deleteMyAccount
+      summary: Hapus akun (UU PDP Pasal 8); data yang wajib disimpan PPIU dipertahankan tanpa identitas akun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [password, confirm], properties: { password: { type: string, format: password }, two_factor_code: { type: [string, 'null'] }, confirm: { type: string, enum: [HAPUS] } } }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/sessions:
+    get:
+      tags: [Me]
+      operationId: listMySessions
+      summary: Perangkat yang sedang masuk (kunci sesi asli tidak dikirim; dipakai hash 16 karakter)
+      responses:
+        '200': { description: OK }
+  /me/sessions/{key}:
+    delete:
+      tags: [Me]
+      operationId: revokeMySession
+      summary: Keluarkan satu perangkat (bukan perangkat saat ini)
+      parameters:
+        - { name: key, in: path, required: true, schema: { type: string, pattern: '^[0-9a-f]{16}$' } }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+  /me/sessions/revoke-others:
+    post:
+      tags: [Me]
+      operationId: revokeOtherSessions
+      summary: Keluarkan semua perangkat lain dan cabut token aplikasi
+      responses:
+        '200': { description: OK }
   /me/savings-plans:
     get:
       tags: [Me]

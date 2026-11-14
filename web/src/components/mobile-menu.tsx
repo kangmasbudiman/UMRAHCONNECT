@@ -17,7 +17,7 @@ const LINKS = [
 export function MobileMenu({ signedIn }: { signedIn: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button type="button" aria-expanded={open} aria-controls="menu-ponsel" onClick={() => setOpen((v) => !v)}
         className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-primary-800 hover:bg-primary-50">
         {open ? <IconX className="h-6 w-6" /> : <IconMenu className="h-6 w-6" />}

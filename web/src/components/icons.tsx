@@ -6,7 +6,7 @@ import {
   ImagePlus, Inbox, Info, KeyRound, Landmark, LayoutDashboard, Link2, ListChecks, Lock, LogOut, Luggage, Mail, MapPin, Megaphone,
   MessageCircle, Package, PackageCheck, PackageX, Pencil, Percent, Phone, Plus, QrCode, Receipt, ReceiptText, RefreshCw, ScrollText,
   Send, Settings, ShieldAlert, ShieldCheck, Sparkles, Star, StickyNote, Store, Ticket, Timer, Trash2, TrendingUp, TriangleAlert, Undo2,
-  PiggyBank, Route, Scale, Upload, UserCheck, UserCog, UserPlus, UserRound, UserX, Users, Wallet,
+  MonitorSmartphone, PiggyBank, Route, Scale, Upload, UserCheck, UserCog, UserPlus, UserRound, UserX, Users, Wallet,
 } from 'lucide-react';
 
 /** Ikon garis sederhana (24×24, stroke currentColor), dibuat khusus untuk UMRAH CONNECT. */
@@ -137,5 +137,6 @@ export const IconUserX = wrap(UserX);
 export const IconTeam = wrap(Users);
 export const IconMoney = wrap(Wallet);
 export const IconPiggy = wrap(PiggyBank);
+export const IconDevices = wrap(MonitorSmartphone);
 export const IconRoute = wrap(Route);
 export const IconScale = wrap(Scale);

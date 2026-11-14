@@ -27,6 +27,7 @@ class NotificationService
         'departure.milestone' => 'Kabar persiapan keberangkatan',
         'review.replied' => 'PPIU membalas ulasan Anda',
         'savings.reminder' => 'Pengingat tabungan umrah',
+        'security.new_device' => 'Login dari perangkat baru',
         'account.deactivated' => 'Akun dinonaktifkan',
         'payment.submitted' => 'Bukti bayar baru',
         'payment.verified' => 'Pembayaran terverifikasi',
@@ -76,7 +77,9 @@ class NotificationService
                     }
                 });
             } elseif ($user->phone) {
-                Log::info('[WA belum aktif] '.$user->phone.': '.$payload['title'].' — '.$payload['body']);
+                $phone = $user->phone;
+                $text = "*{$payload['title']}*\n{$payload['body']}".(isset($payload['url']) ? "\n".rtrim(config('app.web_url'), '/').$payload['url'] : '');
+                DB::afterCommit(fn () => \App\Support\WhatsApp::send($phone, $text));
             }
         } catch (\Throwable $e) {
             Log::warning('Notifikasi gagal: '.$event.' '.$e->getMessage());

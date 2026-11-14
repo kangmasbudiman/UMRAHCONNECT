@@ -308,7 +308,7 @@ class MvpGateTest extends TestCase
                 $missing[] = $r->methods()[0].' '.$uri;
             }
             if (str_starts_with($uri, 'api/v1/') && ! str_starts_with($uri, 'api/v1/public') && ! str_starts_with($uri, 'api/v1/auth') && ! $has('auth:sanctum')
-                && ! str_starts_with($uri, 'api/v1/files/') ) {
+                && ! str_starts_with($uri, 'api/v1/files/') && $uri !== 'api/v1/health') { // health: publik untuk pemantau uptime
                 $missing[] = $r->methods()[0].' '.$uri.' (tanpa auth)';
             }
         }

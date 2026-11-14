@@ -180,7 +180,8 @@ class BookingService
         if ($booker && $booker->status !== 'unclaimed') {
             $this->notify->send($booker, 'booking.created', ['body' => $body, 'url' => "/akun/booking/{$b->id}"], $tenant->id, true);
         } elseif ($booker) {
-            \Illuminate\Support\Facades\Log::info('[WA belum aktif] '.$booker->phone.': '.$body);
+            $phone = $booker->phone;
+            DB::afterCommit(fn () => \App\Support\WhatsApp::send($phone, $body.' Lacak: '.rtrim(config('app.web_url'), '/').'/lacak?kode='.$b->code));
         }
         $this->notify->toTenant($tenant->id, ['owner', 'admin'], 'booking.created_staff', ['body' => "Booking baru {$b->code}: {$pkg->name}, {$b->participant_count} jamaah.", 'url' => "/dasbor/ppiu/{$tenant->id}/booking/{$b->id}"]);
     }

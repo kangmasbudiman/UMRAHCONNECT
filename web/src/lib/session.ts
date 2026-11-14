@@ -40,6 +40,8 @@ export async function serverApi<T>(path: string, extraHeaders: Record<string, st
       Cookie: jar.toString(),
       Referer: `${WEB_ORIGIN}/`,
       'X-Forwarded-For': h.get('x-forwarded-for') ?? '',
+      // Teruskan perangkat pengunjung agar daftar "perangkat yang sedang masuk" dan audit log tidak tercatat sebagai server web.
+      'User-Agent': h.get('user-agent') ?? 'UMRAH CONNECT web',
       ...extraHeaders,
     },
     cache: 'no-store',

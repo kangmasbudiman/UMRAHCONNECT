@@ -36,6 +36,8 @@ foreach (['tenant', 'member', 'account', 'file', 'package', 'departure', 'image'
 
 Route::prefix('v1')->group(function () {
     // Marketplace publik (API Documentation §4)
+    Route::get('health', \App\Http\Controllers\Api\V1\HealthController::class)->middleware('throttle:public');
+
     Route::prefix('public')->middleware('throttle:public')->controller(PublicCatalogController::class)->group(function () {
         Route::get('packages', 'packages');
         Route::get('packages/{tenantSlug}/{packageSlug}', 'package');
@@ -45,7 +47,7 @@ Route::prefix('v1')->group(function () {
         Route::get('facets', 'facets');
         Route::get('config', 'config');
         Route::get('packages/{tenantSlug}/{packageSlug}/reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'publicIndex']);
-        Route::get('track', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'track'])->middleware('throttle:referral-click');
+        Route::get('track', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'track'])->middleware('throttle:track');
         Route::get('referrals/{code}', 'referral');
         Route::post('referrals/{code}/clicks', 'referralClick')->middleware('throttle:referral-click');
     });
@@ -74,6 +76,12 @@ Route::prefix('v1')->group(function () {
         Route::patch('me', [MeController::class, 'update']);
         Route::get('me/contexts', [MeController::class, 'contexts']);
         Route::get('me/notifications', [NotificationController::class, 'index']);
+        Route::post('me/data-export', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'export'])->middleware('throttle:reauth');
+        Route::get('me/account/deletion', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'deletionCheck']);
+        Route::post('me/account/delete', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'delete'])->middleware('throttle:reauth');
+        Route::get('me/sessions', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'sessions']);
+        Route::delete('me/sessions/{key}', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'revokeSession'])->where('key', '[0-9a-f]{16}');
+        Route::post('me/sessions/revoke-others', [\App\Http\Controllers\Api\V1\PrivacyController::class, 'revokeOthers']);
         Route::get('me/savings-plans', [\App\Http\Controllers\Api\V1\SavingsController::class, 'index']);
         Route::post('me/savings-plans', [\App\Http\Controllers\Api\V1\SavingsController::class, 'store']);
         Route::patch('me/savings-plans/{plan}', [\App\Http\Controllers\Api\V1\SavingsController::class, 'update'])->whereUuid('plan');

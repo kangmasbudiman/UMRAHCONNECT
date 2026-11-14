@@ -52,6 +52,14 @@ class FileController extends Controller
         if (str_starts_with($mime, 'image/') && @getimagesize($upload->getRealPath()) === false) {
             throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File gambar rusak atau bukan gambar.']);
         }
+        // Pemindaian virus (ClamAV) bila dikonfigurasi; gagal dipindai = ditolak (fail-closed) kecuali dinonaktifkan.
+        $scan = app(\App\Support\VirusScanner::class)->scan($upload->getRealPath());
+        if ($scan === 'infected') {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File ini terdeteksi berbahaya dan ditolak. Pindai perangkat Anda, lalu unggah file lain.']);
+        }
+        if ($scan === 'error' && config('services.clamav.fail_closed')) {
+            throw new ApiException(503, 'scanner_unavailable', 'Pemeriksaan keamanan file sedang tidak tersedia. Coba lagi beberapa menit lagi.');
+        }
         $disk = $visibility === 'public' ? 'public' : 'local';
         $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'][$mime];
         $path = $upload->storeAs('files/'.now()->format('Y/m'), Str::uuid().'.'.$ext, $disk);

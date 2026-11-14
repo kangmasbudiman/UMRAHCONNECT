@@ -39,7 +39,8 @@ export async function proxy(req: NextRequest) {
   clean.searchParams.delete('ref');
   const res = NextResponse.redirect(clean);
   res.cookies.set('uc_ref', JSON.stringify({ code: ref.toUpperCase(), at: Date.now() }), {
-    maxAge: 60 * 60 * 24 * 90, // batas atas pengaturan; masa berlaku sebenarnya dicek dari attribution_window_days httpOnly: true, sameSite: 'lax', path: '/',
+    // 90 hari = batas atas pengaturan; masa berlaku sebenarnya dicek dari attribution_window_days.
+    maxAge: 60 * 60 * 24 * 90, httpOnly: true, sameSite: 'lax', path: '/',
   });
 
   try {

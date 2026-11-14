@@ -33,3 +33,8 @@ Artisan::command('commissions:backfill', function (App\Services\CommissionServic
         });
     $this->info("{$n} komisi dibuat.");
 })->purpose('Buat komisi untuk booking lama yang belum punya komisi');
+
+// NFR-07/08: detak penjadwal (dibaca /api/v1/health & app:preflight), backup harian, uji restore mingguan.
+Schedule::call(fn () => \Illuminate\Support\Facades\Cache::forever('scheduler:heartbeat', now()->toIso8601String()))->everyMinute()->name('scheduler-heartbeat');
+Schedule::command('app:backup')->dailyAt('02:00')->timezone('Asia/Jakarta')->withoutOverlapping();
+Schedule::command('app:backup-verify')->weeklyOn(0, '03:00')->timezone('Asia/Jakarta')->withoutOverlapping();

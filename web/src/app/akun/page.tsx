@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { Alert, StatusPill } from '@/components/form';
-import { requireContexts } from '@/lib/session';
+import { requireContexts, serverApi } from '@/lib/session';
+import { DevicesPanel, PrivacyPanel, type DeviceSession } from './security-privacy';
 import { InvitationActions, LogoutButton, ProfileForm, TwoFactorSetup } from './account-actions';
-import { IconHandshake, IconLock, IconMail, IconOffice, IconPiggy, IconPlus, IconShieldCheck, IconTicket, IconUser, IconWork } from '@/components/icons';
+import { IconDevices, IconHandshake, IconLock, IconMail, IconOffice, IconPiggy, IconPlus, IconShieldCheck, IconTicket, IconUser, IconWork } from '@/components/icons';
 import { IconHeading } from '@/components/stat-card';
 
 export const metadata = { title: 'Akun saya' };
@@ -17,6 +18,10 @@ function WsIcon({ icon: Icon, tone = 'primary' }: { icon: (p: { className?: stri
 async function Account() {
   const ctx = await requireContexts('/akun');
   const u = ctx.user;
+  const [sessions, deletion] = await Promise.all([
+    serverApi<{ data: DeviceSession[] }>('/me/sessions').then((r) => r.data).catch(() => [] as DeviceSession[]),
+    serverApi<{ data: { blockers: string[] } }>('/me/account/deletion').then((r) => r.data.blockers).catch(() => [] as string[]),
+  ]);
   return (
     <>
       <section className="bg-hero text-white">
@@ -125,6 +130,18 @@ async function Account() {
             <IconHeading icon={IconLock} id="keamanan-h">Keamanan</IconHeading>
             <p className="mt-1 text-ink-600">Verifikasi dua langkah (2FA) melindungi akun walau kata sandi bocor. Wajib untuk Owner, Finance, dan staf platform.</p>
             <div className="mt-4"><TwoFactorSetup enabled={u.two_factor_enabled} /></div>
+          </section>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section id="perangkat" className="card scroll-mt-24 p-5" aria-labelledby="perangkat-h">
+            <IconHeading icon={IconDevices} id="perangkat-h">Perangkat yang sedang masuk</IconHeading>
+            <div className="mt-3"><DevicesPanel sessions={sessions} /></div>
+          </section>
+          <section id="privasi" className="card scroll-mt-24 p-5" aria-labelledby="privasi-h">
+            <IconHeading icon={IconShieldCheck} id="privasi-h">Privasi &amp; data saya</IconHeading>
+            <p className="mt-1 text-ink-600">Hak Anda menurut UU Pelindungan Data Pribadi. Baca <Link href="/privasi" className="font-semibold text-primary-700 underline">Kebijakan Privasi</Link>.</p>
+            <div className="mt-4"><PrivacyPanel blockers={deletion} twoFactor={u.two_factor_enabled} /></div>
           </section>
         </div>
       </div>

@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import Script from 'next/script';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Field, Spinner } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { LEGAL } from '@/lib/nav';
 
 type Role = 'jamaah' | 'agen' | 'ppiu';
+const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const ROLES: { id: Role; title: string; desc: string }[] = [
   { id: 'jamaah', title: 'Jamaah', desc: 'Pesan paket dan pantau pembayaran' },
@@ -22,6 +24,9 @@ export function RegisterForm({ initialRole }: { initialRole: Role }) {
   const [via, setVia] = useState<'email' | 'phone'>('email');
   const [error, setError] = useState<ApiClientError | string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Penangkal bot: waktu formulir mulai diisi (dikirim ke API; < 2,5 detik dianggap otomatis).
+  const startedAt = useRef(0);
+  useEffect(() => { startedAt.current = Date.now(); }, []);
 
   const after = role === 'ppiu' ? '/dasbor/ppiu/daftar' : role === 'agen' ? '/agen/daftar' : '/akun';
 
@@ -40,6 +45,9 @@ export function RegisterForm({ initialRole }: { initialRole: Role }) {
           name: fd.get('name'),
           ...(via === 'email' ? { email: fd.get('contact') } : { phone: fd.get('contact') }),
           password: fd.get('password'),
+          website: fd.get('website'),
+          form_started_at: startedAt.current || undefined,
+          turnstile_token: fd.get('cf-turnstile-response') || undefined,
           ...LEGAL,
         },
       });
@@ -96,6 +104,18 @@ export function RegisterForm({ initialRole }: { initialRole: Role }) {
       <Field id="password" label="Kata sandi" hint="Minimal 8 karakter, berisi huruf dan angka." error={apiErr?.field('password')}>
         <input id="password" name="password" type="password" className="input" autoComplete="new-password" required minLength={8} aria-describedby="password-hint" />
       </Field>
+
+      {/* Honeypot: tak terlihat dan dilewati pembaca layar; hanya bot yang mengisinya. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
+      {TURNSTILE_KEY && (
+        <>
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+          <div className="cf-turnstile" data-sitekey={TURNSTILE_KEY} data-language="id" />
+        </>
+      )}
 
       <label className="flex gap-3 text-sm leading-6">
         <input type="checkbox" name="agree" value="1" className="mt-1 h-5 w-5 shrink-0 accent-primary-700" />

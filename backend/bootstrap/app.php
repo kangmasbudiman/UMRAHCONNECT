@@ -37,7 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         // Server Next.js lokal meneruskan IP pengunjung lewat X-Forwarded-For (rate limit per pengunjung, bukan per server).
-        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        // Rantai produksi nginx → Next.js → Laravel: isi TRUSTED_PROXIES (koma) dengan IP proxy tepercaya.
+        $middleware->trustProxies(at: array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', '127.0.0.1,::1'))));
         // Web (Next.js) memakai sesi cookie Sanctum SPA lewat proxy same-origin (API Documentation §2).
         $middleware->statefulApi();
         // API tidak pernah mengalihkan ke halaman login: tamu mendapat 401 JSON (route 'login' memang tidak ada).

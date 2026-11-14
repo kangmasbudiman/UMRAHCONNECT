@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Mail;
 
 /**
  * Pengiriman OTP untuk development: email lewat mailer aktif (MAIL_MAILER=log menulis ke storage/logs),
- * WhatsApp hanya dicatat ke log sampai integrasi WhatsApp API (Fase 2).
+ * WhatsApp lewat gateway bila WHATSAPP_DRIVER diisi (App\Support\WhatsApp), selain itu dicatat ke log.
  */
 class LogOtpSender implements OtpSender
 {
@@ -26,6 +26,6 @@ class LogOtpSender implements OtpSender
 
             return;
         }
-        Log::info('[OTP whatsapp] '.$identifier.': '.$text);
+        \App\Support\WhatsApp::send($identifier, $text);
     }
 }

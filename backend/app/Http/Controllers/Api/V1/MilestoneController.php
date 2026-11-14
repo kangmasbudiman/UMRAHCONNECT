@@ -14,6 +14,7 @@ use App\Support\Audit;
 use App\Support\Journey;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -81,11 +82,21 @@ class MilestoneController extends Controller
             'code' => ['required', 'string', 'max:20'],
             'phone' => ['required', 'digits:4'],
         ], ['phone.digits' => 'Masukkan 4 digit terakhir nomor HP pemesan.']);
-        $b = Booking::withoutTenantScope()->with(['booker', 'departure', 'package', 'tenant'])->where('code', Str::upper(trim($data['code'])))->first();
+        $code = Str::upper(trim($data['code']));
+        // Kode booking berurutan dan "kunci"-nya hanya 4 digit: setelah 5 kali salah, kode ini dikunci 1 jam
+        // (berlaku untuk semua IP), di samping batas per IP. Kode yang tidak ada diperlakukan sama agar tidak bisa dipetakan.
+        $lockKey = 'track-fail:'.hash('sha256', $code);
+        if (RateLimiter::tooManyAttempts($lockKey, 5)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($lockKey) / 60);
+            throw new ApiException(429, 'too_many_attempts', "Terlalu banyak percobaan untuk kode booking ini. Coba lagi dalam {$minutes} menit, atau hubungi PPIU/agen Anda.");
+        }
+        $b = Booking::withoutTenantScope()->with(['booker', 'departure', 'package', 'tenant'])->where('code', $code)->first();
         $phone = (string) ($b?->booker?->phone ?? '');
         if (! $b || $phone === '' || ! hash_equals(substr($phone, -4), $data['phone'])) {
+            RateLimiter::hit($lockKey, 3600);
             throw new ApiException(404, 'not_found', 'Booking tidak ditemukan. Periksa kode booking dan 4 digit terakhir nomor HP pemesan.');
         }
+        RateLimiter::clear($lockKey);
 
         return response()->json(['data' => [
             'code' => $b->code,

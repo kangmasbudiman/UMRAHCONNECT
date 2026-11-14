@@ -15,20 +15,33 @@ Referensi: Development Roadmap §7, Testing Documentation (AC, AZ, TC-SEC, TC-PE
 | TC-SEC-07 | Tipe file dari isi; PDF berisi JavaScript/aksi otomatis ditolak; gambar harus valid |
 | NFR-10 header | API: nosniff, DENY, CSP ketat untuk JSON, `no-store` untuk respons login. Web: nosniff, DENY, frame-ancestors, HSTS di produksi |
 
-Jalankan: `php artisan test` (73 tes).
+Jalankan: `php artisan test` (91 tes).
 
 ## Uji beban lokal (laptop 10 core, server PHP bawaan 8 worker)
 
 - TC-PERF-01 versi lokal (`loadtest/run-public.sh`): p95 endpoint publik 62–87 ms pada 20 koneksi, 333 ms pada 100 koneksi; 0 gagal. Server dev menolak 200 koneksi serentak (batas antrean socket), jadi 200 VU **harus diulang di staging** (nginx + php-fpm).
 - TC-PERF-02 versi lokal (`php artisan test --testsuite=Load`): 50 booking serentak pada kuota 14 → tepat 14 berhasil, 36 ditolak 409, tidak ada overbooking. p95 ±730–800 ms karena 50 proses berebut CPU laptop; target 500 ms diukur di staging.
 
+## Pengerasan tambahan (setelah tinjauan keamanan fitur pembeda)
+
+| Hal | Status |
+| --- | --- |
+| /lacak publik | Kunci per kode booking setelah 5 salah (1 jam) + 10/menit & 60/jam per IP |
+| UU PDP | Unduh data saya (JSON) dan hapus akun (anonimisasi; data wajib PPIU dipertahankan) di Akun → Privasi |
+| Perangkat aktif | Daftar & keluarkan perangkat; notifikasi/email login dari perangkat baru |
+| Anti-bot daftar | Honeypot + waktu isi minimal; Cloudflare Turnstile aktif bila `TURNSTILE_*` diisi |
+| Virus unggahan | ClamAV (`CLAMAV_SOCKET`), fail-closed |
+| Backup | `app:backup` harian 02.00 WIB (retensi 30 hari), `app:backup-verify` mingguan; `/api/v1/health` untuk pemantau uptime |
+| WhatsApp | OTP & notifikasi lewat gateway (`WHATSAPP_DRIVER=fonnte`); tanpa token hanya dicatat ke log |
+| Dokumen hukum | Draf Kebijakan Privasi & S&K versi 2026-11-v1 — wajib ditinjau konsultan hukum |
+
 ## Belum bisa diselesaikan di kode — butuh tim/staging
 
 1. UAT-01–08 dengan 2 PPIU calon pilot (22 Mar–2 Apr 2027), tanda tangan persetujuan.
 2. TC-SEC-02 OWASP ZAP baseline dan TC-SEC-08 uji penetrasi eksternal di staging.
 3. TC-PERF-01/02/03/05 di staging dengan data sintetis 500 PPIU / 50.000 jamaah; TC-PERF-04 Lighthouse.
-4. NFR-07/08: uptime monitoring, backup harian + uji restore (bagian dokumen Deployment).
-5. Pemindaian antivirus file unggahan (ClamAV) — pemeriksaan PDF saat ini berbasis pola teks dan tidak membuka stream terkompresi.
+4. NFR-07/08: perintah backup, uji restore, dan `/api/v1/health` sudah ada; yang tersisa memasang layanan pemantau uptime, cron penjadwal, dan salinan backup di luar server (dokumen Deployment).
+5. Pasang clamd di server dan isi `CLAMAV_SOCKET`; daftar akun Turnstile & gateway WhatsApp; salin folder backup ke penyimpanan di luar server; atur `TRUSTED_PROXIES` sesuai rantai nginx → Next.js → Laravel.
 
 ## Data awal produksi
 

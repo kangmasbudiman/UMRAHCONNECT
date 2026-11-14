@@ -52,7 +52,15 @@ class Preflight extends Command
             $demo = User::where('email', 'like', '%@umrahconnect.test')->count();
             $add('Tidak ada akun data contoh', ! $prod || $demo === 0, "Ada $demo akun @umrahconnect.test. Basis data produksi harus bersih dari DemoSeeder.");
         }
-        $add('Penjadwal berjalan (schedule:run tiap menit lewat cron)', false, 'Pastikan cron: * * * * * php artisan schedule:run. Tidak bisa dicek otomatis.', false);
+        $beat = \Illuminate\Support\Facades\Cache::get('scheduler:heartbeat');
+        $add('Penjadwal berjalan (detak < 5 menit)', $beat && \Illuminate\Support\Carbon::parse($beat)->gt(now()->subMinutes(5)), 'Pasang cron: * * * * * php artisan schedule:run (atau jalankan schedule:work).', $prod);
+        $backup = \Illuminate\Support\Facades\Cache::get('backup:last');
+        $add('Backup database < 26 jam', $backup && \Illuminate\Support\Carbon::parse($backup['at'])->gt(now()->subHours(26)), 'Jalankan php artisan app:backup dan pastikan jadwal 02.00 berjalan; salin folder backup ke luar server.', $prod);
+        $verified = \Illuminate\Support\Facades\Cache::get('backup:last_verified');
+        $add('Uji restore < 8 hari', $verified && \Illuminate\Support\Carbon::parse($verified['at'])->gt(now()->subDays(8)), 'Jalankan php artisan app:backup-verify.', false);
+        $add('Pemindai virus unggahan (ClamAV)', filled(config('services.clamav.socket')), 'Pasang clamd dan isi CLAMAV_SOCKET.', false);
+        $add('Penangkal bot pendaftaran (Turnstile)', filled(config('services.turnstile.secret')) && filled(config('services.turnstile.site_key')), 'Isi TURNSTILE_SITE_KEY dan TURNSTILE_SECRET_KEY (dan NEXT_PUBLIC_TURNSTILE_SITE_KEY di web).', false);
+        $add('Gateway WhatsApp untuk OTP', filled(config('services.whatsapp.driver')) && filled(config('services.whatsapp.token')), 'Isi WHATSAPP_DRIVER=fonnte dan WHATSAPP_TOKEN; tanpa ini OTP WhatsApp hanya dicatat ke log.', false);
 
         $this->table(['Hasil', 'Pemeriksaan', 'Perbaikan'], $checks);
         $failed = collect($checks)->where(0, 'GAGAL')->count();

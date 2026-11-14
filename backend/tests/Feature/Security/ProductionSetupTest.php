@@ -52,6 +52,8 @@ class ProductionSetupTest extends TestCase
         config(['app.debug' => false, 'app.url' => 'https://api.umrahconnect.id', 'app.web_url' => 'https://umrahconnect.id',
             'app.blind_index_key' => str_repeat('k9', 20), 'permissions.enforce_two_factor' => true, 'session.secure' => true,
             'mail.default' => 'smtp', 'cache.default' => 'database']);
+        \Illuminate\Support\Facades\Cache::forever('scheduler:heartbeat', now()->toIso8601String());
+        \Illuminate\Support\Facades\Cache::forever('backup:last', ['file' => 'x.dump', 'at' => now()->toIso8601String(), 'bytes' => 1]);
         $this->artisan('app:preflight', ['--production' => true])->assertSuccessful();
     }
 }

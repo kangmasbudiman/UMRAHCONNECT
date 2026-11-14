@@ -70,9 +70,9 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/95 shadow-[0_1px_8px_rgb(16_24_40/0.06)] backdrop-blur">
       <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
         <Logo />
-        <nav aria-label="Menu utama" className="ml-6 hidden items-center gap-1 md:flex">
+        <nav aria-label="Menu utama" className="ml-6 hidden items-center gap-1 lg:flex">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="inline-flex min-h-12 items-center gap-2 rounded-lg px-3 font-semibold text-ink-900 hover:bg-primary-50 hover:text-primary-700">
+            <Link key={n.href} href={n.href} className="inline-flex min-h-12 items-center gap-2 whitespace-nowrap rounded-lg px-3 font-semibold text-ink-900 hover:bg-primary-50 hover:text-primary-700">
               <n.Icon className="h-5 w-5 text-primary-600" />{n.label}
             </Link>
           ))}

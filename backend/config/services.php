@@ -35,4 +35,23 @@ return [
         ],
     ],
 
+    // Cloudflare Turnstile untuk formulir daftar (opsional; kosong = nonaktif).
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
+    // Gateway WhatsApp untuk OTP & notifikasi (opsional; kosong = hanya dicatat ke log).
+    'whatsapp' => [
+        'driver' => env('WHATSAPP_DRIVER'), // fonnte | null
+        'url' => env('WHATSAPP_URL', 'https://api.fonnte.com/send'),
+        'token' => env('WHATSAPP_TOKEN'),
+    ],
+
+    // Pemindai virus unggahan (opsional): ClamAV clamd lewat unix socket atau host:port.
+    'clamav' => [
+        'socket' => env('CLAMAV_SOCKET'), // mis. unix:///var/run/clamav/clamd.ctl atau tcp://127.0.0.1:3310
+        'fail_closed' => env('CLAMAV_FAIL_CLOSED', true),
+    ],
+
 ];
