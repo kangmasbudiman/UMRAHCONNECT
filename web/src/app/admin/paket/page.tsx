@@ -5,6 +5,7 @@ import { StatusPill } from '@/components/form';
 import { requireContexts, serverApi } from '@/lib/session';
 import { AdminHeader } from '../admin-nav';
 import { ReasonAction } from '../platform-actions';
+import { IconInbox, IconSearch } from '@/components/icons';
 
 export const metadata = { title: 'Moderasi paket' };
 
@@ -35,10 +36,10 @@ async function Moderation({ searchParams }: PageProps<'/admin/paket'>) {
           <input type="hidden" name="status" value={status} />
           <label htmlFor="pk-q" className="sr-only">Cari paket</label>
           <input id="pk-q" name="q" defaultValue={q} className="input max-w-xs" placeholder="Cari nama paket" />
-          <button className="btn btn-outline">Cari</button>
+          <button className="btn btn-outline"><IconSearch className="h-5 w-5" />Cari</button>
         </form>
       </div>
-      {res.data.length === 0 ? <p className="card p-8 text-center text-ink-600">Tidak ada paket.</p> : (
+      {res.data.length === 0 ? <p className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />Tidak ada paket.</p> : (
         <ul className="space-y-3">
           {res.data.map((p) => (
             <li key={p.id} className="card p-4">

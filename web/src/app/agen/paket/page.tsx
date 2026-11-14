@@ -6,6 +6,8 @@ import { serverApi } from '@/lib/session';
 import type { AgentPackage, Partnership, ReferralLink } from '@/lib/agent-types';
 import { AgentHeader, requireAgent } from '../agent-shell';
 import { CreateLinkButton, LinkTools } from '../agent-forms';
+import { IconHeading } from '@/components/stat-card';
+import { IconLink, IconPackage } from '@/components/icons';
 
 export const metadata = { title: 'Paket & link' };
 
@@ -32,7 +34,7 @@ async function Packages() {
         ) : (
           <>
             <section aria-labelledby="ppiu-link-h" className="card p-5">
-              <h2 id="ppiu-link-h" className="text-xl font-extrabold">Link profil PPIU</h2>
+              <IconHeading icon={IconLink} id="ppiu-link-h" className="text-xl font-extrabold">Link profil PPIU</IconHeading>
               <p className="mt-1 text-ink-600">Untuk calon jamaah yang belum memilih paket.</p>
               <ul className="mt-3 space-y-4">
                 {parts.map((p) => {
@@ -50,7 +52,7 @@ async function Packages() {
               </ul>
             </section>
             <section aria-labelledby="pkg-h">
-              <h2 id="pkg-h" className="text-xl font-extrabold">Paket dari PPIU mitra</h2>
+              <IconHeading icon={IconPackage} id="pkg-h" className="text-xl font-extrabold">Paket dari PPIU mitra</IconHeading>
               {pkgs.length === 0 && <p className="mt-2 text-ink-600">PPIU mitra belum menerbitkan paket.</p>}
               <ul className="mt-3 grid gap-4 lg:grid-cols-2">
                 {pkgs.map((p) => {

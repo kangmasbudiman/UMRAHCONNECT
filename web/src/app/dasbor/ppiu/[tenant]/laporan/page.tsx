@@ -1,10 +1,13 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { Alert } from '@/components/form';
 import type { Report } from '@/lib/finance-types';
 import { rupiah } from '@/lib/format';
 import { serverApi, ServerApiError } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../tenant-shell';
+import { IconChart, IconInbox, IconMoney, IconSpreadsheet } from '@/components/icons';
+import { IconHeading } from '@/components/stat-card';
 
 export const metadata = { title: 'Laporan' };
 
@@ -21,6 +24,7 @@ async function Reports({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant
   const perms = page.membership.permissions;
   const canSales = perms.includes('report.sales.view');
   const canFinance = perms.includes('report.finance.view');
+  await connection(); // tanggal hari ini dihitung saat request
   const now = new Date();
   const from = typeof sp.from === 'string' ? sp.from : wibDate(new Date(now.getFullYear(), now.getMonth(), 1));
   const to = typeof sp.to === 'string' ? sp.to : wibDate(now);
@@ -54,17 +58,17 @@ async function Reports({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant
           </div>
           <div><label htmlFor="from" className="mb-1.5 block font-semibold">Dari</label><input id="from" name="from" type="date" className="input" defaultValue={from} /></div>
           <div><label htmlFor="to" className="mb-1.5 block font-semibold">Sampai</label><input id="to" name="to" type="date" className="input" defaultValue={to} /></div>
-          <button className="btn btn-primary">Tampilkan</button>
+          <button className="btn btn-primary"><IconChart className="h-5 w-5" />Tampilkan</button>
         </form>
         {noRange && <p className="text-sm text-ink-600">Laporan ini menampilkan posisi saat ini (tidak dibatasi tanggal).</p>}
         {error && <Alert tone="danger">{error}</Alert>}
         {report && (
           <section className="card overflow-hidden" aria-label="Hasil laporan">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle p-4">
-              <h2 className="text-lg font-extrabold">{isSales ? `Penjualan ${SALES[jenis as keyof typeof SALES].toLowerCase()}` : FINANCE[jenis as keyof typeof FINANCE]}</h2>
-              {canExport && <a href={`/api/v1/tenants/${id}/reports/${isSales ? 'sales' : 'finance'}/export?format=csv&${qs}`} className="btn btn-outline min-h-10 px-4">Ekspor CSV</a>}
+              <IconHeading icon={isSales ? IconChart : IconMoney} className="text-lg font-extrabold">{isSales ? `Penjualan ${SALES[jenis as keyof typeof SALES].toLowerCase()}` : FINANCE[jenis as keyof typeof FINANCE]}</IconHeading>
+              {canExport && <a href={`/api/v1/tenants/${id}/reports/${isSales ? 'sales' : 'finance'}/export?format=csv&${qs}`} className="btn btn-outline min-h-10 px-4"><IconSpreadsheet className="h-5 w-5" />Ekspor CSV</a>}
             </div>
-            {report.rows.length === 0 ? <p className="p-8 text-center text-ink-600">Tidak ada data pada rentang ini.</p> : (
+            {report.rows.length === 0 ? <p className="p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />Tidak ada data pada rentang ini.</p> : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left text-sm">
                   <thead className="bg-surface text-ink-600"><tr>{report.columns.map((c) => <th key={c.key} className={`px-3 py-2 ${c.money ? 'text-right' : ''}`}>{c.label}</th>)}</tr></thead>

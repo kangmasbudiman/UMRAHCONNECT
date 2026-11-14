@@ -6,6 +6,8 @@ import { COMMISSION_STATUS, type CommissionRow, type CommissionStatus, type Payo
 import { rupiah, tanggal } from '@/lib/format';
 import { serverApi } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../tenant-shell';
+import { IconCircleCheck, IconCommission, IconHistory, IconPayout, IconTimer, IconTrend } from '@/components/icons';
+import { IconHeading, StatCard } from '@/components/stat-card';
 
 export const metadata = { title: 'Komisi agen' };
 
@@ -34,16 +36,16 @@ async function Commissions({ params, searchParams }: PageProps<'/dasbor/ppiu/[te
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {(['earned', 'approved', 'paid', 'estimated'] as CommissionStatus[]).map((s) => (
             <li key={s} className="card p-4">
-              <p className="text-sm text-ink-600">{s === 'earned' ? 'Menunggu persetujuan' : s === 'approved' ? 'Siap dibayar' : s === 'paid' ? 'Sudah dibayar' : 'Perkiraan (belum diperoleh)'}</p>
-              <p className="num text-2xl font-extrabold text-primary-800">{rupiah(t[s]?.amount ?? 0)}</p>
-              <p className="text-sm text-ink-600">{t[s]?.count ?? 0} komisi</p>
+              <StatCard icon={s === 'earned' ? IconTimer : s === 'approved' ? IconCircleCheck : s === 'paid' ? IconPayout : IconTrend} tone={s === 'paid' ? 'gold' : s === 'earned' ? 'warning' : 'primary'}
+                label={s === 'earned' ? 'Menunggu persetujuan' : s === 'approved' ? 'Siap dibayar' : s === 'paid' ? 'Sudah dibayar' : 'Perkiraan (belum diperoleh)'}
+                value={rupiah(t[s]?.amount ?? 0)} sub={`${t[s]?.count ?? 0} komisi`} />
             </li>
           ))}
         </ul>
 
         {requested.length > 0 && (
           <section className="card space-y-3 border-gold-500 p-5" aria-labelledby="po-h">
-            <h2 id="po-h" className="text-xl font-extrabold">Pengajuan pencairan menunggu dibayar</h2>
+            <IconHeading icon={IconPayout} id="po-h">Pengajuan pencairan menunggu dibayar</IconHeading>
             <ul className="divide-y divide-border-subtle">
               {requested.map((p) => (
                 <li key={p.id} className="grid gap-3 py-3 md:grid-cols-[1fr_auto] md:items-center">
@@ -60,7 +62,7 @@ async function Commissions({ params, searchParams }: PageProps<'/dasbor/ppiu/[te
         )}
 
         <section aria-labelledby="com-h" className="space-y-3">
-          <h2 id="com-h" className="text-xl font-extrabold">Komisi</h2>
+          <IconHeading icon={IconCommission} id="com-h">Komisi</IconHeading>
           <nav aria-label="Status komisi" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
             {TABS.map((s) => (
               <Link key={s} href={`/dasbor/ppiu/${id}/komisi?status=${s}`} aria-current={s === status ? 'page' : undefined}
@@ -74,7 +76,7 @@ async function Commissions({ params, searchParams }: PageProps<'/dasbor/ppiu/[te
 
         {payouts.filter((p) => p.status !== 'requested').length > 0 && (
           <section className="card p-5" aria-labelledby="poh-h">
-            <h2 id="poh-h" className="text-lg font-extrabold">Riwayat pencairan</h2>
+            <IconHeading icon={IconHistory} id="poh-h" className="text-lg font-extrabold">Riwayat pencairan</IconHeading>
             <ul className="mt-2 divide-y divide-border-subtle">
               {payouts.filter((p) => p.status !== 'requested').map((p) => (
                 <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">

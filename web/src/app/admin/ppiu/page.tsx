@@ -7,6 +7,7 @@ import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { TenantFull } from '@/lib/tenant-types';
 
 import { AdminHeader } from '../admin-nav';
+import { IconInbox, IconSearch } from '@/components/icons';
 
 export const metadata = { title: 'Verifikasi PPIU' };
 
@@ -54,11 +55,11 @@ async function Queue({ searchParams }: PageProps<'/admin/ppiu'>) {
         <input type="hidden" name="status" value={status} />
         <label htmlFor="q" className="sr-only">Cari PPIU</label>
         <input id="q" name="q" defaultValue={q} className="input max-w-md" placeholder="Cari nama, badan usaha, atau nomor izin" />
-        <button className="btn btn-outline">Cari</button>
+        <button className="btn btn-outline"><IconSearch className="h-5 w-5" />Cari</button>
       </form>
       <div className="card mt-4 overflow-hidden">
         {res.data.length === 0 ? (
-          <p className="p-8 text-center text-ink-600">Tidak ada PPIU dengan status ini.</p>
+          <p className="p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />Tidak ada PPIU dengan status ini.</p>
         ) : (
           <table className="w-full text-left">
             <thead className="bg-surface text-sm text-ink-600">

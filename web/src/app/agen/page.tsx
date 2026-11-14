@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { Alert, StatusPill } from '@/components/form';
+import { IconHandshake, IconLink, IconSearch, IconTimer, IconTrend } from '@/components/icons';
+import { IconHeading, StatCard } from '@/components/stat-card';
 import { serverApi } from '@/lib/session';
 import type { Partnership, ReferralLink } from '@/lib/agent-types';
 import { AgentHeader, requireAgent } from './agent-shell';
@@ -18,8 +20,8 @@ async function Overview() {
   const active = parts.filter((p) => p.status === 'active');
   const clicks = links.reduce((a, l) => a + l.click_count, 0);
   const stats = [
-    ['PPIU mitra aktif', active.length], ['Menunggu persetujuan', parts.filter((p) => p.status === 'applied').length],
-    ['Link aktif', links.filter((l) => l.is_active).length], ['Total klik link', clicks],
+    ['PPIU mitra aktif', active.length, IconHandshake], ['Menunggu persetujuan', parts.filter((p) => p.status === 'applied').length, IconTimer],
+    ['Link aktif', links.filter((l) => l.is_active).length, IconLink], ['Total klik link', clicks, IconTrend],
   ] as const;
 
   return (
@@ -33,20 +35,20 @@ async function Overview() {
           </Alert>
         ))}
         <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {stats.map(([l, v]) => (
-            <li key={l} className="card p-4"><p className="text-sm text-ink-600">{l}</p><p className="num text-3xl font-extrabold text-primary-800">{v}</p></li>
+          {stats.map(([l, v, I]) => (
+            <li key={l} className="card p-4"><StatCard icon={I} label={l} value={v} /></li>
           ))}
         </ul>
         {active.length === 0 ? (
           <div className="card p-8 text-center">
             <p className="text-lg font-bold">Belum ada PPIU mitra aktif</p>
             <p className="mt-1 text-ink-600">Ajukan kemitraan ke PPIU terverifikasi. Setelah disetujui, Anda bisa membuat link paket dan membagikannya.</p>
-            <Link href="/agen/mitra" className="btn btn-primary mt-4">Cari PPIU mitra</Link>
+            <Link href="/agen/mitra" className="btn btn-primary mt-4"><IconSearch className="h-5 w-5" />Cari PPIU mitra</Link>
           </div>
         ) : (
           <section className="card p-5" aria-labelledby="mitra-h">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="mitra-h" className="text-xl font-extrabold">PPIU mitra</h2>
+              <IconHeading icon={IconHandshake} id="mitra-h">PPIU mitra</IconHeading>
               <Link href="/agen/paket" className="btn btn-gold min-h-10 px-4">Bagikan paket</Link>
             </div>
             <ul className="mt-3 divide-y divide-border-subtle">
@@ -63,7 +65,7 @@ async function Overview() {
           </section>
         )}
         <section className="card p-5" aria-labelledby="link-h">
-          <h2 id="link-h" className="text-xl font-extrabold">Link teratas</h2>
+          <IconHeading icon={IconLink} id="link-h">Link teratas</IconHeading>
           {links.length === 0 ? <p className="mt-2 text-ink-600">Belum ada link. Buat dari halaman Paket &amp; link.</p> : (
             <table className="mt-3 w-full text-left">
               <thead className="text-sm text-ink-600"><tr><th className="py-2">Link</th><th className="py-2 text-right">Klik</th></tr></thead>

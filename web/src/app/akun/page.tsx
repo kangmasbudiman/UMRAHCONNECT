@@ -3,10 +3,16 @@ import { Suspense } from 'react';
 import { Alert, StatusPill } from '@/components/form';
 import { requireContexts } from '@/lib/session';
 import { InvitationActions, LogoutButton, ProfileForm, TwoFactorSetup } from './account-actions';
+import { IconHandshake, IconLock, IconMail, IconOffice, IconPiggy, IconPlus, IconShieldCheck, IconTicket, IconUser, IconWork } from '@/components/icons';
+import { IconHeading } from '@/components/stat-card';
 
 export const metadata = { title: 'Akun saya' };
 
 const ROLE_LABEL: Record<string, string> = { owner: 'Owner', admin: 'Admin', finance: 'Finance' };
+
+function WsIcon({ icon: Icon, tone = 'primary' }: { icon: (p: { className?: string }) => React.ReactNode; tone?: 'primary' | 'gold' }) {
+  return <span className={`mb-1 flex h-10 w-10 items-center justify-center rounded-[10px] ${tone === 'gold' ? 'bg-gold-100 text-gold-700' : 'bg-primary-50 text-primary-700'}`}><Icon className="h-5 w-5" /></span>;
+}
 
 async function Account() {
   const ctx = await requireContexts('/akun');
@@ -39,7 +45,7 @@ async function Account() {
 
         {ctx.invitations.length > 0 && (
           <section className="card p-5" aria-labelledby="undangan">
-            <h2 id="undangan" className="text-xl font-extrabold">Undangan tim</h2>
+            <IconHeading icon={IconMail} id="undangan">Undangan tim</IconHeading>
             <ul className="mt-3 divide-y divide-border-subtle">
               {ctx.invitations.map((i) => (
                 <li key={i.member_id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -52,10 +58,11 @@ async function Account() {
         )}
 
         <section aria-labelledby="ruang-kerja">
-          <h2 id="ruang-kerja" className="text-xl font-extrabold">Ruang kerja</h2>
+          <IconHeading icon={IconWork} id="ruang-kerja">Ruang kerja</IconHeading>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ctx.platform_role && (
               <Link href="/admin" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+                <WsIcon icon={IconShieldCheck} />
                 <span className="text-sm font-semibold text-gold-700">Platform · {ctx.platform_role === 'super_admin' ? 'Super Admin' : 'Admin Platform'}</span>
                 <span className="text-lg font-extrabold group-hover:text-primary-700">Dasbor platform</span>
                 <span className="text-ink-600">Verifikasi PPIU, angka global, audit log, akses dukungan.</span>
@@ -63,30 +70,41 @@ async function Account() {
             )}
             {ctx.tenants.map((t) => (
               <Link key={t.id} href={`/dasbor/ppiu/${t.id}`} className="card group flex flex-col gap-2 p-5 hover:border-primary-600">
+                <WsIcon icon={IconOffice} />
                 <span className="text-sm font-semibold text-gold-700">PPIU · {ROLE_LABEL[t.role]}</span>
                 <span className="text-lg font-extrabold group-hover:text-primary-700">{t.brand_name}</span>
                 <span><StatusPill status={t.tenant_status} /></span>
               </Link>
             ))}
             <Link href="/dasbor/ppiu/daftar" className="flex flex-col gap-1 rounded-[12px] border border-dashed border-primary-600 bg-primary-50 p-5 hover:bg-primary-100">
+              <WsIcon icon={IconPlus} />
               <span className="text-sm font-semibold text-primary-700">Untuk travel berizin</span>
-              <span className="text-lg font-extrabold text-primary-800">+ Daftarkan PPIU</span>
+              <span className="text-lg font-extrabold text-primary-800">Daftarkan PPIU</span>
               <span className="text-ink-600">Isi profil, unggah legalitas, lalu ajukan verifikasi.</span>
             </Link>
             {ctx.agent ? (
               <Link href="/agen" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+                <WsIcon icon={IconHandshake} />
                 <span className="text-sm font-semibold text-gold-700">Agen · kode {ctx.agent.code}</span>
                 <span className="text-lg font-extrabold group-hover:text-primary-700">Dasbor agen</span>
                 <span className="text-ink-600">{ctx.agent.active_partnerships} PPIU mitra aktif. Bagikan link paket.</span>
               </Link>
             ) : (
               <Link href="/agen/daftar" className="flex flex-col gap-1 rounded-[12px] border border-dashed border-gold-600 bg-gold-50 p-5 hover:bg-gold-100">
+                <WsIcon icon={IconHandshake} tone="gold" />
                 <span className="text-sm font-semibold text-gold-700">Untuk agen pemasaran</span>
-                <span className="text-lg font-extrabold text-primary-800">+ Jadi agen</span>
+                <span className="text-lg font-extrabold text-primary-800">Jadi agen</span>
                 <span className="text-ink-600">Bermitra dengan PPIU dan terima komisi resmi.</span>
               </Link>
             )}
+            <Link href="/akun/tabungan" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+              <WsIcon icon={IconPiggy} tone="gold" />
+              <span className="text-sm font-semibold text-gold-700">Persiapan</span>
+              <span className="text-lg font-extrabold group-hover:text-primary-700">Tabungan umrah</span>
+              <span className="text-ink-600">Target, setoran per bulan, dan pengingat.</span>
+            </Link>
             <Link href="/akun/booking" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+              <WsIcon icon={IconTicket} />
               <span className="text-sm font-semibold text-gold-700">Jamaah</span>
               <span className="text-lg font-extrabold group-hover:text-primary-700">Booking saya</span>
               <span className="text-ink-600">Status booking, tagihan DP dan pelunasan, rekening tujuan.</span>
@@ -96,7 +114,7 @@ async function Account() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <section className="card p-5" aria-labelledby="profil">
-            <h2 id="profil" className="text-xl font-extrabold">Profil</h2>
+            <IconHeading icon={IconUser} id="profil">Profil</IconHeading>
             <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-ink-600">
               {u.email && <><dt>Email</dt><dd className="text-ink-900">{u.email} {u.email_verified ? '· terverifikasi' : '· belum diverifikasi'}</dd></>}
               {u.phone && <><dt>Nomor HP</dt><dd className="text-ink-900">{u.phone} {u.phone_verified ? '· terverifikasi' : '· belum diverifikasi'}</dd></>}
@@ -104,7 +122,7 @@ async function Account() {
             <div className="mt-4"><ProfileForm name={u.name} /></div>
           </section>
           <section id="keamanan" className="card scroll-mt-24 p-5" aria-labelledby="keamanan-h">
-            <h2 id="keamanan-h" className="text-xl font-extrabold">Keamanan</h2>
+            <IconHeading icon={IconLock} id="keamanan-h">Keamanan</IconHeading>
             <p className="mt-1 text-ink-600">Verifikasi dua langkah (2FA) melindungi akun walau kata sandi bocor. Wajib untuk Owner, Finance, dan staf platform.</p>
             <div className="mt-4"><TwoFactorSetup enabled={u.two_factor_enabled} /></div>
           </section>

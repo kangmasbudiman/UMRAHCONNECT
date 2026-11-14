@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { rupiah, tanggal } from '@/lib/format';
 import type { PackageSummary, ScheduleItem, TenantPublic } from '@/lib/api';
 import { IconArrowRight, IconCalendar, IconClock, IconPin, IconPlane, IconShield } from './icons';
+import { CompareToggle } from './compare';
+import { ElderlyBadge, RatingBadge, TransparencyBadge } from './trust';
 
 /** Lencana PPIU terverifikasi (UI/UX Design §2: VerifiedBadge). */
 export function VerifiedBadge({ brand, license }: { brand: string; license?: string }) {
@@ -60,10 +62,10 @@ export function Cover({ url, title, className = '', label, priority = false }: {
 
 const pkgHref = (p: PackageSummary) => `/paket/${p.tenant.slug}/${p.slug}`;
 
-/** Kartu grid (beranda, profil PPIU). */
+/** Kartu grid (beranda, profil PPIU). Tautan menutupi kartu lewat judul; tombol Bandingkan tetap bisa diklik. */
 export function PackageCard({ p }: { p: PackageSummary }) {
   return (
-    <Link href={pkgHref(p)} className="card group flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-raised">
+    <article className="card group relative flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-raised">
       <div className="relative">
         <Cover url={p.cover_image_url} title={p.name} className="h-40" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-primary-800">
@@ -71,8 +73,11 @@ export function PackageCard({ p }: { p: PackageSummary }) {
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="text-lg font-bold leading-6 group-hover:text-primary-700">{p.name}</h3>
+        <h3 className="text-lg font-bold leading-6">
+          <Link href={pkgHref(p)} className="after:absolute after:inset-0 group-hover:text-primary-700 focus-visible:outline-none">{p.name}</Link>
+        </h3>
         <div><VerifiedBadge brand={p.tenant.brand_name} license={p.tenant.ppiu_license_no} /></div>
+        <div className="flex flex-wrap items-center gap-1.5"><RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
         <p className="flex items-center gap-1.5 text-sm text-ink-600"><IconPlane className="h-4 w-4" />{p.airline} · Hotel <Stars n={p.hotel_makkah_stars} /></p>
         {p.next_departure && (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
@@ -80,12 +85,15 @@ export function PackageCard({ p }: { p: PackageSummary }) {
             <SeatsPill seats={p.next_departure.seats_remaining} />
           </p>
         )}
-        <div className="mt-auto border-t border-dashed border-border-subtle pt-3">
-          <p className="text-xs text-ink-600">Mulai dari</p>
-          <p className="num text-xl font-extrabold text-primary-800">{rupiah(p.price_from_amount)}<span className="text-sm font-normal text-ink-600"> /orang</span></p>
+        <div className="mt-auto flex items-end justify-between gap-2 border-t border-dashed border-border-subtle pt-3">
+          <div>
+            <p className="text-xs text-ink-600">Mulai dari</p>
+            <p className="num text-xl font-extrabold text-primary-800">{rupiah(p.price_from_amount)}<span className="text-sm font-normal text-ink-600"> /orang</span></p>
+          </div>
+          <CompareToggle itemKey={`${p.tenant.slug}/${p.slug}`} name={p.name} />
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -99,6 +107,7 @@ export function PackageRow({ p }: { p: PackageSummary }) {
           <Link href={pkgHref(p)} className="after:absolute after:inset-0 hover:text-primary-700 focus-visible:outline-none">{p.name}</Link>
         </h3>
         <div><VerifiedBadge brand={p.tenant.brand_name} license={p.tenant.ppiu_license_no} /></div>
+        <div className="flex flex-wrap items-center gap-1.5"><RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
         <ul className="mt-1 grid gap-1.5 text-sm text-ink-600">
           <li className="flex items-center gap-2"><IconPlane className="h-4 w-4 text-primary-700" />{p.airline}</li>
           <li className="flex items-center gap-2"><IconShield className="h-4 w-4 text-primary-700" />Hotel Makkah <Stars n={p.hotel_makkah_stars} /></li>
@@ -119,7 +128,10 @@ export function PackageRow({ p }: { p: PackageSummary }) {
           <p className="num text-xl font-extrabold text-primary-800">{rupiah(p.price_from_amount)}</p>
           <p className="text-xs text-ink-600">per orang · harga resmi PPIU</p>
         </div>
-        <span className="btn btn-gold px-4">Lihat paket</span>
+        <div className="flex flex-wrap items-center gap-2 lg:flex-col lg:items-stretch">
+          <span className="btn btn-gold px-4">Lihat paket</span>
+          <CompareToggle itemKey={`${p.tenant.slug}/${p.slug}`} name={p.name} className="justify-center" />
+        </div>
       </div>
     </article>
   );

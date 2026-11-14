@@ -5,6 +5,8 @@ import { serverApi, ServerApiError } from '@/lib/session';
 import type { PackageManaged } from '@/lib/tenant-types';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../../tenant-shell';
 import { DeparturesPanel, PackageActions, PackageDetailsForm, PhotosPanel } from '../package-forms';
+import { IconHeading } from '@/components/stat-card';
+import { IconCalendarDays, IconImagePlus, IconPackage } from '@/components/icons';
 
 export const metadata = { title: 'Kelola paket' };
 
@@ -38,16 +40,16 @@ async function Editor({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant]
             <Alert tone="info">Paket sedang terbit. Perubahan langsung tampil di marketplace setelah disimpan.</Alert>
           )}
           <section id="keberangkatan" className="card scroll-mt-24 p-5 md:p-6">
-            <h2 className="text-xl font-extrabold">Keberangkatan dan harga</h2>
+            <IconHeading icon={IconCalendarDays} className="text-xl font-extrabold">Keberangkatan dan harga</IconHeading>
             <p className="mt-1 text-ink-600">Setiap keberangkatan punya kuota dan harga resminya sendiri. Sisa kursi = kuota − ditahan − terkonfirmasi.</p>
             <div className="mt-4"><DeparturesPanel tenantId={id} pkg={pkg} canManage={perms.includes('departure.manage')} canPrice={perms.includes('departure.price.update')} /></div>
           </section>
           <section id="foto" className="card scroll-mt-24 p-5 md:p-6">
-            <h2 className="text-xl font-extrabold">Foto</h2>
+            <IconHeading icon={IconImagePlus} className="text-xl font-extrabold">Foto</IconHeading>
             <div className="mt-4"><PhotosPanel tenantId={id} pkg={pkg} editable={canManage && editable} /></div>
           </section>
           <section id="detail" className="card scroll-mt-24 p-5 md:p-6">
-            <h2 className="mb-4 text-xl font-extrabold">Detail paket</h2>
+            <IconHeading icon={IconPackage} className="mb-4 text-xl font-extrabold">Detail paket</IconHeading>
             <PackageDetailsForm tenantId={id} pkg={pkg} readOnly={!canManage || !editable} />
           </section>
         </div>

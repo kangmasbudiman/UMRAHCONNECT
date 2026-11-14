@@ -44,6 +44,8 @@ Route::prefix('v1')->group(function () {
         Route::get('departures', 'departures');
         Route::get('facets', 'facets');
         Route::get('config', 'config');
+        Route::get('packages/{tenantSlug}/{packageSlug}/reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'publicIndex']);
+        Route::get('track', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'track'])->middleware('throttle:referral-click');
         Route::get('referrals/{code}', 'referral');
         Route::post('referrals/{code}/clicks', 'referralClick')->middleware('throttle:referral-click');
     });
@@ -72,6 +74,11 @@ Route::prefix('v1')->group(function () {
         Route::patch('me', [MeController::class, 'update']);
         Route::get('me/contexts', [MeController::class, 'contexts']);
         Route::get('me/notifications', [NotificationController::class, 'index']);
+        Route::get('me/savings-plans', [\App\Http\Controllers\Api\V1\SavingsController::class, 'index']);
+        Route::post('me/savings-plans', [\App\Http\Controllers\Api\V1\SavingsController::class, 'store']);
+        Route::patch('me/savings-plans/{plan}', [\App\Http\Controllers\Api\V1\SavingsController::class, 'update'])->whereUuid('plan');
+        Route::delete('me/savings-plans/{plan}', [\App\Http\Controllers\Api\V1\SavingsController::class, 'destroy'])->whereUuid('plan');
+        Route::post('me/savings-plans/{plan}/entries', [\App\Http\Controllers\Api\V1\SavingsController::class, 'addEntry'])->whereUuid('plan');
         Route::post('me/notifications/read', [NotificationController::class, 'read']);
         Route::post('me/invitations/{member}/accept', fn (\Illuminate\Http\Request $r, string $member) => app(MemberController::class)->respond($r, $member, 'accept'))->whereUuid('member');
         Route::post('me/invitations/{member}/decline', fn (\Illuminate\Http\Request $r, string $member) => app(MemberController::class)->respond($r, $member, 'decline'))->whereUuid('member');
@@ -90,6 +97,7 @@ Route::prefix('v1')->group(function () {
         Route::get('me/invoices/{invoice}/pdf', [PaymentController::class, 'myInvoicePdf']);
         Route::get('me/receipts/{receipt}/pdf', [PaymentController::class, 'myReceiptPdf']);
         Route::post('me/bookings/{booking}/cancel-request', [BookingOpsController::class, 'myCancelRequest']);
+        Route::post('me/bookings/{booking}/review', [\App\Http\Controllers\Api\V1\ReviewController::class, 'store'])->whereUuid('booking');
         Route::get('me/pilgrims/{pilgrim}/documents', [PilgrimDocumentController::class, 'index']);
         Route::post('me/pilgrims/{pilgrim}/documents', [PilgrimDocumentController::class, 'store']);
 
@@ -162,6 +170,8 @@ Route::prefix('v1')->group(function () {
             Route::get('receipts/{receipt}/pdf', [PaymentController::class, 'receiptPdf'])->middleware('perm:invoice.view');
             Route::post('bookings/{booking}/cancel', [BookingOpsController::class, 'cancel'])->middleware(['perm:booking.cancel', 'idempotent']);
             Route::patch('bookings/{booking}/attribution', [BookingOpsController::class, 'changeAttribution'])->middleware('perm:booking.attribution.change');
+            Route::get('reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'tenantIndex'])->middleware('perm:package.view');
+            Route::post('reviews/{review}/reply', [\App\Http\Controllers\Api\V1\ReviewController::class, 'reply'])->whereUuid('review')->middleware('perm:package.manage');
             Route::post('bookings/{booking}/cancel-request/reject', [BookingOpsController::class, 'rejectCancelRequest'])->middleware('perm:booking.cancel');
             Route::get('bookings/{booking}/refunds', [BookingOpsController::class, 'refunds'])->middleware('perm:payment.view');
             Route::post('bookings/{booking}/refunds', [BookingOpsController::class, 'recordRefund'])->middleware(['perm:refund.record', 'idempotent']);
@@ -218,6 +228,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('departures/{departure}', 'show')->middleware('perm:package.view');
                 Route::patch('departures/{departure}', 'update')->middleware('perm:departure.manage');
                 Route::put('departures/{departure}/prices', 'replacePrices')->middleware('perm:departure.price.update');
+                Route::get('departures/{departure}/milestones', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'index'])->middleware('perm:package.view');
+                Route::put('departures/{departure}/milestones/{type}', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'update'])->middleware('perm:departure.manage');
                 Route::post('departures/{departure}/close-sales', 'closeSales')->middleware('perm:departure.manage');
                 Route::post('departures/{departure}/open-sales', 'openSales')->middleware('perm:departure.manage');
                 Route::post('departures/{departure}/cancel', 'cancel')->middleware('perm:departure.manage');
@@ -238,6 +250,9 @@ Route::prefix('v1')->group(function () {
             Route::get('packages', 'packages')->middleware('platform:platform.tenant.view');
             Route::post('packages/{package}/take-down', 'takeDown')->whereUuid('package')->middleware('platform:platform.package.take_down');
             Route::post('packages/{package}/restore', 'restorePackage')->whereUuid('package')->middleware('platform:platform.package.take_down');
+            Route::get('reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'platformIndex'])->middleware('platform:platform.tenant.view');
+            Route::post('reviews/{review}/hide', [\App\Http\Controllers\Api\V1\ReviewController::class, 'hide'])->whereUuid('review')->middleware('platform:platform.package.take_down');
+            Route::post('reviews/{review}/unhide', [\App\Http\Controllers\Api\V1\ReviewController::class, 'unhide'])->whereUuid('review')->middleware('platform:platform.package.take_down');
             Route::get('users', 'users')->middleware('platform:platform.user.view');
             Route::post('users/{user}/deactivate', 'deactivateUser')->whereUuid('user')->middleware('platform:platform.user.manage:limited');
             Route::post('users/{user}/reactivate', 'reactivateUser')->whereUuid('user')->middleware('platform:platform.user.manage:limited');

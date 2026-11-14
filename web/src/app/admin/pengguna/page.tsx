@@ -5,6 +5,7 @@ import { StatusPill } from '@/components/form';
 import { requireContexts, serverApi } from '@/lib/session';
 import { AdminHeader } from '../admin-nav';
 import { ConfirmAction, ReasonAction } from '../platform-actions';
+import { IconChevronRight, IconInbox, IconSearch } from '@/components/icons';
 
 export const metadata = { title: 'Pengguna' };
 
@@ -29,10 +30,10 @@ async function Users({ searchParams }: PageProps<'/admin/pengguna'>) {
         <label htmlFor="u-q" className="sr-only">Cari akun</label>
         <input id="u-q" name="q" defaultValue={q} className="input max-w-md" placeholder="Nama, email, atau nomor HP" />
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="status" value="deactivated" defaultChecked={!!status} className="h-5 w-5" /> Hanya yang nonaktif</label>
-        <button className="btn btn-outline">Cari</button>
+        <button className="btn btn-outline"><IconSearch className="h-5 w-5" />Cari</button>
       </form>
       {!isSuper && <p className="text-sm text-ink-600">Anda bisa menonaktifkan akun agen dan jamaah. Akun staf PPIU dan staf platform hanya bisa diubah Super Admin.</p>}
-      {res.data.length === 0 ? <p className="card p-8 text-center text-ink-600">Akun tidak ditemukan.</p> : (
+      {res.data.length === 0 ? <p className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />Akun tidak ditemukan.</p> : (
         <ul className="space-y-3">
           {res.data.map((u) => {
             const staff = !!u.platform_role || u.memberships.length > 0;
@@ -66,7 +67,7 @@ async function Users({ searchParams }: PageProps<'/admin/pengguna'>) {
           })}
         </ul>
       )}
-      {res.meta.next_cursor && <Link href={`/admin/pengguna?${new URLSearchParams({ ...(q ? { q } : {}), ...(status ? { status } : {}), cursor: res.meta.next_cursor })}`} className="btn btn-outline">Muat berikutnya</Link>}
+      {res.meta.next_cursor && <Link href={`/admin/pengguna?${new URLSearchParams({ ...(q ? { q } : {}), ...(status ? { status } : {}), cursor: res.meta.next_cursor })}`} className="btn btn-outline"><IconChevronRight className="h-5 w-5" />Muat berikutnya</Link>}
     </>
   );
 }

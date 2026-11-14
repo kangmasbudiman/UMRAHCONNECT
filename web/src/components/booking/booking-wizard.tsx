@@ -6,6 +6,8 @@ import { Alert, Field, Spinner } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { ROOM_LABEL, rupiah, tanggal } from '@/lib/format';
 import type { SavedPilgrim, WizardDeparture } from '@/lib/booking-types';
+import { IconHeading } from '@/components/stat-card';
+import { IconCalendarDays, IconCircleCheck, IconTeam } from '@/components/icons';
 
 type Room = 'quad' | 'triple' | 'double';
 type NewPilgrim = { full_name: string; nik: string; birth_place: string; birth_date: string; gender: '' | 'L' | 'P'; phone: string; passport_no: string };
@@ -137,7 +139,7 @@ export function BookingWizard(props: WizardProps) {
 
         {step === 0 && dep && (
           <section className="card space-y-5 p-5" aria-labelledby="s1">
-            <h2 id="s1" className="text-xl font-extrabold">Pilih keberangkatan</h2>
+            <IconHeading icon={IconCalendarDays} id="s1" className="text-xl font-extrabold">Pilih keberangkatan</IconHeading>
             <fieldset className="grid gap-3 sm:grid-cols-2">
               <legend className="sr-only">Keberangkatan</legend>
               {props.departures.map((d) => {
@@ -185,7 +187,7 @@ export function BookingWizard(props: WizardProps) {
 
         {step === 1 && (
           <section className="space-y-4" aria-labelledby="s2">
-            <h2 id="s2" className="text-xl font-extrabold">Data jamaah</h2>
+            <IconHeading icon={IconTeam} id="s2" className="text-xl font-extrabold">Data jamaah</IconHeading>
             {props.mode !== 'jamaah' && (
               <div className="card grid gap-4 p-5 sm:grid-cols-2">
                 <p className="font-bold sm:col-span-2">Pemesan</p>
@@ -254,7 +256,7 @@ export function BookingWizard(props: WizardProps) {
 
         {step === 2 && dep && (
           <section className="card space-y-5 p-5" aria-labelledby="s3">
-            <h2 id="s3" className="text-xl font-extrabold">Tinjau dan konfirmasi</h2>
+            <IconHeading icon={IconCircleCheck} id="s3" className="text-xl font-extrabold">Tinjau dan konfirmasi</IconHeading>
             <dl className="grid gap-3 sm:grid-cols-2">
               <div><dt className="text-sm text-ink-600">Paket</dt><dd className="font-bold">{props.packageName}</dd></div>
               <div><dt className="text-sm text-ink-600">Keberangkatan</dt><dd className="font-bold">{tanggal(dep.departure_date)} dari {dep.departure_city}</dd></div>

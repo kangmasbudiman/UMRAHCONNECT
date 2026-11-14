@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { requireContexts, serverApi } from '@/lib/session';
 import { AdminHeader } from '../admin-nav';
 import { AddStaffForm, ConfirmAction } from '../platform-actions';
+import { IconHeading } from '@/components/stat-card';
+import { IconTeam, IconUserPlus } from '@/components/icons';
 
 export const metadata = { title: 'Staf platform' };
 
@@ -16,7 +18,7 @@ async function StaffList() {
   return (
     <>
       <section className="card overflow-hidden" aria-labelledby="st-h">
-        <h2 id="st-h" className="border-b border-border-subtle p-4 text-lg font-extrabold">Staf saat ini</h2>
+        <IconHeading icon={IconTeam} id="st-h" className="border-b border-border-subtle p-4 text-lg font-extrabold">Staf saat ini</IconHeading>
         <ul className="divide-y divide-border-subtle">
           {rows.map((u) => (
             <li key={u.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -33,7 +35,7 @@ async function StaffList() {
         </ul>
       </section>
       <section className="card space-y-3 p-5" aria-labelledby="add-h">
-        <h2 id="add-h" className="text-lg font-extrabold">Tambah Admin Platform</h2>
+        <IconHeading icon={IconUserPlus} id="add-h" className="text-lg font-extrabold">Tambah Admin Platform</IconHeading>
         <p className="text-sm text-ink-600">Akun harus sudah terdaftar dengan email terverifikasi. Admin Platform wajib mengaktifkan 2FA sebelum bisa membuka area platform. Super Admin baru hanya bisa dibuat dari server.</p>
         <AddStaffForm />
       </section>

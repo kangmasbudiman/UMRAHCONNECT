@@ -1691,6 +1691,33 @@ paths:
       security: []
       responses:
         '200': { description: 'OK, data.attribution_window_days (integer)' }
+  /public/track:
+    get:
+      tags: [Public]
+      operationId: trackBooking
+      summary: Lacak Umrah publik (kode booking + 4 digit akhir HP pemesan), tanpa data pribadi
+      security: []
+      x-requirements: [Fitur pembeda 2026-11]
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: phone, in: query, required: true, schema: { type: string, pattern: '^\\d{4}$' } }
+      responses:
+        '200': { description: 'OK: code, status, package, tenant, departure, participant_count, journey' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/packages/{tenantSlug}/{packageSlug}/reviews:
+    get:
+      tags: [Public]
+      operationId: listPackageReviews
+      summary: Ulasan terverifikasi paket (hanya dari jamaah yang sudah berangkat) + ringkasan rating
+      security: []
+      parameters:
+        - { name: tenantSlug, in: path, required: true, schema: { type: string } }
+        - { name: packageSlug, in: path, required: true, schema: { type: string } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { description: 'OK: data[], meta.summary {avg,count,distribution}, meta.tenant {avg,count}' }
+        '4XX': { $ref: '#/components/responses/Error' }
   /public/facets:
     get:
       tags: [Public]
@@ -3773,6 +3800,166 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Package' }
         '4XX': { $ref: '#/components/responses/Error' }
+  /me/bookings/{booking}/review:
+    post:
+      tags: [Booking]
+      operationId: createReview
+      summary: Tulis ulasan (hanya pemesan, booking berstatus departed/completed, satu per booking)
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [rating, body], properties: { rating: { type: integer, minimum: 1, maximum: 5 }, body: { type: string, minLength: 20, maxLength: 2000 } } }
+      responses:
+        '201': { description: Created }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/savings-plans:
+    get:
+      tags: [Me]
+      operationId: listSavingsPlans
+      summary: Rencana Tabungan Umrah milik pengguna (pencatat; platform tidak menyimpan uang)
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Me]
+      operationId: createSavingsPlan
+      summary: Buat rencana (target dari paket × jumlah orang bila target_amount kosong)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [persons, target_date]
+              properties:
+                package_id: { type: [string, 'null'], format: uuid }
+                label: { type: [string, 'null'] }
+                persons: { type: integer, minimum: 1, maximum: 20 }
+                target_amount: { type: [integer, 'null'] }
+                target_date: { type: string, format: date }
+                initial_amount: { type: [integer, 'null'] }
+                reminder_day: { type: [integer, 'null'], minimum: 1, maximum: 28 }
+      responses:
+        '201': { description: Created }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/savings-plans/{plan}:
+    parameters:
+      - { name: plan, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+    patch:
+      tags: [Me]
+      operationId: updateSavingsPlan
+      summary: Ubah rencana (target, tanggal, pengingat, arsip)
+      responses:
+        '200': { description: OK }
+        '4XX': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Me]
+      operationId: deleteSavingsPlan
+      summary: Hapus rencana beserta catatan setoran
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+  /me/savings-plans/{plan}/entries:
+    post:
+      tags: [Me]
+      operationId: addSavingsEntry
+      summary: Catat setoran (positif) atau penarikan (negatif); setoran per bulan dihitung ulang
+      parameters:
+        - { name: plan, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [amount], properties: { amount: { type: integer }, saved_on: { type: string, format: date }, note: { type: string, maxLength: 200 } } }
+      responses:
+        '201': { description: Created }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/milestones:
+    get:
+      tags: [Catalog]
+      operationId: listDepartureMilestones
+      summary: Tahap Lacak Umrah satu keberangkatan
+      x-permission: package.view
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: departure, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+      responses:
+        '200': { description: OK }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/milestones/{type}:
+    put:
+      tags: [Catalog]
+      operationId: updateDepartureMilestone
+      summary: Tandai tahap (visa_submitted, visa_issued, ticket_issued, hotel_confirmed, manasik) selesai/belum; pemesan aktif diberi tahu
+      x-permission: departure.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: departure, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: type, in: path, required: true, schema: { type: string, enum: [visa_submitted, visa_issued, ticket_issued, hotel_confirmed, manasik] } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [pending, done] }, happened_on: { type: [string, 'null'], format: date }, note: { type: [string, 'null'], maxLength: 500 } } }
+      responses:
+        '200': { description: OK }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/reviews:
+    get:
+      tags: [Tenant]
+      operationId: listTenantReviews
+      summary: Ulasan terverifikasi untuk PPIU
+      x-permission: package.view
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { description: OK }
+  /tenants/{tenant}/reviews/{review}/reply:
+    post:
+      tags: [Tenant]
+      operationId: replyReview
+      summary: Balas ulasan (tampil di halaman paket); pengulas diberi tahu
+      x-permission: package.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: review, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+      responses:
+        '200': { description: OK }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/reviews:
+    get:
+      tags: [Platform]
+      operationId: listPlatformReviews
+      summary: Semua ulasan untuk moderasi
+      x-permission: platform.tenant.view
+      responses:
+        '200': { description: OK }
+  /platform/reviews/{review}/hide:
+    post:
+      tags: [Platform]
+      operationId: hideReview
+      summary: Sembunyikan ulasan yang melanggar (alasan wajib, tercatat di audit log)
+      x-permission: platform.package.take_down
+      parameters:
+        - { name: review, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { description: OK }
+  /platform/reviews/{review}/unhide:
+    post:
+      tags: [Platform]
+      operationId: unhideReview
+      summary: Tampilkan kembali ulasan
+      x-permission: platform.package.take_down
+      parameters:
+        - { name: review, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }
+      responses:
+        '200': { description: OK }
   /platform/users:
     get:
       tags: [Platform]

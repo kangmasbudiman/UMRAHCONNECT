@@ -23,6 +23,23 @@ export type PackageSummary = {
   duration_days: number; airline: string; hotel_makkah_stars: number | null; cover_image_url: string | null;
   price_from_amount: number;
   next_departure: { departure_date: string; departure_city: string; seats_remaining: number } | null;
+  hotel_makkah_distance_m?: number | null; hotel_madinah_distance_m?: number | null;
+  elderly_friendly?: boolean; transparency_score?: number; rating?: Rating | null;
+};
+export type Rating = { avg: number | null; count: number };
+export type TransparencyItem = { key: string; label: string; ok: boolean; weight: number };
+export type Review = {
+  id: string; rating: number; body: string; author: string; status: string;
+  verified_departure: { departure_date: string } | null; tenant_reply: string | null; replied_at: string | null; created_at: string;
+};
+export type ReviewList = { data: Review[]; meta: { next_cursor: string | null; summary: Rating & { distribution: Record<string, number> }; tenant: Rating } };
+export type JourneyStep = { key: string; label: string; status: 'done' | 'current' | 'pending' | 'skipped'; date: string | null; note: string | null };
+export type Journey = { state: string; progress: number; steps: JourneyStep[] };
+export type Tracking = {
+  code: string; status: string; participant_count: number; journey: Journey;
+  package: { name: string; duration_days: number };
+  tenant: { brand_name: string; slug: string; whatsapp: string | null; ppiu_license_no: string };
+  departure: { departure_date: string; return_date: string; departure_city: string };
 };
 export type PackageDetail = {
   id: string; slug: string; name: string; duration_days: number; airline: string;
@@ -31,8 +48,9 @@ export type PackageDetail = {
   description: string | null; itinerary: { day: number; title: string; activities?: string[] }[];
   facilities: string[]; includes: string[]; excludes: string[];
   document_requirements: string | null; payment_terms: string | null; cancellation_terms: string | null;
-  tenant: TenantPublic; departures: DeparturePublic[];
+  tenant: TenantPublic & { rating?: Rating }; departures: DeparturePublic[];
   images: { id: string; url: string | null; sort_order: number }[];
+  transparency: { score: number; items: TransparencyItem[] }; elderly_friendly: boolean; rating: Rating | null;
 };
 export type ScheduleItem = DeparturePublic & {
   package: { slug: string; name: string; duration_days: number; airline: string };
@@ -90,7 +108,7 @@ export async function getTenants(): Promise<List<TenantPublic>> {
   return get('/public/tenants?limit=100');
 }
 
-export async function getTenant(slug: string): Promise<(TenantPublic & { packages: PackageSummary[] }) | null> {
+export async function getTenant(slug: string): Promise<(TenantPublic & { packages: PackageSummary[]; rating?: Rating }) | null> {
   'use cache';
   cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   try {
@@ -121,6 +139,27 @@ export async function getPublicConfig(): Promise<{ attribution_window_days: numb
     return (await get<{ data: { attribution_window_days: number } }>('/public/config')).data;
   } catch {
     return { attribution_window_days: 30 };
+  }
+}
+
+export async function getPackageReviews(tenantSlug: string, packageSlug: string): Promise<ReviewList | null> {
+  'use cache';
+  cacheLife('minutes');
+  try {
+    return await get<ReviewList>(`/public/packages/${encodeURIComponent(tenantSlug)}/${encodeURIComponent(packageSlug)}/reviews?limit=10`);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
+/** Lacak Umrah publik: tidak di-cache (status bisa berubah kapan saja). */
+export async function trackBooking(code: string, phone: string): Promise<Tracking | null> {
+  try {
+    return (await get<{ data: Tracking }>(`/public/track?code=${encodeURIComponent(code)}&phone=${encodeURIComponent(phone)}`)).data;
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 404 || e.status === 422)) return null;
+    throw e;
   }
 }
 

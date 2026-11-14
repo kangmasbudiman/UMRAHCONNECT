@@ -9,6 +9,8 @@ import { rupiah } from '@/lib/format';
 import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { TenantFull } from '@/lib/tenant-types';
 import { AdminHeader } from '../../../admin-nav';
+import { IconHeading } from '@/components/stat-card';
+import { IconTicket } from '@/components/icons';
 
 export const metadata = { title: 'Akses dukungan' };
 
@@ -43,7 +45,7 @@ async function SupportView({ params, searchParams }: PageProps<'/admin/ppiu/[id]
             <li key={l} className="card p-4"><p className="text-sm text-ink-600">{l}</p><p className="num text-xl font-extrabold">{v}</p></li>
           ))}
         </ul>
-        <h2 className="text-xl font-extrabold">Booking terbaru</h2>
+        <IconHeading icon={IconTicket} className="text-xl font-extrabold">Booking terbaru</IconHeading>
         <BookingList rows={bookings} hrefFor={() => '#'} showTenant={false} showBooker empty="Belum ada booking." />
       </div>
   );

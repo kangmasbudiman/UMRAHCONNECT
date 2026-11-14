@@ -16,6 +16,7 @@ Schedule::command('jobs:run invoice-reminders')->dailyAt('08:00')->timezone('Asi
 Schedule::command('jobs:run mark-departed')->dailyAt('00:05')->timezone('Asia/Jakarta')->withoutOverlapping();
 Schedule::command('jobs:run license-check')->dailyAt('07:00')->timezone('Asia/Jakarta')->withoutOverlapping();
 Schedule::command('jobs:run h14-summary')->dailyAt('07:30')->timezone('Asia/Jakarta')->withoutOverlapping();
+Schedule::command('jobs:run savings-reminders')->dailyAt('07:15')->timezone('Asia/Jakarta')->withoutOverlapping();
 
 // Sekali jalan saat rilis Sprint 6: buat komisi "perkiraan" untuk booking beragen yang dibuat sebelum modul komisi aktif.
 Artisan::command('commissions:backfill', function (App\Services\CommissionService $svc) {

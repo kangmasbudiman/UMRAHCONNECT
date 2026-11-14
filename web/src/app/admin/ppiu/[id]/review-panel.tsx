@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Alert, Field, Spinner, StatusPill } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { DOC_LABEL, type BankAccount, type TenantDoc } from '@/lib/tenant-types';
+import { IconHeading } from '@/components/stat-card';
+import { IconFolder, IconLandmark, IconReview, IconShieldAlert, IconShieldCheck } from '@/components/icons';
 
 type DocDecision = { status: 'accepted' | 'rejected' | ''; note: string };
 
@@ -46,7 +48,7 @@ export function ReviewPanel({ tenantId, status, docs, banks, canVerify, canSuspe
       {(typeof error === 'string' || apiErr) && <Alert tone="danger">{typeof error === 'string' ? error : apiErr?.message}</Alert>}
 
       <section className="card p-5" aria-labelledby="dok-h">
-        <h2 id="dok-h" className="text-xl font-extrabold">Dokumen legalitas</h2>
+        <IconHeading icon={IconFolder} id="dok-h" className="text-xl font-extrabold">Dokumen legalitas</IconHeading>
         {latest.length === 0 && <p className="mt-2 text-ink-600">Belum ada dokumen.</p>}
         <ul className="mt-2 divide-y divide-border-subtle">
           {latest.map((d) => (
@@ -80,7 +82,7 @@ export function ReviewPanel({ tenantId, status, docs, banks, canVerify, canSuspe
       </section>
 
       <section className="card p-5" aria-labelledby="rek-h">
-        <h2 id="rek-h" className="text-xl font-extrabold">Rekening</h2>
+        <IconHeading icon={IconLandmark} id="rek-h" className="text-xl font-extrabold">Rekening</IconHeading>
         {banks.length === 0 && <p className="mt-2 text-ink-600">Belum ada rekening.</p>}
         <ul className="mt-2 divide-y divide-border-subtle">
           {banks.map((a) => (
@@ -103,7 +105,7 @@ export function ReviewPanel({ tenantId, status, docs, banks, canVerify, canSuspe
 
       {reviewing && (
         <form onSubmit={decide} className="card space-y-4 border-gold-500 p-5" aria-labelledby="kep-h">
-          <h2 id="kep-h" className="text-xl font-extrabold">Keputusan</h2>
+          <IconHeading icon={IconReview} id="kep-h" className="text-xl font-extrabold">Keputusan</IconHeading>
           <fieldset className="grid gap-2 sm:grid-cols-3">
             <legend className="sr-only">Keputusan verifikasi</legend>
             {[['verified', 'Verifikasi', 'Tampil di marketplace'], ['needs_revision', 'Minta revisi', 'PPIU memperbaiki lalu mengajukan ulang'], ['rejected', 'Tolak', 'Pengajuan ditutup']].map(([v, l, d], i) => (
@@ -128,7 +130,7 @@ export function ReviewPanel({ tenantId, status, docs, banks, canVerify, canSuspe
           if (!confirm(action === 'suspend' ? 'Tangguhkan PPIU ini? Semua paketnya langsung hilang dari marketplace.' : 'Pulihkan PPIU ini menjadi terverifikasi?')) return;
           call(action, () => api(`/platform/tenants/${tenantId}/${action}`, { json: { reason } }));
         }}>
-          <h2 className="text-xl font-extrabold">{status === 'verified' ? 'Tangguhkan PPIU' : 'Pulihkan PPIU'}</h2>
+          <IconHeading icon={status === 'verified' ? IconShieldAlert : IconShieldCheck} className="text-xl font-extrabold">{status === 'verified' ? 'Tangguhkan PPIU' : 'Pulihkan PPIU'}</IconHeading>
           <Field id="reason" label="Alasan" hint="Tercatat di audit log dan ditampilkan ke PPIU." error={apiErr?.field('reason')}>
             <textarea id="reason" name="reason" rows={2} className="input" required minLength={3} />
           </Field>

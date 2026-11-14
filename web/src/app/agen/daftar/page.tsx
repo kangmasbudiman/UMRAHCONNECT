@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { Alert } from '@/components/form';
 import { requireContexts } from '@/lib/session';
 import { AgentProfileForm } from '../agent-forms';
+import { IconHeading } from '@/components/stat-card';
+import { IconIdCard } from '@/components/icons';
 
 export const metadata = { title: 'Daftar sebagai agen' };
 
@@ -38,7 +40,7 @@ export default function AgentRegisterPage() {
       </section>
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="card p-5 md:p-6">
-          <h2 className="text-xl font-extrabold">Data agen</h2>
+          <IconHeading icon={IconIdCard} className="text-xl font-extrabold">Data agen</IconHeading>
           <p className="mt-1 text-ink-600">Satu orang hanya bisa punya satu akun agen (dicek dari NIK). Data identitas disimpan terenkripsi.</p>
           <div className="mt-5"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-surface" />}><Content /></Suspense></div>
         </div>

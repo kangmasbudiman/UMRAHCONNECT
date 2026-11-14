@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { IconCircleCheck, IconCircleX, IconInfo, IconWarning } from './icons';
 
 /** Label di atas input, petunjuk dan pesan error di bawah (UI/UX Design §2: form). */
 export function Field({ id, label, hint, error, children, optional }: {
@@ -23,11 +24,17 @@ const TONES = {
   info: 'border-info bg-info-bg text-info',
 } as const;
 
+const TONE_ICON = { danger: IconCircleX, success: IconCircleCheck, warning: IconWarning, info: IconInfo } as const;
+
 export function Alert({ tone = 'info', title, children }: { tone?: keyof typeof TONES; title?: string; children?: ReactNode }) {
+  const Icon = TONE_ICON[tone];
   return (
-    <div role={tone === 'danger' ? 'alert' : 'status'} className={`rounded-[10px] border px-4 py-3 ${TONES[tone]}`}>
-      {title && <p className="font-bold">{title}</p>}
-      {children && <div className={title ? 'mt-1 text-ink-900' : 'text-ink-900'}>{children}</div>}
+    <div role={tone === 'danger' ? 'alert' : 'status'} className={`flex gap-3 rounded-[10px] border px-4 py-3 ${TONES[tone]}`}>
+      <Icon className="mt-0.5 h-5 w-5" />
+      <div className="min-w-0 flex-1">
+        {title && <p className="font-bold">{title}</p>}
+        {children && <div className={title ? 'mt-1 text-ink-900' : 'text-ink-900'}>{children}</div>}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { getContexts, serverApi } from '@/lib/session';
 import { MobileMenu } from './mobile-menu';
+import { IconBell, IconBook, IconCalendarDays, IconHandshake, IconLandmark, IconMapPin, IconOffice, IconPackage, IconPiggy, IconRoute, IconScale, IconSearch, IconShieldCheck, IconUser, IconUserPlus } from './icons';
 
 /** Tombol kanan header: tamu → Masuk/Daftar; sudah masuk → Akun. Dibaca per permintaan (cookie sesi). */
 async function SignedInActions() {
@@ -16,7 +17,7 @@ function HeaderActions({ user, unread = 0 }: { user: { name: string } | null; un
       <>
         <Link href="/akun/notifikasi" className="relative inline-flex h-12 w-12 items-center justify-center rounded-lg text-primary-800 hover:bg-primary-50"
           aria-label={unread > 0 ? `Notifikasi, ${unread} belum dibaca` : 'Notifikasi'}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+          <IconBell className="h-6 w-6" />
           {unread > 0 && <span className="num absolute right-1.5 top-1.5 min-w-5 rounded-full bg-gold-500 px-1 text-center text-xs font-bold text-ink-900">{unread > 9 ? '9+' : unread}</span>}
         </Link>
         <Link href="/akun" className="btn btn-outline px-3 sm:px-4">
@@ -30,10 +31,10 @@ function HeaderActions({ user, unread = 0 }: { user: { name: string } | null; un
   return (
     <>
       <Link href="/daftar?peran=ppiu" className="hidden min-h-12 items-center rounded-lg px-3 font-semibold text-gold-700 hover:bg-gold-50 lg:inline-flex">
-        Daftarkan PPIU
+        <IconOffice className="mr-1.5 h-5 w-5" />Daftarkan PPIU
       </Link>
-      <Link href="/masuk" className="btn btn-outline px-3 sm:px-4">Masuk</Link>
-      <Link href="/daftar" className="btn btn-primary hidden px-4 md:inline-flex">Daftar</Link>
+      <Link href="/masuk" className="btn btn-outline px-3 sm:px-4"><IconUser className="h-5 w-5" />Masuk</Link>
+      <Link href="/daftar" className="btn btn-primary hidden px-4 md:inline-flex"><IconUserPlus className="h-5 w-5" />Daftar</Link>
       <MobileMenu signedIn={false} />
     </>
   );
@@ -58,9 +59,10 @@ export function Logo({ onDark = false }: { onDark?: boolean }) {
 }
 
 const NAV = [
-  { href: '/paket', label: 'Paket Umrah' },
-  { href: '/jadwal', label: 'Jadwal' },
-  { href: '/ppiu', label: 'PPIU' },
+  { href: '/paket', label: 'Paket Umrah', Icon: IconPackage },
+  { href: '/jadwal', label: 'Jadwal', Icon: IconCalendarDays },
+  { href: '/ppiu', label: 'PPIU', Icon: IconOffice },
+  { href: '/lacak', label: 'Lacak Umrah', Icon: IconRoute },
 ] as const;
 
 export function SiteHeader() {
@@ -70,8 +72,8 @@ export function SiteHeader() {
         <Logo />
         <nav aria-label="Menu utama" className="ml-6 hidden items-center gap-1 md:flex">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="inline-flex min-h-12 items-center rounded-lg px-3 font-semibold text-ink-900 hover:bg-primary-50 hover:text-primary-700">
-              {n.label}
+            <Link key={n.href} href={n.href} className="inline-flex min-h-12 items-center gap-2 rounded-lg px-3 font-semibold text-ink-900 hover:bg-primary-50 hover:text-primary-700">
+              <n.Icon className="h-5 w-5 text-primary-600" />{n.label}
             </Link>
           ))}
         </nav>
@@ -95,10 +97,15 @@ export function SiteFooter() {
           <p className="mt-4 max-w-sm text-white/80">
             Marketplace umrah yang mempertemukan jamaah, agen, dan PPIU berizin. Pilot di Kota Jambi.
           </p>
+          <ul className="mt-4 space-y-2 text-sm text-white/85">
+            <li className="flex items-center gap-2"><IconShieldCheck className="h-5 w-5 text-gold-500" />Hanya PPIU berizin yang terverifikasi</li>
+            <li className="flex items-center gap-2"><IconLandmark className="h-5 w-5 text-gold-500" />Bayar langsung ke rekening resmi PPIU</li>
+            <li className="flex items-center gap-2"><IconMapPin className="h-5 w-5 text-gold-500" />Kota Jambi, Indonesia</li>
+          </ul>
         </div>
-        <FooterCol title="Tentang" links={[['Cara kerja', '/#cara-kerja'], ['Direktori PPIU', '/ppiu']]} />
-        <FooterCol title="Layanan" links={[['Cari paket umrah', '/paket'], ['Jadwal keberangkatan', '/jadwal']]} />
-        <FooterCol title="Untuk Mitra" links={[['Daftarkan PPIU', '/daftar?peran=ppiu'], ['Jadi agen', '/daftar?peran=agen'], ['Masuk', '/masuk']]} />
+        <FooterCol title="Tentang" links={[['Cara kerja', '/#cara-kerja', IconBook], ['Direktori PPIU', '/ppiu', IconOffice]]} />
+        <FooterCol title="Layanan" links={[['Cari paket umrah', '/paket', IconSearch], ['Jadwal keberangkatan', '/jadwal', IconCalendarDays], ['Lacak Umrah', '/lacak', IconRoute], ['Rencana tabungan', '/tabungan', IconPiggy], ['Bandingkan paket', '/bandingkan', IconScale]]} />
+        <FooterCol title="Untuk Mitra" links={[['Daftarkan PPIU', '/daftar?peran=ppiu', IconOffice], ['Jadi agen', '/daftar?peran=agen', IconHandshake], ['Masuk', '/masuk', IconUser]]} />
       </div>
       <div className="border-t border-white/15">
         <div className="mx-auto grid max-w-6xl gap-3 px-4 py-6 text-sm text-white/80 md:grid-cols-2">
@@ -115,13 +122,13 @@ export function SiteFooter() {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+function FooterCol({ title, links }: { title: string; links: [string, string, (p: { className?: string }) => React.ReactNode][] }) {
   return (
     <div>
       <h2 className="text-sm font-bold uppercase tracking-wider text-gold-500">{title}</h2>
       <ul className="mt-3">
-        {links.map(([label, href]) => (
-          <li key={href}><Link href={href} className="inline-flex min-h-10 items-center text-white/90 hover:text-white hover:underline">{label}</Link></li>
+        {links.map(([label, href, Icon]) => (
+          <li key={href}><Link href={href} className="inline-flex min-h-10 items-center gap-2 text-white/90 hover:text-white hover:underline"><Icon className="h-4 w-4 text-white/60" />{label}</Link></li>
         ))}
       </ul>
     </div>

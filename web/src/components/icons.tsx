@@ -1,3 +1,14 @@
+import type { LucideIcon } from 'lucide-react';
+import {
+  Activity, ArrowLeft, ArrowRightLeft, BadgeCheck, Ban, Banknote, Bell, BookOpen, Briefcase, Building2, CalendarClock, CalendarDays,
+  ChartColumn, ChevronRight, CircleCheck, CircleDollarSign, CircleX, ClipboardCheck, ClipboardList, Copy, CreditCard, Crown, Download,
+  ExternalLink, Eye, FileCheck2, FileSpreadsheet, FileText, Flag, FolderOpen, HandCoins, Handshake, Headset, History, House, IdCard,
+  ImagePlus, Inbox, Info, KeyRound, Landmark, LayoutDashboard, Link2, ListChecks, Lock, LogOut, Luggage, Mail, MapPin, Megaphone,
+  MessageCircle, Package, PackageCheck, PackageX, Pencil, Percent, Phone, Plus, QrCode, Receipt, ReceiptText, RefreshCw, ScrollText,
+  Send, Settings, ShieldAlert, ShieldCheck, Sparkles, Star, StickyNote, Store, Ticket, Timer, Trash2, TrendingUp, TriangleAlert, Undo2,
+  PiggyBank, Route, Scale, Upload, UserCheck, UserCog, UserPlus, UserRound, UserX, Users, Wallet,
+} from 'lucide-react';
+
 /** Ikon garis sederhana (24×24, stroke currentColor), dibuat khusus untuk UMRAH CONNECT. */
 type P = { className?: string };
 const base = 'shrink-0';
@@ -28,3 +39,103 @@ export const IconArrowRight = (p: P) => <Svg {...p}><path d="M5 12h14M13 6l6 6-6
 export const IconCheck = (p: P) => <Svg {...p}><path d="m5 12.5 4.5 4.5L19 7.5" /></Svg>;
 export const IconBriefcase = (p: P) => <Svg {...p}><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18" /></Svg>;
 export const IconBuilding = (p: P) => <Svg {...p}><path d="M4 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M15 9h4a1 1 0 0 1 1 1v11M2 21h20" /><path d="M8 7h3M8 11h3M8 15h3" /></Svg>;
+
+/*
+ * Ikon tambahan dari lucide-react, disamakan gayanya dengan ikon di atas
+ * (garis 1.8, ujung bulat, ukuran bawaan h-5 w-5, aria-hidden). Pakai dari file ini saja agar seragam.
+ */
+
+function wrap(I: LucideIcon) {
+  const Wrapped = ({ className = 'h-5 w-5' }: P) => <I aria-hidden="true" strokeWidth={1.8} className={`${base} ${className}`} />;
+  Wrapped.displayName = `Icon(${I.displayName ?? 'lucide'})`;
+  return Wrapped;
+}
+
+export const IconActivity = wrap(Activity);
+export const IconBack = wrap(ArrowLeft);
+export const IconTransfer = wrap(ArrowRightLeft);
+export const IconVerified = wrap(BadgeCheck);
+export const IconBan = wrap(Ban);
+export const IconCash = wrap(Banknote);
+export const IconBell = wrap(Bell);
+export const IconBook = wrap(BookOpen);
+export const IconWork = wrap(Briefcase);
+export const IconOffice = wrap(Building2);
+export const IconCalendarClock = wrap(CalendarClock);
+export const IconCalendarDays = wrap(CalendarDays);
+export const IconChart = wrap(ChartColumn);
+export const IconChevronRight = wrap(ChevronRight);
+export const IconCircleCheck = wrap(CircleCheck);
+export const IconCommission = wrap(CircleDollarSign);
+export const IconCircleX = wrap(CircleX);
+export const IconReview = wrap(ClipboardCheck);
+export const IconClipboard = wrap(ClipboardList);
+export const IconCopy = wrap(Copy);
+export const IconCard = wrap(CreditCard);
+export const IconCrown = wrap(Crown);
+export const IconDownload = wrap(Download);
+export const IconExternal = wrap(ExternalLink);
+export const IconEye = wrap(Eye);
+export const IconFileCheck = wrap(FileCheck2);
+export const IconSpreadsheet = wrap(FileSpreadsheet);
+export const IconFile = wrap(FileText);
+export const IconFlag = wrap(Flag);
+export const IconFolder = wrap(FolderOpen);
+export const IconPayout = wrap(HandCoins);
+export const IconHandshake = wrap(Handshake);
+export const IconSupport = wrap(Headset);
+export const IconHistory = wrap(History);
+export const IconHome = wrap(House);
+export const IconIdCard = wrap(IdCard);
+export const IconImagePlus = wrap(ImagePlus);
+export const IconInbox = wrap(Inbox);
+export const IconInfo = wrap(Info);
+export const IconKey = wrap(KeyRound);
+export const IconLandmark = wrap(Landmark);
+export const IconDashboard = wrap(LayoutDashboard);
+export const IconLink = wrap(Link2);
+export const IconChecklist = wrap(ListChecks);
+export const IconLock = wrap(Lock);
+export const IconLogout = wrap(LogOut);
+export const IconLuggage = wrap(Luggage);
+export const IconMail = wrap(Mail);
+export const IconMapPin = wrap(MapPin);
+export const IconMegaphone = wrap(Megaphone);
+export const IconChat = wrap(MessageCircle);
+export const IconPackage = wrap(Package);
+export const IconPackageCheck = wrap(PackageCheck);
+export const IconPackageX = wrap(PackageX);
+export const IconEdit = wrap(Pencil);
+export const IconPercent = wrap(Percent);
+export const IconPhone = wrap(Phone);
+export const IconPlus = wrap(Plus);
+export const IconQr = wrap(QrCode);
+export const IconReceipt = wrap(Receipt);
+export const IconInvoice = wrap(ReceiptText);
+export const IconRefresh = wrap(RefreshCw);
+export const IconLog = wrap(ScrollText);
+export const IconSend = wrap(Send);
+export const IconSettings = wrap(Settings);
+export const IconShieldAlert = wrap(ShieldAlert);
+export const IconShieldCheck = wrap(ShieldCheck);
+export const IconSparkles = wrap(Sparkles);
+export const IconStar = wrap(Star);
+export const IconNote = wrap(StickyNote);
+export const IconStore = wrap(Store);
+export const IconTicket = wrap(Ticket);
+export const IconTimer = wrap(Timer);
+export const IconTrash = wrap(Trash2);
+export const IconTrend = wrap(TrendingUp);
+export const IconWarning = wrap(TriangleAlert);
+export const IconUndo = wrap(Undo2);
+export const IconUpload = wrap(Upload);
+export const IconUserCheck = wrap(UserCheck);
+export const IconUserCog = wrap(UserCog);
+export const IconUserPlus = wrap(UserPlus);
+export const IconUser = wrap(UserRound);
+export const IconUserX = wrap(UserX);
+export const IconTeam = wrap(Users);
+export const IconMoney = wrap(Wallet);
+export const IconPiggy = wrap(PiggyBank);
+export const IconRoute = wrap(Route);
+export const IconScale = wrap(Scale);

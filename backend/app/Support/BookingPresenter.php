@@ -78,6 +78,7 @@ class BookingPresenter
             'total_amount' => $b->total_amount,
             'paid_amount' => $b->paid_amount,
             'invoices' => $b->invoices->map(fn ($i) => self::invoice($i, $b->code))->values(),
+            'journey' => Journey::forBooking($b),
             'created_at' => $b->created_at?->toIso8601String(),
         ];
     }
@@ -112,6 +113,9 @@ class BookingPresenter
         $out['payments'] = self::payments($b, true);
         $out['refunds'] = $b->refunds->map(fn ($r) => self::refund($r))->values();
         $out['refund_total_amount'] = (int) $b->refunds->sum('amount');
+        $review = \App\Models\Review::withoutTenantScope()->with('user')->where('booking_id', $b->id)->first();
+        $out['review'] = $review ? \App\Http\Controllers\Api\V1\ReviewController::present($review) : null;
+        $out['can_review'] = ! $review && in_array($b->status, \App\Http\Controllers\Api\V1\ReviewController::ELIGIBLE, true);
         if ($tenantView) {
             $out['commission_snapshot'] = $b->commission_snapshot;
             $docs = PilgrimDocument::with(['file', 'reviews'])->whereIn('pilgrim_id', $b->participants->pluck('pilgrim_id'))->where('status', 'active')->get()->groupBy('pilgrim_id');

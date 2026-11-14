@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { requireContexts, serverApi } from '@/lib/session';
 import { AdminHeader } from '../admin-nav';
+import { IconChevronRight, IconFilter } from '@/components/icons';
 
 export const metadata = { title: 'Audit log' };
 
@@ -28,7 +29,7 @@ async function Logs({ searchParams }: PageProps<'/admin/audit'>) {
       <form className="flex flex-wrap gap-2" role="search">
         <label htmlFor="action" className="sr-only">Filter aksi</label>
         <input id="action" name="action" defaultValue={action} className="input max-w-sm" placeholder="Awalan aksi, mis. payment. atau tenant.verification" />
-        <button className="btn btn-outline">Saring</button>
+        <button className="btn btn-outline"><IconFilter className="h-5 w-5" />Saring</button>
       </form>
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
@@ -49,7 +50,7 @@ async function Logs({ searchParams }: PageProps<'/admin/audit'>) {
           </tbody>
         </table>
       </div>
-      {res.meta.next_cursor && <Link href={`/admin/audit?${new URLSearchParams({ ...(action ? { action } : {}), cursor: res.meta.next_cursor })}`} className="btn btn-outline">Muat berikutnya</Link>}
+      {res.meta.next_cursor && <Link href={`/admin/audit?${new URLSearchParams({ ...(action ? { action } : {}), cursor: res.meta.next_cursor })}`} className="btn btn-outline"><IconChevronRight className="h-5 w-5" />Muat berikutnya</Link>}
     </>
   );
 }

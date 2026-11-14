@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Alert, Field, Spinner } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
+import { IconLogout } from '@/components/icons';
 
 export function LogoutButton({ className = 'btn btn-outline' }: { className?: string }) {
   const router = useRouter();
@@ -15,7 +16,7 @@ export function LogoutButton({ className = 'btn btn-outline' }: { className?: st
       router.replace('/');
       router.refresh();
     }}>
-      {busy && <Spinner />}Keluar
+      {busy ? <Spinner /> : <IconLogout className="h-5 w-5" />}Keluar
     </button>
   );
 }

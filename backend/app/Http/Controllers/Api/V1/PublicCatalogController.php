@@ -35,7 +35,8 @@ class PublicCatalogController extends Controller
             'tenant' => 'nullable|string|max:100',
             'departure_city' => 'nullable|string|max:100',
             'q' => 'nullable|string|max:100',
-            'sort' => 'nullable|in:price,-price,departure_date,-published_at',
+            'elderly' => 'nullable|boolean',
+            'sort' => 'nullable|in:price,-price,departure_date,-published_at,-rating',
             'limit' => 'nullable|integer|min:1|max:100',
             'cursor' => 'nullable|string',
         ]);
@@ -77,13 +78,17 @@ class PublicCatalogController extends Controller
             ->selectSub($minPrice, 'price_from_amount')
             ->selectSub($nextDate, 'next_departure_date')
             ->whereHas('departures', $depFilter)
-            ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->where('status', 'scheduled')->whereDate('departure_date', '>=', $today)->orderBy('departure_date')]);
+            ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->where('status', 'scheduled')->whereDate('departure_date', '>=', $today)->orderBy('departure_date'), 'departures.prices']);
 
         if (! empty($v['duration_days'])) {
             $query->where('duration_days', $v['duration_days']);
         }
         if (! empty($v['airline'])) {
             $query->where('airline', 'ilike', $v['airline']);
+        }
+        if (! empty($v['elderly'])) {
+            $query->where('hotel_makkah_distance_m', '<=', \App\Support\CatalogPresenter::ELDERLY_MAX_DISTANCE_M)
+                ->where('hotel_madinah_distance_m', '<=', \App\Support\CatalogPresenter::ELDERLY_MAX_DISTANCE_M);
         }
         if (! empty($v['hotel_stars'])) {
             $query->where('hotel_makkah_stars', '>=', $v['hotel_stars']);
@@ -106,13 +111,15 @@ class PublicCatalogController extends Controller
             'price' => $query->orderBy('price_from_amount'),
             '-price' => $query->orderByDesc('price_from_amount'),
             '-published_at' => $query->orderByDesc('packages.published_at'),
+            '-rating' => $query->orderByRaw("(select avg(r.rating) from reviews r where r.package_id = packages.id and r.status = 'published') desc nulls last"),
             default => $query->orderBy('next_departure_date'),
         };
         $query->orderBy('packages.id');
 
         [$rows, $meta] = OffsetCursor::paginate($query, $request);
+        $ratings = \App\Support\Ratings::forPackages($rows->pluck('id')->all());
 
-        return response()->json(['data' => $rows->map(fn (Package $p) => $this->packageSummary($p))->values(), 'meta' => $meta]);
+        return response()->json(['data' => $rows->map(fn (Package $p) => $this->packageSummary($p, $ratings))->values(), 'meta' => $meta]);
     }
 
     /** GET /public/packages/{tenantSlug}/{packageSlug} — FR-MKT-04, FR-MKT-05, FR-MKT-10 */
@@ -125,7 +132,10 @@ class PublicCatalogController extends Controller
             ->firstOrFail();
 
         return response()->json(['data' => array_merge($this->packageFull($package), [
-            'tenant' => $this->tenantPublic($package->tenant),
+            'transparency' => \App\Support\CatalogPresenter::transparency($package),
+            'elderly_friendly' => \App\Support\CatalogPresenter::elderlyFriendly($package),
+            'rating' => \App\Support\Ratings::forPackages([$package->id])[$package->id] ?? null,
+            'tenant' => $this->tenantPublic($package->tenant) + ['rating' => \App\Support\Ratings::forTenant($package->tenant_id)],
             'departures' => $package->departures->map(fn (Departure $d) => $this->departurePublic($d))->values(),
         ])]);
     }
@@ -154,8 +164,11 @@ class PublicCatalogController extends Controller
             ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->upcoming()->orderBy('departure_date'), 'departures.prices'])
             ->orderBy('name')->get();
 
+        $ratings = \App\Support\Ratings::forPackages($packages->pluck('id')->all());
+
         return response()->json(['data' => array_merge($this->tenantPublic($tenant), [
-            'packages' => $packages->map(fn (Package $p) => $this->packageSummary($p))->values(),
+            'rating' => \App\Support\Ratings::forTenant($tenant->id),
+            'packages' => $packages->map(fn (Package $p) => $this->packageSummary($p, $ratings))->values(),
         ])]);
     }
 
@@ -258,7 +271,7 @@ class PublicCatalogController extends Controller
         ];
     }
 
-    private function packageSummary(Package $p): array
+    private function packageSummary(Package $p, array $ratings = []): array
     {
         $next = $p->departures->first();
         $priceFrom = $p->price_from_amount ?? $p->departures->flatMap(fn ($d) => $d->prices ?? collect())->min('price_amount');
@@ -267,6 +280,10 @@ class PublicCatalogController extends Controller
             'id' => $p->id, 'slug' => $p->slug, 'name' => $p->name,
             'tenant' => ['slug' => $p->tenant->slug, 'brand_name' => $p->tenant->brand_name, 'verified' => true, 'ppiu_license_no' => $p->tenant->ppiu_license_no],
             'duration_days' => $p->duration_days, 'airline' => $p->airline, 'hotel_makkah_stars' => $p->hotel_makkah_stars,
+            'hotel_makkah_distance_m' => $p->hotel_makkah_distance_m, 'hotel_madinah_distance_m' => $p->hotel_madinah_distance_m,
+            'elderly_friendly' => \App\Support\CatalogPresenter::elderlyFriendly($p),
+            'transparency_score' => \App\Support\CatalogPresenter::transparency($p)['score'],
+            'rating' => $ratings[$p->id] ?? null,
             'cover_image_url' => ($img = $p->images->first()) ? \App\Support\CatalogPresenter::image($img)['url'] : null,
             'price_from_amount' => (int) $priceFrom,
             'next_departure' => $next ? [

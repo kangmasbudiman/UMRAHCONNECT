@@ -8,6 +8,7 @@ import type { AgentPackage } from '@/lib/agent-types';
 import { rupiah } from '@/lib/format';
 import { serverApi, ServerApiError } from '@/lib/session';
 import { AgentHeader, requireAgent } from '../../agent-shell';
+import { IconInbox } from '@/components/icons';
 
 export const metadata = { title: 'Booking untuk jamaah' };
 
@@ -24,7 +25,7 @@ async function Content({ searchParams }: PageProps<'/agen/booking/baru'>) {
       <>
         <AgentHeader ctx={ctx} active="booking" title="Booking untuk jamaah" sub="Pilih paket dari PPIU mitra Anda." />
         <div className="mx-auto max-w-5xl px-4 py-6">
-          {pkgs.length === 0 ? <div className="card p-8 text-center text-ink-600">Belum ada paket dari PPIU mitra aktif. <Link href="/agen/mitra" className="font-bold text-primary-700 underline">Ajukan kemitraan</Link></div> : (
+          {pkgs.length === 0 ? <div className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />Belum ada paket dari PPIU mitra aktif. <Link href="/agen/mitra" className="font-bold text-primary-700 underline">Ajukan kemitraan</Link></div> : (
             <ul className="grid gap-4 md:grid-cols-2">
               {pkgs.map((p) => (
                 <li key={p.id}>

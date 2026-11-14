@@ -4,7 +4,7 @@ import { getFacets, getPackages, getSchedule, getTenants } from '@/lib/api';
 import { bulanTahun, budgetSteps } from '@/lib/format';
 import { DepartureCard, PackageCard, SectionHeading, TenantCard } from '@/components/ui';
 import { HeroSearch } from '@/components/hero-search';
-import { IconBank, IconBriefcase, IconBuilding, IconShield, IconTag, IconUsers, IconArrowRight } from '@/components/icons';
+import { IconArrowRight, IconBank, IconBriefcase, IconBuilding, IconPiggy, IconRoute, IconScale, IconShield, IconStar, IconTag, IconUsers, IconVerified } from '@/components/icons';
 
 /** MKT-01 Beranda (FR-MKT-01): pencarian ala OTA + sorotan katalog. Hasil pencarian ada di /paket. */
 export default function Home() {
@@ -34,6 +34,17 @@ export default function Home() {
           <Usp icon={<IconTag className="h-6 w-6" />} title="Harga resmi" text="Sama lewat agen maupun langsung." />
           <Usp icon={<IconBank className="h-6 w-6" />} title="Bayar ke rekening PPIU" text="Platform tidak memegang dana jamaah." />
           <Usp icon={<IconUsers className="h-6 w-6" />} title="Didampingi agen" text="Agen lokal membantu sampai berangkat." />
+        </ul>
+      </section>
+
+      <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-beda">
+        <SectionHeading title="Kenapa umrah lewat UMRAH CONNECT" sub="Transparan sampai hari berangkat, bukan hanya sampai Anda membayar." />
+        <ul id="h-beda" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Feature href="/lacak" icon={<IconRoute className="h-6 w-6" />} title="Lacak Umrah" text="Pantau DP, dokumen, visa, tiket, manasik sampai berangkat, seperti melacak paket." />
+          <Feature href="/paket?sort=-rating" icon={<IconStar className="h-6 w-6" />} title="Ulasan terverifikasi" text="Hanya dari jamaah yang benar-benar berangkat lewat platform ini." />
+          <Feature href="/paket" icon={<IconScale className="h-6 w-6" />} title="Bandingkan paket" text="Hingga 3 paket berdampingan: harga per kamar, jarak hotel, DP, kebijakan batal." />
+          <Feature href="/tabungan" icon={<IconPiggy className="h-6 w-6" />} title="Rencana tabungan" text="Hitung setoran per bulan dan dapatkan pengingat sampai target tercapai." />
+          <Feature href="/paket?elderly=1" icon={<IconVerified className="h-6 w-6" />} title="Skor transparansi" text="Setiap paket dinilai kelengkapannya. Ada filter ramah lansia (hotel ≤300 m)." />
         </ul>
       </section>
 
@@ -144,5 +155,17 @@ function RowSkeleton() {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true" aria-label="Memuat">
       {Array.from({ length: 4 }, (_, i) => <div key={i} className="card h-56 animate-pulse" />)}
     </div>
+  );
+}
+
+function Feature({ href, icon, title, text }: { href: string; icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <li>
+      <Link href={href} className="card group flex h-full flex-col gap-2 p-4 transition hover:-translate-y-0.5 hover:border-primary-600">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-700 text-gold-500">{icon}</span>
+        <span className="font-bold group-hover:text-primary-700">{title}</span>
+        <span className="text-sm text-ink-600">{text}</span>
+      </Link>
+    </li>
   );
 }

@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  */
 class ScheduledJobs extends Command
 {
-    protected $signature = 'jobs:run {job : invoice-reminders|mark-departed|license-check|h14-summary}';
+    protected $signature = 'jobs:run {job : invoice-reminders|mark-departed|license-check|h14-summary|savings-reminders}';
 
     protected $description = 'Jalankan job terjadwal UMRAH CONNECT (JOB-02/03/05/06)';
 
@@ -31,6 +31,7 @@ class ScheduledJobs extends Command
             'mark-departed' => $this->markDeparted(),
             'license-check' => $this->licenseCheck($notify),
             'h14-summary' => $this->h14Summary($notify),
+            'savings-reminders' => $this->savingsReminders($notify),
             default => -1,
         };
         if ($n < 0) {
@@ -129,5 +130,23 @@ class ScheduledJobs extends Command
         }
 
         return $deps->count();
+    }
+
+    /** Pengingat bulanan Rencana Tabungan Umrah pada tanggal pilihan pengguna. */
+    private function savingsReminders(NotificationService $notify): int
+    {
+        $today = now('Asia/Jakarta');
+        $n = 0;
+        \App\Models\SavingsPlan::with('user')->where('status', 'active')->where('reminder_day', $today->day)
+            ->where('target_date', '>', $today->toDateString())->each(function ($plan) use ($notify, &$n) {
+                $rp = fn ($v) => 'Rp'.number_format($v, 0, ',', '.');
+                $notify->send($plan->user, 'savings.reminder', [
+                    'body' => "Saatnya menyisihkan {$rp($plan->monthly_amount)} untuk \"{$plan->label}\". Terkumpul {$rp($plan->saved_amount)} dari {$rp($plan->target_amount)}.",
+                    'url' => '/akun/tabungan',
+                ], null, true);
+                $n++;
+            });
+
+        return $n;
     }
 }

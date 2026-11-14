@@ -6,6 +6,7 @@ import { Alert, Field, Spinner } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { rupiah } from '@/lib/format';
 import { INVOICE_TYPE, type Invoice } from '@/lib/booking-types';
+import { IconCash, IconCircleX, IconIdCard, IconNote, IconRefresh, IconTransfer } from '@/components/icons';
 
 type Err = ApiClientError | string | null;
 const msgOf = (e: Err) => (typeof e === 'string' ? e : e?.message);
@@ -112,10 +113,10 @@ export function CancelRequestForm({ bookingId }: { bookingId: string }) {
 // ---------------------------- PPIU ----------------------------
 
 /** Tombol dengan form kecil yang bisa dibuka/tutup. */
-function Expand({ label, tone = 'outline', onOpen, children }: { label: string; tone?: 'outline' | 'danger' | 'gold'; onOpen?: () => void; children: (close: () => void) => React.ReactNode }) {
+function Expand({ label, tone = 'outline', onOpen, icon: Icon, children }: { label: string; tone?: 'outline' | 'danger' | 'gold'; onOpen?: () => void; icon?: (p: { className?: string }) => React.ReactNode; children: (close: () => void) => React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const cls = tone === 'danger' ? 'btn border border-danger bg-white text-danger hover:bg-danger-bg' : tone === 'gold' ? 'btn btn-gold' : 'btn btn-outline';
-  return open ? <div className="w-full">{children(() => setOpen(false))}</div> : <button type="button" className={cls} onClick={() => { setOpen(true); onOpen?.(); }}>{label}</button>;
+  return open ? <div className="w-full">{children(() => setOpen(false))}</div> : <button type="button" className={cls} onClick={() => { setOpen(true); onOpen?.(); }}>{Icon && <Icon className="h-5 w-5" />}{label}</button>;
 }
 
 /** FR-FIN-06 Catat pembayaran langsung (tunai di kantor / transfer yang sudah dicek). */
@@ -127,7 +128,7 @@ export function RecordPaymentForm({ tenantId, invoices }: { tenantId: string; in
   const [key, setKey] = useState(() => crypto.randomUUID());
   if (!open.length) return null;
   return (
-    <Expand label="Catat pembayaran langsung">
+    <Expand label="Catat pembayaran langsung" icon={IconCash}>
       {(close) => (
         <form className="grid gap-3 rounded-[12px] bg-surface p-4 sm:grid-cols-2" noValidate onSubmit={async (e) => {
           e.preventDefault();
@@ -169,7 +170,7 @@ export function CancelBookingForm({ tenantId, bookingId, paid, requested, cancel
   const [key] = useState(() => crypto.randomUUID());
   const apiErr = error instanceof ApiClientError ? error : null;
   return (
-    <Expand label={requested ? 'Setujui pembatalan' : 'Batalkan booking'} tone="danger">
+    <Expand label={requested ? 'Setujui pembatalan' : 'Batalkan booking'} tone="danger" icon={IconCircleX}>
       {(close) => (
         <form className="space-y-3 rounded-[12px] border border-danger/40 bg-danger-bg/40 p-4" noValidate onSubmit={async (e) => {
           e.preventDefault();
@@ -225,7 +226,7 @@ export function RefundForm({ tenantId, bookingId, remaining }: { tenantId: strin
   const [key, setKey] = useState(() => crypto.randomUUID());
   if (remaining <= 0) return null;
   return (
-    <Expand label="Catat refund" tone="gold">
+    <Expand label="Catat refund" tone="gold" icon={IconRefresh}>
       {(close) => (
         <form className="grid gap-3 rounded-[12px] bg-surface p-4 sm:grid-cols-2" noValidate onSubmit={async (e) => {
           e.preventDefault();
@@ -293,7 +294,7 @@ export function NoteForm({ tenantId, bookingId }: { tenantId: string; bookingId:
       <label htmlFor="note-body" className="sr-only">Catatan baru</label>
       <textarea id="note-body" name="body" rows={2} className="input" placeholder="Tulis catatan untuk tim (tidak terlihat jamaah/agen)" />
       {error && <p role="alert" className="text-sm font-semibold text-danger">{error}</p>}
-      <button className="btn btn-outline min-h-10 px-4" disabled={busy}>{busy && <Spinner />}Tambah catatan</button>
+      <button className="btn btn-outline min-h-10 px-4" disabled={busy}>{busy ? <Spinner /> : <IconNote className="h-5 w-5" />}Tambah catatan</button>
     </form>
   );
 }
@@ -338,11 +339,11 @@ export function IdentityButton({ tenantId, pilgrimId }: { tenantId: string; pilg
   const [data, setData] = useState<{ nik: string; passport_no: string | null } | null>(null);
   if (data) return <span className="num text-sm">NIK {data.nik}{data.passport_no ? ` · Paspor ${data.passport_no}` : ''}</span>;
   return (
-    <button type="button" className="min-h-10 px-2 text-sm font-semibold text-primary-700 underline" onClick={async () => {
+    <button type="button" className="inline-flex min-h-10 items-center gap-1 px-2 text-sm font-semibold text-primary-700 underline" onClick={async () => {
       if (!confirm('Tampilkan NIK dan paspor lengkap? Akses ini dicatat di audit log.')) return;
       try { setData((await api<{ data: { nik: string; passport_no: string | null } }>(`/tenants/${tenantId}/pilgrims/${pilgrimId}/identity`)).data); }
       catch (e) { alert(errorMessage(e)); }
-    }}>Lihat NIK lengkap</button>
+    }}><IconIdCard className="h-4 w-4" />Lihat NIK lengkap</button>
   );
 }
 
@@ -360,7 +361,7 @@ export function AttributionForm({ tenantId, bookingId, currentAgentId }: { tenan
     catch (e) { setError(errorMessage(e)); setPartners([]); }
   };
   return (
-    <Expand label="Ubah atribusi agen" onOpen={load}>
+    <Expand label="Ubah atribusi agen" onOpen={load} icon={IconTransfer}>
       {(close) => (
         <form className="space-y-3 rounded-[12px] bg-surface p-4" noValidate onSubmit={async (e) => {
           e.preventDefault();

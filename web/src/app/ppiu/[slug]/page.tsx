@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { getTenant } from '@/lib/api';
 import { waLink } from '@/lib/format';
 import { PackageCard, SectionHeading, VerifiedBadge, WhatsAppButton } from '@/components/ui';
+import { RatingBadge } from '@/components/trust';
 import { IconBuilding, IconPin, IconShield } from '@/components/icons';
 
 export async function generateMetadata({ params }: PageProps<'/ppiu/[slug]'>): Promise<Metadata> {
@@ -35,7 +36,7 @@ async function Body({ params }: { params: PageProps<'/ppiu/[slug]'>['params'] })
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl font-extrabold md:text-3xl">{t.brand_name}</h1>
               <p className="text-ink-600">{t.legal_name}</p>
-              <div className="mt-2"><VerifiedBadge brand={t.brand_name} license={t.ppiu_license_no} /></div>
+              <div className="mt-2 flex flex-wrap items-center gap-2"><VerifiedBadge brand={t.brand_name} license={t.ppiu_license_no} /><RatingBadge rating={t.rating} /></div>
             </div>
             <WhatsAppButton href={waLink(t.whatsapp, `Assalamualaikum ${t.brand_name}, saya ingin bertanya tentang paket umrah.`)} label="Chat WhatsApp resmi" />
           </div>

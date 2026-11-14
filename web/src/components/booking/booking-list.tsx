@@ -2,12 +2,13 @@ import Link from 'next/link';
 import { StatusPill } from '@/components/form';
 import { rupiah, tanggal } from '@/lib/format';
 import type { BookingSummary } from '@/lib/booking-types';
+import { IconInbox } from '@/components/icons';
 
 /** Daftar booking ringkas (jamaah, agen, PPIU). */
 export function BookingList({ rows, hrefFor, showTenant = true, showBooker = false, empty }: {
   rows: BookingSummary[]; hrefFor: (id: string) => string; showTenant?: boolean; showBooker?: boolean; empty: React.ReactNode;
 }) {
-  if (rows.length === 0) return <div className="card p-8 text-center text-ink-600">{empty}</div>;
+  if (rows.length === 0) return <div className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />{empty}</div>;
   return (
     <ul className="space-y-3">
       {rows.map((b) => (

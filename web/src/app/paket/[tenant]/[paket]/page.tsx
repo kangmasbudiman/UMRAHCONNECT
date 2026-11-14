@@ -4,10 +4,12 @@ import { cookies } from 'next/headers';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { getPackage, getReferral, type PackageDetail } from '@/lib/api';
+import { getPackage, getPackageReviews, getReferral, type PackageDetail } from '@/lib/api';
+import { CompareToggle } from '@/components/compare';
+import { ElderlyBadge, RatingBadge, RatingStars, TransparencyBadge } from '@/components/trust';
 import { ROOM_LABEL, rupiah, tanggal, waLink } from '@/lib/format';
 import { Cover, SeatsPill, Stars, VerifiedBadge, WhatsAppButton } from '@/components/ui';
-import { IconBank, IconCalendar, IconCheck, IconClock, IconHotel, IconPin, IconPlane, IconTag, IconX } from '@/components/icons';
+import { IconBank, IconCalendar, IconCalendarDays, IconCheck, IconChecklist, IconClock, IconFile, IconHotel, IconMapPin, IconPiggy, IconPin, IconPlane, IconStar, IconTag, IconVerified, IconX } from '@/components/icons';
 
 type Props = PageProps<'/paket/[tenant]/[paket]'>;
 
@@ -41,7 +43,7 @@ async function PackageBody({ params }: { params: Props['params'] }) {
   const daftarHref = `/paket/${p.tenant.slug}/${p.slug}/daftar`;
   const anchors = [
     ['ringkasan', 'Ringkasan'], ['keberangkatan', 'Keberangkatan'], ['hotel', 'Hotel'],
-    ['fasilitas', 'Fasilitas'], ['itinerary', 'Itinerary'], ['syarat', 'Syarat'],
+    ['fasilitas', 'Fasilitas'], ['itinerary', 'Itinerary'], ['syarat', 'Syarat'], ['transparansi', 'Transparansi'], ['ulasan', 'Ulasan'],
   ] as const;
 
   return (
@@ -75,6 +77,12 @@ async function PackageBody({ params }: { params: Props['params'] }) {
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <VerifiedBadge brand={p.tenant.brand_name} license={p.tenant.ppiu_license_no} />
               <span className="text-sm text-ink-600">Izin PPIU: {p.tenant.ppiu_license_no}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <RatingBadge rating={p.rating} />
+              <a href="#transparansi"><TransparencyBadge score={p.transparency.score} /></a>
+              <ElderlyBadge show={p.elderly_friendly} />
+              <CompareToggle itemKey={`${p.tenant.slug}/${p.slug}`} name={p.name} />
             </div>
             <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Fact icon={<IconClock />} label="Durasi" value={`${p.duration_days} hari`} />
@@ -153,6 +161,27 @@ async function PackageBody({ params }: { params: Props['params'] }) {
               <Term label="Kebijakan pembatalan">{p.cancellation_terms}</Term>
             </dl>
           </Section>
+
+          <Section id="transparansi" title="Skor transparansi">
+            <div className="card p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <p className="num text-4xl font-extrabold text-primary-800">{p.transparency.score}<span className="text-lg font-semibold text-ink-600">/100</span></p>
+                <p className="max-w-md text-sm text-ink-600">Dihitung otomatis dari kelengkapan informasi yang Anda butuhkan sebelum membayar. Paket hanya bisa terbit di UMRAH CONNECT bila informasi utamanya lengkap.</p>
+              </div>
+              <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                {p.transparency.items.map((i) => (
+                  <li key={i.key} className="flex items-start gap-2 text-sm">
+                    {i.ok ? <IconCheck className="mt-0.5 h-5 w-5 text-success" /> : <IconX className="mt-0.5 h-5 w-5 text-ink-600" />}
+                    <span className={i.ok ? '' : 'text-ink-600'}>{i.label}<span className="sr-only">{i.ok ? ' (ada)' : ' (belum ada)'}</span></span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Section>
+
+          <Section id="ulasan" title="Ulasan jamaah">
+            <Suspense fallback={<div className="card h-32 animate-pulse" />}><Reviews tenant={p.tenant.slug} slug={p.slug} /></Suspense>
+          </Section>
         </div>
 
         <aside className="lg:sticky lg:top-32 lg:self-start">
@@ -165,6 +194,7 @@ async function PackageBody({ params }: { params: Props['params'] }) {
             <div className="p-5">
               {next && <p className="flex items-center gap-2 text-sm text-ink-600"><IconCalendar className="h-4 w-4" />Terdekat: {tanggal(next.departure_date)} <SeatsPill seats={next.seats_remaining} status={next.sales_status} /></p>}
               <Link href={daftarHref} className="btn btn-gold mt-4 w-full text-lg">Daftar sekarang</Link>
+              <Link href={`/tabungan?paket=${p.tenant.slug}/${p.slug}`} className="btn btn-outline mt-2 w-full"><IconPiggy className="h-5 w-5" />Rencanakan tabungan</Link>
               <Suspense fallback={null}>
                 <ReferralBox pkg={p} />
               </Suspense>
@@ -189,6 +219,64 @@ async function PackageBody({ params }: { params: Props['params'] }) {
           <Link href={daftarHref} className="btn btn-gold">Daftar sekarang</Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Ulasan terverifikasi: hanya dari jamaah yang berangkat lewat UMRAH CONNECT. */
+async function Reviews({ tenant, slug }: { tenant: string; slug: string }) {
+  const res = await getPackageReviews(tenant, slug);
+  const sum = res?.meta.summary;
+  if (!res || !sum || sum.count === 0) {
+    return (
+      <div className="card p-5 text-ink-600">
+        <p>Belum ada ulasan untuk paket ini.</p>
+        <p className="mt-1 text-sm">Ulasan di UMRAH CONNECT hanya bisa ditulis jamaah yang <strong>benar-benar berangkat</strong> lewat platform ini, jadi tidak ada ulasan titipan.</p>
+      </div>
+    );
+  }
+  const dist = sum.distribution;
+  return (
+    <div className="space-y-3">
+      <div className="card flex flex-wrap items-center gap-6 p-5">
+        <div>
+          <p className="num text-4xl font-extrabold text-primary-800">{(sum.avg ?? 0).toLocaleString('id-ID', { minimumFractionDigits: 1 })}</p>
+          <RatingStars value={sum.avg ?? 0} />
+          <p className="text-sm text-ink-600">{sum.count} ulasan terverifikasi</p>
+        </div>
+        <ul className="min-w-48 flex-1 space-y-1 text-sm" aria-label="Sebaran bintang">
+          {[5, 4, 3, 2, 1].map((n) => {
+            const c = Number(dist[n] ?? 0);
+            return (
+              <li key={n} className="flex items-center gap-2">
+                <span className="num w-3">{n}</span><IconStar className="h-3.5 w-3.5 fill-current text-gold-500" />
+                <span className="h-2 flex-1 overflow-hidden rounded-full bg-surface"><span className="block h-full rounded-full bg-gold-500" style={{ width: `${(c / sum.count) * 100}%` }} /></span>
+                <span className="num w-6 text-right text-ink-600">{c}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <ul className="space-y-3">
+        {res.data.map((r) => (
+          <li key={r.id} className="card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-bold">{r.author}</p>
+              <span className="flex items-center gap-2"><RatingStars value={r.rating} /><span className="sr-only">{r.rating} dari 5 bintang</span></span>
+            </div>
+            {r.verified_departure && (
+              <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-success"><IconVerified className="h-3.5 w-3.5" />Berangkat {tanggal(r.verified_departure.departure_date)} lewat UMRAH CONNECT</p>
+            )}
+            <p className="mt-2 whitespace-pre-line">{r.body}</p>
+            {r.tenant_reply && (
+              <div className="mt-3 rounded-[10px] border-l-4 border-primary-600 bg-primary-50 p-3 text-sm">
+                <p className="font-semibold text-primary-800">Balasan PPIU</p>
+                <p className="mt-0.5">{r.tenant_reply}</p>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -223,7 +311,17 @@ async function ReferralBox({ pkg }: { pkg: PackageDetail }) {
 }
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
-  return <section id={id} className="mt-10 scroll-mt-32"><h2 className="mb-3 text-xl font-extrabold">{title}</h2>{children}</section>;
+  const icon = { keberangkatan: <IconCalendarDays className="h-5 w-5" />, hotel: <IconHotel className="h-5 w-5" />, fasilitas: <IconChecklist className="h-5 w-5" />,
+    itinerary: <IconMapPin className="h-5 w-5" />, syarat: <IconFile className="h-5 w-5" />, transparansi: <IconVerified className="h-5 w-5" />,
+    ulasan: <IconStar className="h-5 w-5" /> }[id];
+  return (
+    <section id={id} className="mt-10 scroll-mt-32">
+      <h2 className="mb-3 flex items-center gap-2 text-xl font-extrabold">
+        {icon && <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-50 text-primary-700">{icon}</span>}{title}
+      </h2>
+      {children}
+    </section>
+  );
 }
 function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (

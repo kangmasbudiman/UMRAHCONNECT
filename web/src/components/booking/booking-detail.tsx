@@ -4,10 +4,15 @@ import { ROOM_LABEL, rupiah, tanggal, waLink } from '@/lib/format';
 import { ATTRIBUTION, DOC_TYPE, INVOICE_TYPE, PAY_METHOD, type Booking } from '@/lib/booking-types';
 import { WhatsAppButton } from '@/components/ui';
 import { Countdown, CopyButton } from './countdown';
+import { ReviewForm } from './review-form';
+import { JourneyTimeline } from '@/components/journey';
+import { RatingStars } from '@/components/trust';
 import {
   AttributionForm, CancelBookingForm, CancelRequestForm, IdentityButton, NoteForm, PaymentUploadForm, RecordPaymentForm,
   RefundForm, RejectCancelRequestButton, ReviewDocButtons, ViewDocButton,
 } from './booking-actions';
+import { IconHeading } from '@/components/stat-card';
+import { IconDownload, IconEye, IconInvoice, IconMoney, IconNote, IconReceipt, IconRefresh, IconRoute, IconTeam, IconUpload } from '@/components/icons';
 
 const wib = (iso: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(iso)) + ' WIB';
 
@@ -69,7 +74,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
         {payable && view !== 'tenant' && firstOpen && payTo && (
           <section className="card overflow-hidden border-gold-500" aria-labelledby="bayar-h">
             <div className="bg-gold-50 p-5">
-              <h2 id="bayar-h" className="text-xl font-extrabold">{firstOpen.type === 'final' ? 'Bayar pelunasan' : firstOpen.type === 'full' ? 'Bayar penuh' : 'Bayar DP'} {rupiah(firstOpen.amount - firstOpen.paid_amount)}</h2>
+              <IconHeading icon={IconMoney} id="bayar-h" className="text-xl font-extrabold">{firstOpen.type === 'final' ? 'Bayar pelunasan' : firstOpen.type === 'full' ? 'Bayar penuh' : 'Bayar DP'} {rupiah(firstOpen.amount - firstOpen.paid_amount)}</IconHeading>
               {awaiting && b.hold_expires_at
                 ? <p className="mt-1">Paling lambat <span className="font-bold">{wib(b.hold_expires_at)}</span> · <Countdown until={b.hold_expires_at} /></p>
                 : <p className="mt-1">Paling lambat <span className="font-bold">{wib(firstOpen.due_at)}</span></p>}
@@ -89,7 +94,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
                 ? <Alert tone="info" title="Bukti bayar sedang diperiksa PPIU">Anda akan melihat kwitansi di sini setelah pembayaran terverifikasi. Booking tidak dibatalkan otomatis selama bukti diperiksa.</Alert>
                 : (
                   <div className="border-t border-border-subtle pt-4">
-                    <h3 className="mb-3 font-extrabold">Sudah transfer? Kirim bukti bayar</h3>
+                    <IconHeading icon={IconUpload} as="h3" className="mb-3 font-extrabold">Sudah transfer? Kirim bukti bayar</IconHeading>
                     <PaymentUploadForm base={view === 'agent' ? '/agent' : '/me'} invoices={b.invoices} />
                   </div>
                 )}
@@ -103,9 +108,22 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
           </Alert>
         )}
 
+        {b.journey && <JourneyTimeline journey={b.journey} />}
+        {view === 'tenant' && tenant && can('departure.manage') && (
+          <Link href={`/dasbor/ppiu/${tenant.tenantId}/keberangkatan/${b.departure.id}`} className="btn btn-outline"><IconRoute className="h-5 w-5" />Perbarui tahap keberangkatan</Link>
+        )}
+        {view === 'jamaah' && b.can_review && <ReviewForm bookingId={b.id} tenantName={b.tenant.brand_name} />}
+        {view === 'jamaah' && b.review && (
+          <section className="card p-5" aria-labelledby="rv-h">
+            <h2 id="rv-h" className="text-lg font-extrabold">Ulasan Anda</h2>
+            <p className="mt-1 flex items-center gap-2"><RatingStars value={b.review.rating} /><span className="sr-only">{b.review.rating} dari 5 bintang</span>{b.review.status === 'hidden' && <span className="text-sm text-ink-600">(disembunyikan tim UMRAH CONNECT)</span>}</p>
+            <p className="mt-2 whitespace-pre-line">{b.review.body}</p>
+            {b.review.tenant_reply && <div className="mt-3 rounded-[10px] border-l-4 border-primary-600 bg-primary-50 p-3 text-sm"><p className="font-semibold text-primary-800">Balasan {b.tenant.brand_name}</p><p>{b.review.tenant_reply}</p></div>}
+          </section>
+        )}
         <section className="card p-5" aria-labelledby="inv-h">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="inv-h" className="text-lg font-extrabold">Tagihan</h2>
+            <IconHeading icon={IconInvoice} id="inv-h" className="text-lg font-extrabold">Tagihan</IconHeading>
             {view === 'tenant' && payable && can('payment.record') && <RecordPaymentForm tenantId={tenant!.tenantId} invoices={b.invoices} />}
           </div>
           <ul className="mt-3 divide-y divide-border-subtle">
@@ -114,7 +132,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
                 <div>
                   <p className="font-bold">{INVOICE_TYPE[i.type]} <span className="num text-sm font-normal text-ink-600">{i.number}</span></p>
                   <p className="text-sm text-ink-600">Jatuh tempo {wib(i.due_at)}{i.paid_amount > 0 && i.status !== 'paid' && <> · dibayar {rupiah(i.paid_amount)}</>}</p>
-                  {invoiceBase && <a href={`${invoiceBase}/${i.id}/pdf`} target="_blank" rel="noopener" className="text-sm font-semibold text-primary-700 underline">Unduh invoice PDF</a>}
+                  {invoiceBase && <a href={`${invoiceBase}/${i.id}/pdf`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-sm font-semibold text-primary-700 underline"><IconDownload className="h-4 w-4" />Unduh invoice PDF</a>}
                 </div>
                 <div className="flex items-center gap-3"><span className="num font-extrabold">{rupiah(i.amount)}</span><StatusPill status={i.status} /></div>
               </li>
@@ -124,7 +142,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
 
         {(b.payments?.length ?? 0) > 0 && (
           <section className="card p-5" aria-labelledby="pay-h">
-            <h2 id="pay-h" className="text-lg font-extrabold">Pembayaran</h2>
+            <IconHeading icon={IconMoney} id="pay-h" className="text-lg font-extrabold">Pembayaran</IconHeading>
             <ul className="mt-3 divide-y divide-border-subtle">
               {b.payments!.map((p) => (
                 <li key={p.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
@@ -133,9 +151,9 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
                     <p className="text-sm text-ink-600">{p.invoice_type ? INVOICE_TYPE[p.invoice_type] : ''} {p.sender_name && <>· dari {p.sender_name}</>}</p>
                     {p.status === 'rejected' && p.reject_reason && <p className="text-sm font-semibold text-danger">Ditolak: {p.reject_reason}</p>}
                     <div className="flex flex-wrap gap-3 text-sm">
-                      {p.receipt && view !== 'agent' && <a href={`${receiptBase}/${p.receipt.id}/pdf`} target="_blank" rel="noopener" className="font-semibold text-primary-700 underline">Kwitansi {p.receipt.number}</a>}
+                      {p.receipt && view !== 'agent' && <a href={`${receiptBase}/${p.receipt.id}/pdf`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-primary-700 underline"><IconReceipt className="h-4 w-4" />Kwitansi {p.receipt.number}</a>}
                       {p.receipt && view === 'agent' && <span className="text-ink-600">Kwitansi {p.receipt.number}</span>}
-                      {p.proof_url && <a href={p.proof_url} target="_blank" rel="noopener" className="font-semibold text-primary-700 underline">Lihat bukti</a>}
+                      {p.proof_url && <a href={p.proof_url} target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-primary-700 underline"><IconEye className="h-4 w-4" />Lihat bukti</a>}
                     </div>
                   </div>
                   <div className="text-right">
@@ -150,7 +168,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
 
         {(b.status === 'cancelled' && view === 'tenant') && (
           <section className="card space-y-3 p-5" aria-labelledby="rf-h">
-            <h2 id="rf-h" className="text-lg font-extrabold">Refund</h2>
+            <IconHeading icon={IconRefresh} id="rf-h" className="text-lg font-extrabold">Refund</IconHeading>
             {(b.refunds ?? []).length === 0 && <p className="text-ink-600">Belum ada refund dicatat.</p>}
             <ul className="divide-y divide-border-subtle">
               {(b.refunds ?? []).map((r) => (
@@ -164,13 +182,13 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
           </section>
         )}
         {b.status === 'cancelled' && view !== 'tenant' && (b.refunds?.length ?? 0) > 0 && (
-          <section className="card p-5"><h2 className="text-lg font-extrabold">Refund</h2>
+          <section className="card p-5"><IconHeading icon={IconRefresh} className="text-lg font-extrabold">Refund</IconHeading>
             <ul className="mt-2 space-y-1">{b.refunds!.map((r) => <li key={r.id} className="flex justify-between"><span>{r.type === 'reallocation' ? `Dialihkan ke ${r.target_booking_code}` : 'Transfer'} · {tanggal(r.paid_on)}</span><span className="num font-bold">{rupiah(r.amount)}</span></li>)}</ul>
           </section>
         )}
 
         <section className="card p-5" aria-labelledby="pst-h">
-          <h2 id="pst-h" className="text-lg font-extrabold">Jamaah ({b.participant_count})</h2>
+          <IconHeading icon={IconTeam} id="pst-h" className="text-lg font-extrabold">Jamaah ({b.participant_count})</IconHeading>
           <ul className="mt-3 divide-y divide-border-subtle">
             {b.participants.map((p, i) => (
               <li key={p.pilgrim_id ?? i} className="space-y-2 py-3">
@@ -216,7 +234,7 @@ export function BookingDetail({ b, view, isNew, tenant }: { b: Booking; view: 'j
 
         {view === 'tenant' && tenant?.notes && (
           <section className="card p-5" aria-labelledby="note-h">
-            <h2 id="note-h" className="text-lg font-extrabold">Catatan internal</h2>
+            <IconHeading icon={IconNote} id="note-h" className="text-lg font-extrabold">Catatan internal</IconHeading>
             <p className="text-sm text-ink-600">Hanya terlihat tim PPIU. Catatan tidak bisa diubah atau dihapus.</p>
             {can('booking.note') && <div className="mt-3"><NoteForm tenantId={tenant.tenantId} bookingId={b.id} /></div>}
             <ol className="mt-4 space-y-3 border-l-2 border-border-subtle pl-4">

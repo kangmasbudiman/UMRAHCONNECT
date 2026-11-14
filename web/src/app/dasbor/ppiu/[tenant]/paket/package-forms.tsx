@@ -7,6 +7,8 @@ import { Alert, Field, Spinner, StatusPill } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { ROOM_LABEL, rupiah, tanggal } from '@/lib/format';
 import { PUBLISH_ITEMS, type DepartureManaged, type ItineraryDay, type PackageManaged, type RoomType } from '@/lib/tenant-types';
+import { IconHeading } from '@/components/stat-card';
+import { IconActivity, IconCalendarDays, IconChecklist, IconFile, IconHotel, IconRoute } from '@/components/icons';
 
 type Err = ApiClientError | string | null;
 const msgOf = (e: Err) => (typeof e === 'string' ? e : e?.message);
@@ -72,7 +74,7 @@ export function PackageActions({ tenantId, pkg, tenantSlug, canManage, canPublis
   return (
     <div className="card space-y-4 p-5">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-extrabold">Status</h2>
+        <IconHeading icon={IconActivity} className="text-lg font-extrabold">Status</IconHeading>
         <StatusPill status={pkg.status} />
       </div>
       {pkg.status === 'published' && (
@@ -183,7 +185,7 @@ export function PackageDetailsForm({ tenantId, pkg, readOnly }: { tenantId: stri
         </div>
 
         <div className={section}>
-          <h3 className="text-lg font-extrabold">Hotel</h3>
+          <IconHeading icon={IconHotel} as="h3" className="text-lg font-extrabold">Hotel</IconHeading>
           <div className="grid gap-4 md:grid-cols-[2fr_1fr_1fr]">
             <Field id="hotel_makkah" label="Hotel Makkah"><input id="hotel_makkah" name="hotel_makkah" className="input" defaultValue={pkg.hotel_makkah ?? ''} /></Field>
             <Field id="hotel_makkah_stars" label="Kelas">{stars('hotel_makkah_stars', pkg.hotel_makkah_stars)}</Field>
@@ -195,7 +197,7 @@ export function PackageDetailsForm({ tenantId, pkg, readOnly }: { tenantId: stri
         </div>
 
         <div className={section}>
-          <h3 className="text-lg font-extrabold">Fasilitas dan biaya</h3>
+          <IconHeading icon={IconChecklist} as="h3" className="text-lg font-extrabold">Fasilitas dan biaya</IconHeading>
           <p className="text-sm text-ink-600">Satu poin per baris.</p>
           <div className="grid gap-4 md:grid-cols-3">
             <Field id="includes" label="Termasuk"><textarea id="includes" name="includes" rows={6} className="input" defaultValue={pkg.includes.join('\n')} placeholder={'Tiket pesawat PP\nVisa umrah\nHotel'} /></Field>
@@ -206,7 +208,7 @@ export function PackageDetailsForm({ tenantId, pkg, readOnly }: { tenantId: stri
 
         <div className={section}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg font-extrabold">Rencana perjalanan</h3>
+            <IconHeading icon={IconCalendarDays} as="h3" className="text-lg font-extrabold">Rencana perjalanan</IconHeading>
             <p className="text-sm text-ink-600">{days.length} hari · durasi paket {pkg.duration_days} hari</p>
           </div>
           <ol className="space-y-3">
@@ -234,7 +236,7 @@ export function PackageDetailsForm({ tenantId, pkg, readOnly }: { tenantId: stri
         </div>
 
         <div className={section}>
-          <h3 className="text-lg font-extrabold">Syarat dan ketentuan</h3>
+          <IconHeading icon={IconFile} as="h3" className="text-lg font-extrabold">Syarat dan ketentuan</IconHeading>
           <Field id="document_requirements" label="Dokumen yang diperlukan"><textarea id="document_requirements" name="document_requirements" rows={3} className="input" defaultValue={pkg.document_requirements ?? ''} /></Field>
           <Field id="payment_terms" label="Ketentuan pembayaran" hint="Tenggat DP dan pelunasan, cara pembayaran."><textarea id="payment_terms" name="payment_terms" rows={3} className="input" defaultValue={pkg.payment_terms ?? ''} /></Field>
           <Field id="cancellation_terms" label="Kebijakan pembatalan" hint="Wajib sebelum terbit. Tulis persentase pengembalian per rentang hari." error={apiErr?.field('cancellation_terms')}>
@@ -374,7 +376,7 @@ function DepartureForm({ tenantId, packageId, dep, onDone }: { tenantId: string;
   const f = (name: string) => apiErr?.field(name);
   return (
     <form onSubmit={submit} noValidate className="space-y-4 rounded-[12px] border border-primary-600 bg-primary-50/40 p-4">
-      <h3 className="font-extrabold">{dep ? 'Ubah keberangkatan' : 'Keberangkatan baru'}</h3>
+      <IconHeading icon={IconCalendarDays} as="h3" className="font-extrabold">{dep ? 'Ubah keberangkatan' : 'Keberangkatan baru'}</IconHeading>
       {msgOf(error) && (!apiErr?.errors || apiErr.status !== 422) && <Alert tone="danger">{msgOf(error)}</Alert>}
       {locked && <Alert tone="info">Sudah ada kursi terpakai: tanggal tidak bisa diubah dan kuota tidak boleh di bawah kursi terpakai.</Alert>}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -460,6 +462,9 @@ export function DeparturesPanel({ tenantId, pkg, canManage, canPrice }: { tenant
                   ))}
                 </ul>
               </div>
+              {d.status !== 'cancelled' && (
+                <a href={`/dasbor/ppiu/${tenantId}/keberangkatan/${d.id}`} className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary-700 underline"><IconRoute className="h-4 w-4" />Lacak Umrah: tahap persiapan</a>
+              )}
               {d.status === 'scheduled' && editable && (canManage || canPrice) && (
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-border-subtle pt-3">
                   <button type="button" className="btn btn-outline min-h-10 px-3 text-sm" onClick={() => setEditing(d.id)} disabled={!!busy}>Ubah</button>

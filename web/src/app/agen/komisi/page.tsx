@@ -5,6 +5,8 @@ import type { CommissionRow, Payout, Totals } from '@/lib/finance-types';
 import { rupiah, tanggal } from '@/lib/format';
 import { serverApi } from '@/lib/session';
 import { AgentHeader, requireAgent } from '../agent-shell';
+import { IconCircleCheck, IconCommission, IconPayout, IconTimer, IconTrend } from '@/components/icons';
+import { IconHeading, StatCard } from '@/components/stat-card';
 
 export const metadata = { title: 'Komisi agen' };
 
@@ -17,10 +19,10 @@ async function Commissions() {
   ]);
   const t = list.meta.totals;
   const cards = [
-    ['Perkiraan', 'estimated', 'Booking belum memenuhi syarat komisi'],
-    ['Diperoleh', 'earned', 'Menunggu persetujuan PPIU'],
-    ['Disetujui', 'approved', 'Bisa diajukan pencairan'],
-    ['Dibayar', 'paid', 'Sudah ditransfer PPIU'],
+    ['Perkiraan', 'estimated', 'Booking belum memenuhi syarat komisi', IconTrend],
+    ['Diperoleh', 'earned', 'Menunggu persetujuan PPIU', IconTimer],
+    ['Disetujui', 'approved', 'Bisa diajukan pencairan', IconCircleCheck],
+    ['Dibayar', 'paid', 'Sudah ditransfer PPIU', IconPayout],
   ] as const;
 
   return (
@@ -28,21 +30,19 @@ async function Commissions() {
       <AgentHeader ctx={ctx} active="komisi" title="Komisi" sub="Komisi dibayar langsung oleh PPIU ke rekening Anda. UMRAH CONNECT tidak memotong komisi." />
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
         <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {cards.map(([l, k, s]) => (
+          {cards.map(([l, k, s, I]) => (
             <li key={k} className="card p-4">
-              <p className="text-sm font-semibold">{l}</p>
-              <p className="num text-2xl font-extrabold text-primary-800">{rupiah(t[k]?.amount ?? 0)}</p>
-              <p className="text-sm text-ink-600">{t[k]?.count ?? 0} komisi · {s}</p>
+              <StatCard icon={I} label={l} value={rupiah(t[k]?.amount ?? 0)} sub={`${t[k]?.count ?? 0} komisi · ${s}`} tone={k === 'paid' ? 'gold' : k === 'approved' ? 'primary' : k === 'earned' ? 'warning' : 'primary'} />
             </li>
           ))}
         </ul>
         <section className="space-y-3" aria-labelledby="k-h">
-          <h2 id="k-h" className="text-xl font-extrabold">Daftar komisi</h2>
+          <IconHeading icon={IconCommission} id="k-h">Daftar komisi</IconHeading>
           <p className="text-ink-600">Pilih komisi berstatus Disetujui dari satu PPIU, lalu ajukan pencairan.</p>
           <CommissionTable rows={list.data} mode="payout-agent" showAgent={false} showTenant />
         </section>
         <section className="card p-5" aria-labelledby="p-h">
-          <h2 id="p-h" className="text-lg font-extrabold">Pencairan</h2>
+          <IconHeading icon={IconPayout} id="p-h" className="text-lg font-extrabold">Pencairan</IconHeading>
           {payouts.length === 0 ? <p className="mt-2 text-ink-600">Belum ada pengajuan pencairan.</p> : (
             <ul className="mt-2 divide-y divide-border-subtle">
               {payouts.map((p) => (

@@ -1,3 +1,4 @@
+import type { Journey } from './api';
 /** Bentuk respons booking (api/openapi.yaml: Booking, BookingAgentView, Invoice). */
 export type PayTo = { bank_name: string; account_no: string; account_holder: string };
 export type Invoice = {
@@ -32,6 +33,9 @@ export type Booking = {
   cancel_request?: { status: 'pending' | 'approved' | 'rejected'; requested_at: string | null; reason: string | null } | null;
   cancel_request_status?: 'pending' | 'approved' | 'rejected' | null; notes_count?: number;
   commission_snapshot?: { type: 'flat' | 'percent'; flat_amount: number | null; percent_bp: number | null; earn_on: string } | null;
+  journey?: Journey;
+  review?: { id: string; rating: number; body: string; status: string; tenant_reply: string | null; created_at: string } | null;
+  can_review?: boolean;
 };
 export type BookingSummary = {
   id: string; code: string; status: BookingStatus; tenant: { id: string; brand_name: string; slug: string };

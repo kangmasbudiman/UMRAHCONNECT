@@ -7,6 +7,8 @@ import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { BankAccount, Member, TenantDoc, TenantFull } from '@/lib/tenant-types';
 import { ReviewPanel } from './review-panel';
 import { SupportPanel, type SupportSession } from './support-panel';
+import { IconHeading } from '@/components/stat-card';
+import { IconHistory, IconOffice, IconSupport } from '@/components/icons';
 
 export const metadata = { title: 'Tinjau PPIU' };
 
@@ -63,12 +65,12 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
         <aside className="space-y-6">
           {allows('platform.support_access') && (
             <section className="card p-5" aria-labelledby="sp-h">
-              <h2 id="sp-h" className="text-lg font-extrabold">Akses dukungan</h2>
+              <IconHeading icon={IconSupport} id="sp-h" className="text-lg font-extrabold">Akses dukungan</IconHeading>
               <div className="mt-3"><SupportPanel tenantId={t.id} session={sessions.find((s) => s.tenant_id === t.id && s.active) ?? null} /></div>
             </section>
           )}
           <section className="card p-5">
-            <h2 className="text-lg font-extrabold">Profil</h2>
+            <IconHeading icon={IconOffice} className="text-lg font-extrabold">Profil</IconHeading>
             <dl className="mt-3 space-y-2">
               {rows.map(([k, v]) => (
                 <div key={k}><dt className="text-sm text-ink-600">{k}</dt><dd className="font-semibold break-words">{v || '—'}</dd></div>
@@ -77,7 +79,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
             {!t.onboarding.license_valid && <p className="mt-3 font-semibold text-danger">Izin sudah tidak berlaku.</p>}
           </section>
           <section className="card p-5">
-            <h2 className="text-lg font-extrabold">Riwayat status</h2>
+            <IconHeading icon={IconHistory} className="text-lg font-extrabold">Riwayat status</IconHeading>
             <ol className="mt-3 space-y-3 border-l-2 border-border-subtle pl-4">
               {t.history.map((h, i) => (
                 <li key={i}>

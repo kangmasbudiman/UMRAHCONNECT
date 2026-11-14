@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { IconClipboard, IconCommission, IconDashboard, IconHandshake, IconLink, IconTicket, IconUser } from '@/components/icons';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { requireContexts, type Contexts } from '@/lib/session';
@@ -11,13 +12,13 @@ export async function requireAgent(next: string): Promise<Contexts & { agent: No
 }
 
 const TABS = [
-  { key: 'ringkasan', href: '/agen', label: 'Ringkasan' },
-  { key: 'mitra', href: '/agen/mitra', label: 'Mitra PPIU' },
-  { key: 'paket', href: '/agen/paket', label: 'Paket & link' },
-  { key: 'prospek', href: '/agen/prospek', label: 'Prospek' },
-  { key: 'booking', href: '/agen/booking', label: 'Booking' },
-  { key: 'komisi', href: '/agen/komisi', label: 'Komisi' },
-  { key: 'profil', href: '/agen/profil', label: 'Profil' },
+  { key: 'ringkasan', href: '/agen', label: 'Ringkasan', Icon: IconDashboard },
+  { key: 'mitra', href: '/agen/mitra', label: 'Mitra PPIU', Icon: IconHandshake },
+  { key: 'paket', href: '/agen/paket', label: 'Paket & link', Icon: IconLink },
+  { key: 'prospek', href: '/agen/prospek', label: 'Prospek', Icon: IconClipboard },
+  { key: 'booking', href: '/agen/booking', label: 'Booking', Icon: IconTicket },
+  { key: 'komisi', href: '/agen/komisi', label: 'Komisi', Icon: IconCommission },
+  { key: 'profil', href: '/agen/profil', label: 'Profil', Icon: IconUser },
 ] as const;
 
 export function AgentHeader({ ctx, active, title, sub }: { ctx: Contexts & { agent: NonNullable<Contexts['agent']> }; active: (typeof TABS)[number]['key']; title?: string; sub?: ReactNode }) {
@@ -34,8 +35,8 @@ export function AgentHeader({ ctx, active, title, sub }: { ctx: Contexts & { age
       <nav aria-label="Menu agen" className="no-scrollbar mx-auto mt-5 flex max-w-6xl gap-1 overflow-x-auto px-4">
         {TABS.map((t) => (
           <Link key={t.key} href={t.href} aria-current={t.key === active ? 'page' : undefined}
-            className={`inline-flex min-h-12 shrink-0 items-center rounded-t-[10px] px-4 font-semibold ${t.key === active ? 'bg-surface text-primary-800' : 'text-white/85 hover:bg-white/10'}`}>
-            {t.label}
+            className={`inline-flex min-h-12 shrink-0 items-center gap-2 rounded-t-[10px] px-4 font-semibold ${t.key === active ? 'bg-surface text-primary-800' : 'text-white/85 hover:bg-white/10'}`}>
+            <t.Icon className={`h-5 w-5 ${t.key === active ? 'text-gold-700' : 'text-gold-500'}`} />{t.label}
           </Link>
         ))}
       </nav>

@@ -6,6 +6,8 @@ import type { Partnership, Scheme } from '@/lib/agent-types';
 import type { PackageManaged } from '@/lib/tenant-types';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../tenant-shell';
 import { InviteAgentForm, PartnershipRowActions, SchemeManager } from './agent-admin';
+import { IconHeading } from '@/components/stat-card';
+import { IconInbox, IconPercent } from '@/components/icons';
 
 export const metadata = { title: 'Agen & komisi' };
 
@@ -51,7 +53,7 @@ async function Agents({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant]
             })}
           </nav>
           {list.data.length === 0 ? (
-            <div className="card p-8 text-center text-ink-600">{total === 0 ? 'Belum ada agen. Undang agen yang Anda kenal, atau tunggu pengajuan dari agen.' : 'Tidak ada kemitraan dengan status ini.'}</div>
+            <div className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />{total === 0 ? 'Belum ada agen. Undang agen yang Anda kenal, atau tunggu pengajuan dari agen.' : 'Tidak ada kemitraan dengan status ini.'}</div>
           ) : (
             <ul className="space-y-3">
               {list.data.map((p) => (
@@ -80,7 +82,7 @@ async function Agents({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant]
           {canManage && verified && <section className="card p-5"><InviteAgentForm tenantId={id} hasDefault={!!defaultLabel} /></section>}
           {schemes && (
             <section className="card p-5" aria-labelledby="skema-h">
-              <h2 id="skema-h" className="text-lg font-extrabold">Skema komisi</h2>
+              <IconHeading icon={IconPercent} id="skema-h" className="text-lg font-extrabold">Skema komisi</IconHeading>
               <div className="mt-2">
                 <SchemeManager tenantId={id} schemes={schemes} canManage={perms.includes('commission_scheme.manage')}
                   packages={pkgs.filter((p) => ['draft', 'published'].includes(p.status)).map((p) => ({ id: p.id, name: p.name }))}

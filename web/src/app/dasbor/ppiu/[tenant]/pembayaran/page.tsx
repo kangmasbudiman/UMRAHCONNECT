@@ -6,6 +6,7 @@ import { rupiah, tanggal } from '@/lib/format';
 import { serverApi } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../tenant-shell';
 import { VerifyActions } from './verify-actions';
+import { IconInbox } from '@/components/icons';
 
 export const metadata = { title: 'Pembayaran' };
 
@@ -42,7 +43,7 @@ async function Queue({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant]/
             );
           })}
         </nav>
-        {res.data.length === 0 ? <div className="card p-8 text-center text-ink-600">{status === 'pending' ? 'Tidak ada bukti bayar yang menunggu. 👍' : 'Belum ada data.'}</div> : (
+        {res.data.length === 0 ? <div className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />{status === 'pending' ? 'Tidak ada bukti bayar yang menunggu. 👍' : 'Belum ada data.'}</div> : (
           <ul className="space-y-3">
             {res.data.map((p) => {
               const remaining = p.booking.total_amount - p.booking.paid_amount;

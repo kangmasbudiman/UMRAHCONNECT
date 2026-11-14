@@ -4,6 +4,7 @@ import { BookingList } from '@/components/booking/booking-list';
 import { BOOKING_STATUS, type BookingStatus, type BookingSummary } from '@/lib/booking-types';
 import { serverApi } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../tenant-shell';
+import { IconSearch } from '@/components/icons';
 
 export const metadata = { title: 'Booking PPIU' };
 
@@ -46,7 +47,7 @@ async function List({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant]/b
           {status && <input type="hidden" name="status" value={status} />}
           <label htmlFor="q" className="sr-only">Cari booking</label>
           <input id="q" name="q" defaultValue={q} className="input max-w-md" placeholder="Kode booking atau nama jamaah" />
-          <button className="btn btn-outline">Cari</button>
+          <button className="btn btn-outline"><IconSearch className="h-5 w-5" />Cari</button>
         </form>
         <BookingList rows={res.data} hrefFor={(b) => `/dasbor/ppiu/${id}/booking/${b}`} showTenant={false} showBooker empty="Belum ada booking." />
       </div>

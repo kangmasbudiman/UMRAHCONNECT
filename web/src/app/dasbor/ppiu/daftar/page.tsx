@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { Alert } from '@/components/form';
 import { requireContexts } from '@/lib/session';
 import { TenantProfileForm } from '../tenant-forms';
+import { IconHeading } from '@/components/stat-card';
+import { IconOffice } from '@/components/icons';
 
 export const metadata = { title: 'Daftarkan PPIU' };
 
@@ -38,7 +40,7 @@ export default function RegisterTenantPage() {
       </section>
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="card p-5 md:p-6">
-          <h2 className="text-xl font-extrabold">1. Profil PPIU</h2>
+          <IconHeading icon={IconOffice} className="text-xl font-extrabold">1. Profil PPIU</IconHeading>
           <p className="mt-1 text-ink-600">Isi sesuai dokumen resmi. Dokumen dan rekening diisi di langkah berikutnya.</p>
           <div className="mt-5">
             <Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-surface" />}><Content /></Suspense>

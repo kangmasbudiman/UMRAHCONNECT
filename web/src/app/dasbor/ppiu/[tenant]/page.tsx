@@ -8,6 +8,8 @@ import { tanggal } from '@/lib/format';
 import { BankAccountsPanel, DocumentsPanel, OwnershipTransfer, SubmitVerification, TeamPanel, TenantProfileForm } from '../tenant-forms';
 import { TenantNav } from '../tenant-nav';
 import { DashboardCards } from '../dashboard-cards';
+import { IconChecklist, IconExternal, IconFolder, IconLandmark, IconOffice, IconTeam } from '@/components/icons';
+import { IconHeading } from '@/components/stat-card';
 
 export const metadata = { title: 'Dasbor PPIU' };
 
@@ -87,13 +89,13 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
           </Alert>
 
           <section id="profil" className="card scroll-mt-24 p-5 md:p-6">
-            <h2 className="text-xl font-extrabold">Profil PPIU</h2>
+            <IconHeading icon={IconOffice}>Profil PPIU</IconHeading>
             <div className="mt-4"><TenantProfileForm tenant={tenant} readOnly={!can('tenant.profile.update') || !['draft', 'needs_revision', 'verified'].includes(st)} /></div>
           </section>
 
           {docs && (
             <section id="dokumen" className="card scroll-mt-24 p-5 md:p-6">
-              <h2 className="text-xl font-extrabold">Dokumen legalitas</h2>
+              <IconHeading icon={IconFolder}>Dokumen legalitas</IconHeading>
               <p className="mt-1 text-ink-600">PDF, JPG, atau PNG, maksimal 5 MB per file. Hanya tim PPIU Anda dan peninjau UMRAH CONNECT yang dapat melihatnya.</p>
               <DocumentsPanel tenantId={id} docs={docs} editable={editable || st === 'verified'} />
             </section>
@@ -101,7 +103,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
 
           {banks && (
             <section id="rekening" className="card scroll-mt-24 p-5 md:p-6">
-              <h2 className="text-xl font-extrabold">Rekening resmi</h2>
+              <IconHeading icon={IconLandmark}>Rekening resmi</IconHeading>
               <p className="mt-1 text-ink-600">Jamaah mentransfer langsung ke rekening ini. Rekening atas nama badan usaha, diverifikasi tim UMRAH CONNECT sebelum dipakai.</p>
               <div className="mt-4"><BankAccountsPanel tenantId={id} accounts={banks} canManage={can('bank_account.manage') && st !== 'pending_review'} /></div>
             </section>
@@ -109,7 +111,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
 
           {members && (
             <section id="tim" className="card scroll-mt-24 p-5 md:p-6">
-              <h2 className="text-xl font-extrabold">Tim</h2>
+              <IconHeading icon={IconTeam}>Tim</IconHeading>
               <div className="mt-2"><TeamPanel tenantId={id} members={members} canManage={can('member.manage')} meId={ctx.user.id} /></div>
               {can('ownership.transfer') && <div className="mt-4"><OwnershipTransfer tenantId={id} brandName={tenant.brand_name} members={members} meId={ctx.user.id} twoFactorEnabled={ctx.user.two_factor_enabled} /></div>}
             </section>
@@ -118,7 +120,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
 
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="card p-5">
-            <h2 className="text-lg font-extrabold">Langkah verifikasi</h2>
+            <IconHeading icon={IconChecklist} className="text-lg font-extrabold">Langkah verifikasi</IconHeading>
             <ol className="mt-3 space-y-2">
               {steps.map((s, i) => (
                 <li key={s.label}>
@@ -139,7 +141,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
               {editable && !isOwner && <p className="text-sm text-ink-600">Hanya Owner yang dapat mengirim pengajuan verifikasi.</p>}
               {st === 'pending_review' && <p className="text-sm text-ink-600">Pengajuan terkirim. Tidak ada yang perlu dilakukan sampai hasil tinjauan keluar.</p>}
               {st === 'verified' && tenant.verified_at && (
-                <p className="text-sm text-ink-600">Terverifikasi sejak {tanggal(tenant.verified_at.slice(0, 10))}. <Link href={`/ppiu/${tenant.slug}`} className="font-semibold text-primary-700 underline">Lihat profil publik</Link></p>
+                <p className="text-sm text-ink-600">Terverifikasi sejak {tanggal(tenant.verified_at.slice(0, 10))}. <Link href={`/ppiu/${tenant.slug}`} className="inline-flex items-center gap-1 font-semibold text-primary-700 underline"><IconExternal className="h-4 w-4" />Lihat profil publik</Link></p>
               )}
             </div>
           </div>

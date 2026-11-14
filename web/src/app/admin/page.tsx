@@ -5,6 +5,8 @@ import { Alert } from '@/components/form';
 import { rupiah, tanggal } from '@/lib/format';
 import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import { AdminHeader } from './admin-nav';
+import { IconCash, IconChart, IconHandshake, IconShieldCheck, IconTicket } from '@/components/icons';
+import { IconHeading, StatCard } from '@/components/stat-card';
 
 export const metadata = { title: 'Dasbor platform' };
 
@@ -27,22 +29,22 @@ async function Dash() {
   const activeBookings = (d.bookings_by_status.awaiting_dp ?? 0) + (d.bookings_by_status.dp_verified ?? 0) + (d.bookings_by_status.fully_paid ?? 0);
   const maxW = Math.max(1, ...d.weekly.map((w) => w.bookings));
   const stats = [
-    ['PPIU terverifikasi', String(d.tenants_by_status.verified ?? 0), `${d.tenants_by_status.pending_review ?? 0} menunggu tinjauan`, '/admin/ppiu'],
-    ['Agen terdaftar', String(d.agents), `${d.users} akun pengguna`, null],
-    ['Booking aktif', String(activeBookings), `${d.bookings_by_status.expired ?? 0} kedaluwarsa · ${d.bookings_by_status.cancelled ?? 0} batal`, null],
-    ['Nilai booking aktif', rupiah(d.gmv_active), `${rupiah(d.payments_verified_amount)} dibayar ke PPIU`, null],
+    ['PPIU terverifikasi', String(d.tenants_by_status.verified ?? 0), `${d.tenants_by_status.pending_review ?? 0} menunggu tinjauan`, '/admin/ppiu', IconShieldCheck],
+    ['Agen terdaftar', String(d.agents), `${d.users} akun pengguna`, null, IconHandshake],
+    ['Booking aktif', String(activeBookings), `${d.bookings_by_status.expired ?? 0} kedaluwarsa · ${d.bookings_by_status.cancelled ?? 0} batal`, null, IconTicket],
+    ['Nilai booking aktif', rupiah(d.gmv_active), `${rupiah(d.payments_verified_amount)} dibayar ke PPIU`, null, IconCash],
   ] as const;
 
   return (
     <div className="space-y-6">
       <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map(([l, v, s, href]) => {
-          const body = <><p className="text-sm text-ink-600">{l}</p><p className="num text-2xl font-extrabold text-primary-800">{v}</p><p className="text-sm text-ink-600">{s}</p></>;
+        {stats.map(([l, v, s, href, I]) => {
+          const body = <StatCard icon={I} label={l} value={v} sub={s} tone={I === IconCash ? 'gold' : 'primary'} />;
           return <li key={l} className="card p-4">{href ? <Link href={href} className="block hover:text-primary-700">{body}</Link> : body}</li>;
         })}
       </ul>
       <section className="card p-5" aria-labelledby="w-h">
-        <h2 id="w-h" className="text-lg font-extrabold">Booking per minggu (8 minggu terakhir)</h2>
+        <IconHeading icon={IconChart} id="w-h" className="text-lg font-extrabold">Booking per minggu (8 minggu terakhir)</IconHeading>
         {d.weekly.length === 0 ? <p className="mt-2 text-ink-600">Belum ada booking.</p> : (
           <ol className="mt-4 flex h-48 items-end gap-3">
             {d.weekly.map((w) => (

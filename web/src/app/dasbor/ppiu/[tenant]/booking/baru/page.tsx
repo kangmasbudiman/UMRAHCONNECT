@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { Alert } from '@/components/form';
 import { BookingWizard } from '@/components/booking/booking-wizard';
@@ -8,6 +9,8 @@ import { tanggal } from '@/lib/format';
 import type { PackageManaged } from '@/lib/tenant-types';
 import { serverApi } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../../tenant-shell';
+import { IconHeading } from '@/components/stat-card';
+import { IconPackage } from '@/components/icons';
 
 export const metadata = { title: 'Booking walk-in' };
 
@@ -18,6 +21,7 @@ async function Content({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant
   const page = await loadTenantPage(id, `/dasbor/ppiu/${id}/booking/baru`, 'booking.create');
   if (!isTenantPage(page)) return page;
   const pkgId = typeof sp.paket === 'string' ? sp.paket : null;
+  await connection(); // tanggal hari ini dihitung saat request
   const today = new Date().toISOString().slice(0, 10);
 
   if (!pkgId) {
@@ -26,7 +30,7 @@ async function Content({ params, searchParams }: PageProps<'/dasbor/ppiu/[tenant
       <>
         <TenantHeader page={page} active="booking" title="Booking walk-in" back={{ href: `/dasbor/ppiu/${id}/booking`, label: 'Daftar booking' }} />
         <div className="mx-auto max-w-4xl px-4 py-6">
-          <h2 className="mb-3 text-xl font-extrabold">Pilih paket</h2>
+          <IconHeading icon={IconPackage} className="mb-3 text-xl font-extrabold">Pilih paket</IconHeading>
           {pkgs.length === 0 ? <Alert tone="info">Belum ada paket dengan keberangkatan mendatang.</Alert> : (
             <ul className="space-y-3">
               {pkgs.map((p) => (

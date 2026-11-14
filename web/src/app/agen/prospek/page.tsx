@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { WhatsAppButton } from '@/components/ui';
 import { FOLLOW_UP, type AgentPackage, type AgentTenant, type FollowUpStatus, type Prospect } from '@/lib/agent-types';
@@ -6,6 +7,8 @@ import { tanggal, waLink } from '@/lib/format';
 import { serverApi } from '@/lib/session';
 import { AgentHeader, requireAgent } from '../agent-shell';
 import { ProspectForm, ProspectRowActions } from './prospect-actions';
+import { IconHeading } from '@/components/stat-card';
+import { IconClipboard, IconInbox, IconSearch } from '@/components/icons';
 
 export const metadata = { title: 'Prospek' };
 
@@ -16,6 +19,7 @@ const todayWib = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakart
 async function Prospects({ searchParams }: PageProps<'/agen/prospek'>) {
   const ctx = await requireAgent('/agen/prospek');
   const sp = await searchParams;
+  await connection(); // tanggal hari ini dihitung saat request
   const status = typeof sp.status === 'string' && (TABS as string[]).includes(sp.status) ? sp.status : 'semua';
   const q = typeof sp.q === 'string' ? sp.q.slice(0, 100) : '';
   const qs = new URLSearchParams({ limit: '100', ...(status !== 'semua' ? { 'filter[follow_up_status]': status } : {}), ...(q ? { q } : {}) });
@@ -45,12 +49,12 @@ async function Prospects({ searchParams }: PageProps<'/agen/prospek'>) {
 
         <section aria-labelledby="pr-h" className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="pr-h" className="text-xl font-extrabold">Daftar prospek</h2>
+            <IconHeading icon={IconClipboard} id="pr-h" className="text-xl font-extrabold">Daftar prospek</IconHeading>
             <form role="search" className="flex gap-2">
               {status !== 'semua' && <input type="hidden" name="status" value={status} />}
               <label htmlFor="pr-q" className="sr-only">Cari nama atau nomor</label>
               <input id="pr-q" name="q" defaultValue={q} className="input min-h-10 w-56 py-1.5" placeholder="Cari nama atau nomor" />
-              <button className="btn btn-outline min-h-10 px-4">Cari</button>
+              <button className="btn btn-outline min-h-10 px-4"><IconSearch className="h-5 w-5" />Cari</button>
             </form>
           </div>
           <nav aria-label="Status prospek" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
@@ -65,7 +69,7 @@ async function Prospects({ searchParams }: PageProps<'/agen/prospek'>) {
             })}
           </nav>
           {list.data.length === 0 ? (
-            <p className="card p-8 text-center text-ink-600">{q || status !== 'semua' ? 'Tidak ada prospek yang cocok.' : 'Belum ada prospek. Catat calon jamaah pertama Anda di atas.'}</p>
+            <p className="card p-8 text-center text-ink-600"><IconInbox className="mx-auto mb-2 h-10 w-10 text-primary-600/50" />{q || status !== 'semua' ? 'Tidak ada prospek yang cocok.' : 'Belum ada prospek. Catat calon jamaah pertama Anda di atas.'}</p>
           ) : (
             <ul className="space-y-3">
               {list.data.map((p) => {

@@ -125,4 +125,43 @@ class CatalogPresenter
 
         return ['items' => $items, 'complete' => ! in_array(false, $items, true), 'has_images' => $p->images->isNotEmpty()];
     }
+
+    /**
+     * Skor transparansi paket (0–100): seberapa lengkap informasi yang dibutuhkan jamaah sebelum membayar.
+     * Bobot mengikuti keluhan jamaah yang paling sering: rencana perjalanan, jarak hotel, kebijakan batal, biaya di luar paket.
+     *
+     * @return array{score:int, items:list<array{key:string,label:string,ok:bool,weight:int}>}
+     */
+    public static function transparency(Package $p): array
+    {
+        $p->loadMissing(['images', 'tenant']);
+        $itinDays = count(array_filter($p->itinerary ?? [], fn ($d) => filled($d['title'] ?? null) && count($d['activities'] ?? []) > 0));
+        $dep = $p->relationLoaded('departures') ? $p->departures->first() : null;
+        $priced = $dep && $dep->relationLoaded('prices') ? $dep->prices->count() : 0;
+        $items = [
+            ['itinerary', 'Rencana perjalanan lengkap setiap hari', $p->duration_days > 0 && $itinDays >= $p->duration_days, 15],
+            ['hotels', 'Nama dan bintang hotel Makkah & Madinah', filled($p->hotel_makkah) && filled($p->hotel_madinah) && $p->hotel_makkah_stars && $p->hotel_madinah_stars, 10],
+            ['distance', 'Jarak hotel ke Masjidil Haram & Nabawi', $p->hotel_makkah_distance_m !== null && $p->hotel_madinah_distance_m !== null, 10],
+            ['includes', 'Rincian termasuk & tidak termasuk', count($p->includes ?? []) > 0 && count($p->excludes ?? []) > 0, 10],
+            ['facilities', 'Daftar fasilitas', count($p->facilities ?? []) > 0, 5],
+            ['documents', 'Syarat dokumen', filled($p->document_requirements), 10],
+            ['payment', 'Ketentuan pembayaran (DP & pelunasan)', filled($p->payment_terms), 10],
+            ['cancellation', 'Kebijakan pembatalan & refund', filled($p->cancellation_terms), 15],
+            ['photos', 'Minimal 3 foto', $p->images->count() >= 3, 5],
+            ['prices', 'Harga per tipe kamar', $priced >= 2, 5],
+            ['license', 'Izin PPIU masih berlaku', $p->tenant && $p->tenant->license_expires_on && $p->tenant->license_expires_on->toDateString() >= now('Asia/Jakarta')->toDateString(), 5],
+        ];
+        $score = array_sum(array_map(fn ($i) => $i[2] ? $i[3] : 0, $items));
+
+        return ['score' => $score, 'items' => array_map(fn ($i) => ['key' => $i[0], 'label' => $i[1], 'ok' => (bool) $i[2], 'weight' => $i[3]], $items)];
+    }
+
+    /** Ramah lansia: kedua hotel paling jauh 300 m dari masjid. */
+    public const ELDERLY_MAX_DISTANCE_M = 300;
+
+    public static function elderlyFriendly(Package $p): bool
+    {
+        return $p->hotel_makkah_distance_m !== null && $p->hotel_madinah_distance_m !== null
+            && $p->hotel_makkah_distance_m <= self::ELDERLY_MAX_DISTANCE_M && $p->hotel_madinah_distance_m <= self::ELDERLY_MAX_DISTANCE_M;
+    }
 }

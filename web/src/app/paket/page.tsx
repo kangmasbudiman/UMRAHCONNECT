@@ -5,18 +5,19 @@ import type { Metadata } from 'next';
 import { getFacets, getPackages, type Facets } from '@/lib/api';
 import { bulanTahun, budgetSteps, rupiah } from '@/lib/format';
 import { PackageRow } from '@/components/ui';
-import { IconFilter, IconSearch, IconX } from '@/components/icons';
+import { IconFilter, IconSearch, IconUsers, IconX } from '@/components/icons';
 
 export const metadata: Metadata = { title: 'Cari paket umrah' };
 
 type SP = Record<string, string | string[] | undefined>;
-type Params = { q?: string; month?: string; airline?: string; departure_city?: string; price_max?: string; sort: string; cursor?: string };
+type Params = { q?: string; month?: string; airline?: string; departure_city?: string; price_max?: string; elderly?: string; sort: string; cursor?: string };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() || undefined;
 
 const SORTS = [
   { value: 'departure_date', label: 'Berangkat terdekat' },
   { value: 'price', label: 'Harga termurah' },
   { value: '-price', label: 'Harga tertinggi' },
+  { value: '-rating', label: 'Rating tertinggi' },
   { value: '-published_at', label: 'Terbaru' },
 ] as const;
 
@@ -44,11 +45,11 @@ async function Results({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const params: Params = {
     q: one(sp.q), month: one(sp.month), airline: one(sp.airline), departure_city: one(sp.departure_city),
-    price_max: one(sp.price_max), sort: SORTS.some((s) => s.value === one(sp.sort)) ? one(sp.sort)! : 'departure_date', cursor: one(sp.cursor),
+    price_max: one(sp.price_max), elderly: one(sp.elderly) === '1' ? '1' : undefined, sort: SORTS.some((s) => s.value === one(sp.sort)) ? one(sp.sort)! : 'departure_date', cursor: one(sp.cursor),
   };
   const [facets, list] = await Promise.all([getFacets(), getPackages({ ...params })]);
 
-  const filters = { q: params.q, month: params.month, airline: params.airline, departure_city: params.departure_city, price_max: params.price_max };
+  const filters = { q: params.q, month: params.month, airline: params.airline, departure_city: params.departure_city, price_max: params.price_max, elderly: params.elderly };
   const href = (over: Partial<Params>) => {
     const merged: Record<string, string | undefined> = { ...filters, sort: params.sort === 'departure_date' ? undefined : params.sort, ...over };
     const query = Object.fromEntries(Object.entries(merged).filter(([, v]) => v)) as Record<string, string>;
@@ -60,6 +61,7 @@ async function Results({ searchParams }: { searchParams: Promise<SP> }) {
     params.departure_city && { key: 'departure_city', label: `Dari ${params.departure_city}` },
     params.airline && { key: 'airline', label: params.airline },
     params.price_max && { key: 'price_max', label: `≤ ${rupiah(Number(params.price_max))}` },
+    params.elderly && { key: 'elderly', label: 'Ramah lansia' },
   ].filter(Boolean) as { key: keyof Params; label: string }[];
 
   return (
@@ -159,6 +161,10 @@ function FilterForm({ idp, params, facets }: { idp: string; params: Params; face
           {facets.airlines.map((a) => <option key={a}>{a}</option>)}
         </select>
       </Field>
+      <label htmlFor={`${idp}-elderly`} className="flex min-h-12 cursor-pointer items-start gap-3 rounded-[10px] border border-border-input bg-white p-3">
+        <input id={`${idp}-elderly`} type="checkbox" name="elderly" value="1" defaultChecked={params.elderly === '1'} className="mt-0.5 h-5 w-5 accent-[var(--color-primary-700)]" />
+        <span><span className="flex items-center gap-1.5 font-semibold"><IconUsers className="h-4 w-4 text-primary-700" />Ramah lansia</span><span className="text-sm text-ink-600">Hotel Makkah & Madinah paling jauh 300 m dari masjid</span></span>
+      </label>
       <button type="submit" className="btn btn-gold w-full">Terapkan filter</button>
     </Form>
   );

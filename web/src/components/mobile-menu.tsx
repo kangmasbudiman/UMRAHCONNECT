@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { IconMenu, IconX } from './icons';
+import { IconCalendarDays, IconMenu, IconOffice, IconPackage, IconPiggy, IconRoute, IconUser, IconUserPlus, IconX } from './icons';
 
 const LINKS = [
-  { href: '/paket', label: 'Paket Umrah' },
-  { href: '/jadwal', label: 'Jadwal' },
-  { href: '/ppiu', label: 'PPIU' },
-  { href: '/daftar?peran=ppiu', label: 'Daftarkan PPIU' },
+  { href: '/paket', label: 'Paket Umrah', Icon: IconPackage },
+  { href: '/jadwal', label: 'Jadwal', Icon: IconCalendarDays },
+  { href: '/ppiu', label: 'PPIU', Icon: IconOffice },
+  { href: '/lacak', label: 'Lacak Umrah', Icon: IconRoute },
+  { href: '/tabungan', label: 'Rencana tabungan', Icon: IconPiggy },
+  { href: '/daftar?peran=ppiu', label: 'Daftarkan PPIU', Icon: IconOffice },
 ] as const;
 
 /** Menu ponsel: tombol 48px, panel di bawah header, tertutup setelah tautan dipilih. */
@@ -26,13 +28,13 @@ export function MobileMenu({ signedIn }: { signedIn: boolean }) {
           <ul className="divide-y divide-border-subtle">
             {LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center font-semibold">{l.label}</Link>
+                <Link href={l.href} onClick={() => setOpen(false)} className="flex min-h-12 items-center gap-3 font-semibold"><l.Icon className="h-5 w-5 text-primary-600" />{l.label}</Link>
               </li>
             ))}
           </ul>
           {signedIn
-            ? <Link href="/akun" onClick={() => setOpen(false)} className="btn btn-primary mt-3 w-full">Akun saya</Link>
-            : <Link href="/daftar" onClick={() => setOpen(false)} className="btn btn-primary mt-3 w-full">Daftar</Link>}
+            ? <Link href="/akun" onClick={() => setOpen(false)} className="btn btn-primary mt-3 w-full"><IconUser className="h-5 w-5" />Akun saya</Link>
+            : <Link href="/daftar" onClick={() => setOpen(false)} className="btn btn-primary mt-3 w-full"><IconUserPlus className="h-5 w-5" />Daftar</Link>}
         </nav>
       )}
     </div>
