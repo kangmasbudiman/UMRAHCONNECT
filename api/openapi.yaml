@@ -1,0 +1,3976 @@
+openapi: 3.1.0
+info:
+  title: UMRAH CONNECT API
+  version: 1.0.0
+  summary: Kontrak REST API platform multi-PPIU dan multi-agen UMRAH CONNECT.
+  description: >-
+    Diturunkan dari API Documentation v1.0 (https://claude.ai/artifact/LTEvaDgYR4s2kMEBFaHNaj),
+    SRS v1.1, Database Design v1.2, dan User Role & Permission v1.1.
+
+
+    Konvensi: JSON UTF-8, field snake_case, ID UUID v7, uang dalam integer Rupiah (field `*_amount`),
+    timestamp ISO 8601 UTC. Sukses dibungkus `{"data": ...}`; daftar memakai `{"data": [...], "meta": {...}}`
+    dengan paginasi kursor. Error memakai skema `Error`.
+
+
+    Autentikasi web: sesi cookie Laravel Sanctum. Ambil cookie CSRF lebih dulu lewat
+    `GET /sanctum/csrf-cookie` (di luar base URL), lalu kirim header `X-XSRF-TOKEN`.
+    Aplikasi mobile (Fase 2) memakai Bearer token dari `POST /auth/tokens`.
+
+
+    Ekstensi: `x-permission` = permission yang dicek (katalog User Role & Permission);
+    `x-requirements` = ID kebutuhan SRS atau proses BPM; `x-phase` = fase bila bukan MVP.
+    Data di luar lingkup pengguna dijawab 404 agar keberadaannya tidak bocor.
+servers:
+  - url: https://api.umrahconnect.id/api/v1
+    description: Production (nama domain sementara)
+  - url: https://api-staging.umrahconnect.id/api/v1
+    description: Staging
+  - url: http://localhost:8000/api/v1
+    description: Development lokal
+tags:
+  - name: Auth
+    description: Registrasi, login, OTP, 2FA, konteks pengguna
+  - name: Public
+    description: Marketplace publik tanpa login
+  - name: Me
+    description: Akun, data jamaah, dan booking milik pemesan
+  - name: Agent
+    description: Portal agen
+  - name: Tenant
+    description: Profil PPIU, tim, rekening, dashboard
+  - name: Catalog
+    description: Paket dan keberangkatan PPIU
+  - name: Partnership
+    description: Kemitraan agen dan skema komisi
+  - name: Booking
+    description: Booking, dokumen jamaah, catatan internal
+  - name: Finance
+    description: Invoice, pembayaran, refund, komisi, payout
+  - name: Report
+    description: Laporan dan ekspor
+  - name: Platform
+    description: Super Admin dan Admin Platform
+  - name: Files
+    description: Unggah dan akses file
+  - name: Webhooks
+    description: Webhook masuk dari vendor (Fase 2)
+security:
+  - sessionCookie: []
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: umrah_connect_session
+      description: Sesi Laravel Sanctum untuk aplikasi web; wajib header X-XSRF-TOKEN pada permintaan non-GET.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token Sanctum untuk aplikasi Android (Fase 2), ability `agent` atau `pilgrim`.
+
+  parameters:
+    TenantId:
+      name: tenant
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    BookingId:
+      name: booking
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    PackageId:
+      name: package
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    DepartureId:
+      name: departure
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    PartnershipId:
+      name: partnership
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    SchemeId:
+      name: scheme
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    InvoiceId:
+      name: invoice
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    PaymentId:
+      name: payment
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    ReceiptId:
+      name: receipt
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    PayoutId:
+      name: payout
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    PilgrimId:
+      name: pilgrim
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    DocumentId:
+      name: document
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    MemberId:
+      name: member
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    AccountId:
+      name: account
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    ImageId:
+      name: image
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    LinkId:
+      name: link
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    ProspectId:
+      name: prospect
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    UserId:
+      name: user
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    SessionId:
+      name: session
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    FileId:
+      name: file
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Kursor opaque dari `meta.next_cursor` halaman sebelumnya.
+      schema: { type: string }
+    Sort:
+      name: sort
+      in: query
+      description: Nama field; awali tanda minus untuk urutan menurun, contoh `-created_at`.
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID unik per aksi; kunci sama dalam 24 jam mengembalikan respons pertama.
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Nilai ETag dari respons GET terakhir; tidak cocok menghasilkan 412.
+      schema: { type: string }
+
+  responses:
+    Error:
+      description: Error (lihat `error.code`)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoContent:
+      description: Berhasil tanpa isi
+    Accepted:
+      description: Diterima dan diproses di antrean; hasil dikirim lewat notifikasi
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  status: { type: string, const: queued }
+    Pdf:
+      description: Berkas PDF
+      content:
+        application/pdf:
+          schema: { type: string, contentMediaType: application/pdf }
+    SignedUrl:
+      description: Signed URL berumur 10 menit
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                required: [url, expires_at]
+                properties:
+                  url: { type: string, format: uri }
+                  expires_at: { $ref: '#/components/schemas/Timestamp' }
+    User:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/User' } } } } }
+    UserList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/User' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    TenantPublic:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/TenantPublicDetail' } } } } }
+    TenantPublicList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/TenantPublic' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Tenant:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Tenant' } } } } }
+    TenantList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Tenant' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    TenantDocument:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/TenantDocument' } } } } }
+    TenantDocumentList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/TenantDocument' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Member:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Member' } } } } }
+    MemberList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Member' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    BankAccount:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/BankAccount' } } } } }
+    BankAccountList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/BankAccount' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Summary:
+      description: Berhasil (ringkasan angka; bentuk rinci mengikuti layar dashboard)
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { type: object, additionalProperties: true } } } } }
+    PackageSummaryList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/PackageSummary' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    PackagePublic:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PackagePublicDetail' } } } } }
+    Package:
+      description: Berhasil
+      headers:
+        ETag: { schema: { type: string } }
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Package' } } } } }
+    PackageList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Package' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Departure:
+      description: Berhasil
+      headers:
+        ETag: { schema: { type: string } }
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Departure' } } } } }
+    DepartureList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Departure' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    DepartureScheduleList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/DepartureScheduleItem' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    PilgrimList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Pilgrim' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Pilgrim:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Pilgrim' } } } } }
+    PilgrimIdentity:
+      description: Berhasil; akses dicatat sebagai `pilgrim.identity.viewed`
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PilgrimIdentity' } } } } }
+    PilgrimDocument:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/PilgrimDocument' } } } } }
+    PilgrimDocumentList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/PilgrimDocument' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    DocumentReview:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/DocumentReview' } } } } }
+    Booking:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Booking' } } } } }
+    BookingList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Booking' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    BookingAgentView:
+      description: Berhasil (tanpa NIK, paspor, tanggal lahir, catatan internal, bukti refund)
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/BookingAgentView' } } } } }
+    BookingAgentViewList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/BookingAgentView' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Note:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Note' } } } } }
+    NoteList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Note' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Invoice:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Invoice' } } } } }
+    InvoiceList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Invoice' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Payment:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Payment' } } } } }
+    PaymentList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Payment' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    VerifyPaymentResult:
+      description: Berhasil; bila melebihi sisa invoice DP, `payments` berisi induk dan pecahan
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/VerifyPaymentResult' } } } } }
+    Refund:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Refund' } } } } }
+    RefundList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Refund' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    CommissionList:
+      description: Berhasil; `meta.totals` berisi jumlah nominal per status
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Commission' } }, meta: { $ref: '#/components/schemas/CommissionListMeta' } } } } }
+    Payout:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Payout' } } } } }
+    PayoutList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Payout' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    AgentProfile:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/AgentProfile' } } } } }
+    AgentTenantList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/AgentTenant' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    AgentPackageList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/AgentPackage' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Partnership:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Partnership' } } } } }
+    PartnershipList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Partnership' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    CommissionScheme:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/CommissionScheme' } } } } }
+    CommissionSchemeList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/CommissionScheme' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    ReferralLink:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/ReferralLink' } } } } }
+    ReferralLinkList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/ReferralLink' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Prospect:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Prospect' } } } } }
+    ProspectList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Prospect' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    NotificationList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/Notification' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    File:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/File' } } } } }
+    Report:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Report' } } } } }
+    SupportSession:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/SupportSession' } } } } }
+    AuditLogList:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data, meta], properties: { data: { type: array, items: { $ref: '#/components/schemas/AuditLog' } }, meta: { $ref: '#/components/schemas/ListMeta' } } } } }
+    Setting:
+      description: Berhasil
+      content: { application/json: { schema: { type: object, required: [data], properties: { data: { $ref: '#/components/schemas/Setting' } } } } }
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      examples: ['01932f6a-7b1c-7d4e-9a2b-3c4d5e6f7a8b']
+    Money:
+      type: integer
+      minimum: 0
+      description: Rupiah penuh tanpa desimal.
+      examples: [32500000]
+    Timestamp:
+      type: string
+      format: date-time
+      examples: ['2026-11-14T03:00:00Z']
+    Date:
+      type: string
+      format: date
+      examples: ['2027-02-10']
+    Phone:
+      type: string
+      pattern: '^\+[1-9][0-9]{7,14}$'
+      description: Format E.164.
+      examples: ['+6281234567890']
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              enum:
+                - bad_request
+                - unauthenticated
+                - forbidden
+                - two_factor_required
+                - tenant_not_verified
+                - tenant_suspended
+                - partnership_inactive
+                - not_found
+                - seats_unavailable
+                - pilgrim_already_booked
+                - invalid_transition
+                - already_processed
+                - idempotency_conflict
+                - precondition_failed
+                - validation_failed
+                - refund_exceeds_paid
+                - reason_required
+                - account_locked
+                - rate_limited
+                - server_error
+            message: { type: string, description: Pesan bahasa Indonesia untuk ditampilkan. }
+            details: { type: [object, 'null'], additionalProperties: true }
+            errors:
+              type: [object, 'null']
+              description: Error validasi per field.
+              additionalProperties: { type: array, items: { type: string } }
+            request_id: { type: string }
+    ListMeta:
+      type: object
+      required: [next_cursor, limit]
+      properties:
+        next_cursor: { type: [string, 'null'] }
+        limit: { type: integer }
+    CommissionListMeta:
+      allOf:
+        - $ref: '#/components/schemas/ListMeta'
+        - type: object
+          properties:
+            totals:
+              type: object
+              description: Total nominal per status komisi.
+              additionalProperties: { $ref: '#/components/schemas/Money' }
+
+    # ---- Enum ----
+    UserStatus: { type: string, enum: [unclaimed, active, locked, deactivated] }
+    PlatformRole: { type: [string, 'null'], enum: [super_admin, platform_admin, null] }
+    TenantRole: { type: string, enum: [owner, admin, finance] }
+    MemberStatus: { type: string, enum: [invited, active, deactivated] }
+    TenantVerificationStatus: { type: string, enum: [draft, pending_review, needs_revision, verified, rejected, suspended] }
+    TenantDocumentType: { type: string, enum: [akta, nib, npwp, ppiu_license, pic_ktp, other] }
+    ReviewStatus: { type: string, enum: [submitted, accepted, rejected] }
+    BankAccountStatus: { type: string, enum: [pending, verified, inactive] }
+    PackageStatus: { type: string, enum: [draft, published, archived, taken_down] }
+    SalesStatus: { type: string, enum: [open, closed, full] }
+    DepartureStatus: { type: string, enum: [scheduled, departed, completed, cancelled] }
+    RoomType: { type: string, enum: [quad, triple, double] }
+    PartnershipStatus: { type: string, enum: [invited, applied, active, rejected, suspended, ended] }
+    PartnershipSource: { type: string, enum: [applied, invited] }
+    SchemeScope: { type: string, enum: [default, package, agent, agent_package] }
+    SchemeType: { type: string, enum: [flat, percent] }
+    EarnOn: { type: string, enum: [fully_paid, dp_verified] }
+    FollowUpStatus: { type: string, enum: [new, contacted, interested, booked, lost] }
+    Gender: { type: string, enum: [L, P] }
+    PilgrimDocumentType: { type: string, enum: [ktp, passport, photo, vaccine, other] }
+    PilgrimDocumentStatus: { type: string, enum: [active, replaced] }
+    DocumentReviewStatus: { type: string, enum: [accepted, rejected] }
+    BookingStatus: { type: string, enum: [awaiting_dp, dp_verified, fully_paid, departed, completed, expired, cancelled] }
+    AttributionSource: { type: string, enum: [agent_created, ppiu_assigned, manual_code, referral_link, none] }
+    BookingChannel: { type: string, enum: [marketplace, agent_portal, ppiu_dashboard] }
+    CancelRequestStatus: { type: string, enum: [pending, approved, rejected] }
+    InvoiceType: { type: string, enum: [dp, final, full] }
+    InvoiceStatus: { type: string, enum: [unpaid, partial, paid, cancelled] }
+    PaymentMethod: { type: string, enum: [bank_transfer, cash, reallocation, gateway] }
+    PaymentStatus: { type: string, enum: [pending, verified, rejected] }
+    RefundType: { type: string, enum: [bank_transfer, reallocation] }
+    CommissionStatus: { type: string, enum: [estimated, earned, approved, paid, cancelled] }
+    PayoutStatus: { type: string, enum: [requested, paid, rejected] }
+    FilePurpose:
+      type: string
+      enum: [package_image, logo, tenant_document, ktp, pilgrim_document, payment_proof, refund_proof, payout_proof, invoice_pdf, receipt_pdf, report_export]
+
+    # ---- Akun ----
+    User:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        name: { type: string, maxLength: 150 }
+        email: { type: [string, 'null'], format: email }
+        phone: { type: [string, 'null'] }
+        status: { $ref: '#/components/schemas/UserStatus' }
+        two_factor_enabled: { type: boolean }
+        platform_role: { $ref: '#/components/schemas/PlatformRole' }
+        last_login_at: { type: [string, 'null'], format: date-time }
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string, maxLength: 150 }
+        email: { type: string, format: email }
+        phone: { $ref: '#/components/schemas/Phone' }
+    Contexts:
+      type: object
+      required: [user, tenants, agent, pilgrim, platform_role]
+      properties:
+        user: { $ref: '#/components/schemas/User' }
+        tenants:
+          type: array
+          items:
+            type: object
+            required: [id, brand_name, role, tenant_status, permissions]
+            properties:
+              id: { $ref: '#/components/schemas/Uuid' }
+              brand_name: { type: string }
+              role: { $ref: '#/components/schemas/TenantRole' }
+              tenant_status: { $ref: '#/components/schemas/TenantVerificationStatus' }
+              permissions: { type: array, items: { type: string }, examples: [[package.view, booking.view]] }
+        agent:
+          type: [object, 'null']
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            code: { type: string }
+            active_partnerships: { type: integer }
+        pilgrim:
+          type: object
+          properties:
+            managed_pilgrims: { type: integer }
+            active_bookings: { type: integer }
+        platform_role: { $ref: '#/components/schemas/PlatformRole' }
+
+    # ---- Tenant ----
+    TenantRef:
+      type: object
+      required: [id, brand_name]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        slug: { type: string }
+        brand_name: { type: string }
+        whatsapp: { type: [string, 'null'] }
+    TenantPublic:
+      type: object
+      required: [id, slug, brand_name, legal_name, ppiu_license_no, verified]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        slug: { type: string }
+        brand_name: { type: string }
+        legal_name: { type: string }
+        ppiu_license_no: { type: string }
+        verified: { type: boolean, const: true }
+        city: { type: string }
+        province: { type: string }
+        address: { type: string }
+        phone: { type: string }
+        whatsapp: { type: string }
+        email: { type: string, format: email }
+        logo_url: { type: [string, 'null'], format: uri }
+    TenantPublicDetail:
+      allOf:
+        - $ref: '#/components/schemas/TenantPublic'
+        - type: object
+          properties:
+            packages: { type: array, items: { $ref: '#/components/schemas/PackageSummary' } }
+    TenantInput:
+      type: object
+      properties:
+        legal_name: { type: string, maxLength: 200 }
+        brand_name: { type: string, maxLength: 200 }
+        ppiu_license_no: { type: string, maxLength: 100 }
+        license_expires_on: { $ref: '#/components/schemas/Date' }
+        nib: { type: string, maxLength: 30 }
+        npwp: { type: string, maxLength: 30 }
+        address: { type: string }
+        city: { type: string, maxLength: 100 }
+        province: { type: string, maxLength: 100 }
+        phone: { $ref: '#/components/schemas/Phone' }
+        whatsapp: { $ref: '#/components/schemas/Phone' }
+        email: { type: string, format: email }
+        logo_file_id: { $ref: '#/components/schemas/Uuid' }
+    Tenant:
+      allOf:
+        - $ref: '#/components/schemas/TenantInput'
+        - type: object
+          required: [id, code, slug, verification_status]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            code: { type: string, maxLength: 10 }
+            slug: { type: string }
+            verification_status: { $ref: '#/components/schemas/TenantVerificationStatus' }
+            verified_at: { type: [string, 'null'], format: date-time }
+            status_note: { type: [string, 'null'] }
+            settings:
+              type: object
+              properties:
+                dp_deadline_hours_default: { type: integer }
+                commission_earn_on_default: { $ref: '#/components/schemas/EarnOn' }
+    TenantDocument:
+      type: object
+      required: [id, type, file_id, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        type: { $ref: '#/components/schemas/TenantDocumentType' }
+        file_id: { $ref: '#/components/schemas/Uuid' }
+        status: { $ref: '#/components/schemas/ReviewStatus' }
+        review_note: { type: [string, 'null'] }
+    Member:
+      type: object
+      required: [id, user, role, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        user: { $ref: '#/components/schemas/User' }
+        role: { $ref: '#/components/schemas/TenantRole' }
+        status: { $ref: '#/components/schemas/MemberStatus' }
+        invited_at: { type: [string, 'null'], format: date-time }
+        joined_at: { type: [string, 'null'], format: date-time }
+    BankAccount:
+      type: object
+      required: [id, bank_name, account_no, account_holder, status, is_default]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        bank_name: { type: string }
+        account_no: { type: string }
+        account_holder: { type: string }
+        status: { $ref: '#/components/schemas/BankAccountStatus' }
+        is_default: { type: boolean }
+    PayTo:
+      type: object
+      required: [bank_name, account_no, account_holder]
+      properties:
+        bank_name: { type: string }
+        account_no: { type: string }
+        account_holder: { type: string }
+
+    # ---- Paket dan keberangkatan ----
+    DeparturePrice:
+      type: object
+      required: [room_type, price_amount]
+      properties:
+        room_type: { $ref: '#/components/schemas/RoomType' }
+        price_amount: { $ref: '#/components/schemas/Money' }
+    ItineraryDay:
+      type: object
+      required: [day, title]
+      properties:
+        day: { type: integer, minimum: 1 }
+        title: { type: string }
+        activities: { type: array, items: { type: string } }
+    PackageInput:
+      type: object
+      properties:
+        name: { type: string, maxLength: 200 }
+        duration_days: { type: integer, minimum: 1 }
+        airline: { type: string, maxLength: 100 }
+        hotel_makkah: { type: [string, 'null'] }
+        hotel_makkah_stars: { type: [integer, 'null'], minimum: 1, maximum: 5 }
+        hotel_makkah_distance_m: { type: [integer, 'null'], minimum: 0 }
+        hotel_madinah: { type: [string, 'null'] }
+        hotel_madinah_stars: { type: [integer, 'null'], minimum: 1, maximum: 5 }
+        hotel_madinah_distance_m: { type: [integer, 'null'], minimum: 0 }
+        description: { type: string }
+        itinerary: { type: array, items: { $ref: '#/components/schemas/ItineraryDay' } }
+        facilities: { type: array, items: { type: string } }
+        includes: { type: array, items: { type: string } }
+        excludes: { type: array, items: { type: string } }
+        document_requirements: { type: string }
+        payment_terms: { type: string }
+        cancellation_terms: { type: string, description: Wajib terisi sebelum terbit. }
+    PackageImage:
+      type: object
+      required: [id, file_id, url, sort_order]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        file_id: { $ref: '#/components/schemas/Uuid' }
+        url: { type: string, format: uri }
+        sort_order: { type: integer, minimum: 0 }
+    Package:
+      allOf:
+        - $ref: '#/components/schemas/PackageInput'
+        - type: object
+          required: [id, slug, status]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            slug: { type: string }
+            status: { $ref: '#/components/schemas/PackageStatus' }
+            taken_down_reason: { type: [string, 'null'] }
+            published_at: { type: [string, 'null'], format: date-time }
+            images: { type: array, items: { $ref: '#/components/schemas/PackageImage' } }
+    PackageSummary:
+      type: object
+      required: [id, slug, name, tenant, duration_days, airline, price_from_amount]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        slug: { type: string }
+        name: { type: string }
+        tenant:
+          type: object
+          properties:
+            slug: { type: string }
+            brand_name: { type: string }
+            verified: { type: boolean }
+            ppiu_license_no: { type: string }
+        duration_days: { type: integer }
+        airline: { type: string }
+        hotel_makkah_stars: { type: [integer, 'null'] }
+        cover_image_url: { type: [string, 'null'], format: uri }
+        price_from_amount: { $ref: '#/components/schemas/Money' }
+        next_departure:
+          type: [object, 'null']
+          properties:
+            departure_date: { $ref: '#/components/schemas/Date' }
+            departure_city: { type: string }
+            seats_remaining: { type: integer }
+    DeparturePublic:
+      type: object
+      required: [id, departure_date, return_date, departure_city, seats_remaining, sales_status, prices]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        departure_date: { $ref: '#/components/schemas/Date' }
+        return_date: { $ref: '#/components/schemas/Date' }
+        departure_city: { type: string }
+        seats_remaining: { type: integer, minimum: 0 }
+        sales_status: { $ref: '#/components/schemas/SalesStatus' }
+        dp_min_per_pax_amount: { $ref: '#/components/schemas/Money' }
+        final_payment_due_on: { $ref: '#/components/schemas/Date' }
+        prices: { type: array, items: { $ref: '#/components/schemas/DeparturePrice' } }
+    PackagePublicDetail:
+      allOf:
+        - $ref: '#/components/schemas/Package'
+        - type: object
+          required: [tenant, departures]
+          properties:
+            tenant: { $ref: '#/components/schemas/TenantPublic' }
+            departures: { type: array, items: { $ref: '#/components/schemas/DeparturePublic' } }
+    DepartureScheduleItem:
+      allOf:
+        - $ref: '#/components/schemas/DeparturePublic'
+        - type: object
+          properties:
+            package: { type: object, properties: { slug: { type: string }, name: { type: string } } }
+            tenant: { type: object, properties: { slug: { type: string }, brand_name: { type: string } } }
+    DepartureInput:
+      type: object
+      properties:
+        departure_date: { $ref: '#/components/schemas/Date' }
+        return_date: { $ref: '#/components/schemas/Date' }
+        departure_city: { type: string, maxLength: 100 }
+        quota: { type: integer, minimum: 1 }
+        dp_min_per_pax_amount: { $ref: '#/components/schemas/Money' }
+        dp_deadline_hours: { type: integer, minimum: 1, default: 48 }
+        final_payment_due_on: { $ref: '#/components/schemas/Date' }
+    DepartureCreate:
+      allOf:
+        - $ref: '#/components/schemas/DepartureInput'
+        - type: object
+          required: [departure_date, return_date, departure_city, quota, dp_min_per_pax_amount, final_payment_due_on, prices]
+          properties:
+            prices: { type: array, minItems: 1, items: { $ref: '#/components/schemas/DeparturePrice' } }
+    Departure:
+      allOf:
+        - $ref: '#/components/schemas/DeparturePublic'
+        - type: object
+          required: [package_id, quota, seats_held, seats_confirmed, status]
+          properties:
+            package_id: { $ref: '#/components/schemas/Uuid' }
+            quota: { type: integer }
+            seats_held: { type: integer }
+            seats_confirmed: { type: integer }
+            dp_deadline_hours: { type: integer }
+            status: { $ref: '#/components/schemas/DepartureStatus' }
+            active_bookings_count: { type: integer, description: Diisi pada respons perubahan harga sebagai peringatan. }
+
+    # ---- Agen dan kemitraan ----
+    AgentRef:
+      type: object
+      required: [id, code, display_name]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string, minLength: 6, maxLength: 8 }
+        display_name: { type: string }
+        whatsapp: { type: [string, 'null'] }
+        domicile_city: { type: [string, 'null'] }
+    AgentProfileInput:
+      type: object
+      properties:
+        nik: { type: string, pattern: '^[0-9]{16}$' }
+        ktp_file_id: { $ref: '#/components/schemas/Uuid' }
+        domicile_city: { type: string, maxLength: 100 }
+        payout_bank_name: { type: string }
+        payout_account_no: { type: string }
+        payout_account_holder: { type: string }
+    AgentProfile:
+      type: object
+      required: [id, code, nik_masked, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string }
+        nik_masked: { type: string, examples: ['3571••••••••0012'] }
+        domicile_city: { type: string }
+        payout_bank_name: { type: string }
+        payout_account_no_masked: { type: string }
+        payout_account_holder: { type: string }
+        status: { type: string, enum: [active, suspended] }
+    CommissionSchemeInput:
+      type: object
+      required: [scope, type]
+      properties:
+        scope: { $ref: '#/components/schemas/SchemeScope' }
+        package_id: { type: [string, 'null'], format: uuid }
+        agent_id: { type: [string, 'null'], format: uuid }
+        type: { $ref: '#/components/schemas/SchemeType' }
+        flat_amount: { type: [integer, 'null'], minimum: 0, description: 'Rupiah per peserta, wajib bila type flat.' }
+        percent_bp: { type: [integer, 'null'], minimum: 0, maximum: 10000, description: 'Basis poin, wajib bila type percent.' }
+        earn_on: { $ref: '#/components/schemas/EarnOn' }
+    CommissionScheme:
+      allOf:
+        - $ref: '#/components/schemas/CommissionSchemeInput'
+        - type: object
+          required: [id, effective_from]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            effective_from: { $ref: '#/components/schemas/Timestamp' }
+            effective_to: { type: [string, 'null'], format: date-time }
+    Partnership:
+      type: object
+      required: [id, tenant, agent, status, source]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        tenant: { $ref: '#/components/schemas/TenantRef' }
+        agent: { $ref: '#/components/schemas/AgentRef' }
+        status: { $ref: '#/components/schemas/PartnershipStatus' }
+        source: { $ref: '#/components/schemas/PartnershipSource' }
+        message: { type: [string, 'null'] }
+        reject_reason: { type: [string, 'null'] }
+        commission_scheme:
+          oneOf:
+            - $ref: '#/components/schemas/CommissionScheme'
+            - type: 'null'
+        decided_at: { type: [string, 'null'], format: date-time }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    AgentTenant:
+      allOf:
+        - $ref: '#/components/schemas/TenantPublic'
+        - type: object
+          properties:
+            partnership_id: { type: [string, 'null'], format: uuid }
+            partnership_status:
+              oneOf:
+                - $ref: '#/components/schemas/PartnershipStatus'
+                - type: 'null'
+    AgentPackage:
+      allOf:
+        - $ref: '#/components/schemas/PackageSummary'
+        - type: object
+          properties:
+            commission_scheme: { $ref: '#/components/schemas/CommissionScheme' }
+    ReferralLink:
+      type: object
+      required: [id, tenant_id, code, url, click_count, is_active]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        package_id: { type: [string, 'null'], format: uuid }
+        code: { type: string, maxLength: 16 }
+        url: { type: string, format: uri }
+        click_count: { type: integer }
+        is_active: { type: boolean }
+    Prospect:
+      type: object
+      required: [name, phone, follow_up_status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { type: [string, 'null'], format: uuid }
+        package_id: { type: [string, 'null'], format: uuid }
+        name: { type: string }
+        phone: { $ref: '#/components/schemas/Phone' }
+        notes: { type: [string, 'null'] }
+        follow_up_status: { $ref: '#/components/schemas/FollowUpStatus' }
+        next_follow_up_on: { type: [string, 'null'], format: date }
+
+    # ---- Jamaah dan booking ----
+    PilgrimInput:
+      type: object
+      properties:
+        full_name: { type: string, maxLength: 150, description: Sesuai paspor. }
+        nik: { type: string, pattern: '^[0-9]{16}$' }
+        birth_place: { type: string }
+        birth_date: { $ref: '#/components/schemas/Date' }
+        gender: { $ref: '#/components/schemas/Gender' }
+        passport_no: { type: [string, 'null'] }
+        passport_expires_on: { type: [string, 'null'], format: date }
+        phone: { type: [string, 'null'] }
+        emergency_contact:
+          type: [object, 'null']
+          properties:
+            name: { type: string }
+            relation: { type: string }
+            phone: { $ref: '#/components/schemas/Phone' }
+        mahram_pilgrim_id: { type: [string, 'null'], format: uuid }
+    Pilgrim:
+      allOf:
+        - $ref: '#/components/schemas/PilgrimInput'
+        - type: object
+          required: [id, full_name]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+    PilgrimIdentity:
+      type: object
+      required: [pilgrim_id, nik]
+      properties:
+        pilgrim_id: { $ref: '#/components/schemas/Uuid' }
+        nik: { type: string }
+        passport_no: { type: [string, 'null'] }
+        passport_expires_on: { type: [string, 'null'], format: date }
+        birth_date: { $ref: '#/components/schemas/Date' }
+    DocumentReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/DocumentReviewStatus' }
+        note: { type: [string, 'null'], description: Wajib bila rejected. }
+    DocumentReview:
+      allOf:
+        - $ref: '#/components/schemas/DocumentReviewInput'
+        - type: object
+          properties:
+            tenant: { $ref: '#/components/schemas/TenantRef' }
+            reviewed_at: { $ref: '#/components/schemas/Timestamp' }
+    PilgrimDocument:
+      type: object
+      required: [id, pilgrim_id, type, file_id, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        pilgrim_id: { $ref: '#/components/schemas/Uuid' }
+        type: { $ref: '#/components/schemas/PilgrimDocumentType' }
+        file_id: { $ref: '#/components/schemas/Uuid' }
+        status: { $ref: '#/components/schemas/PilgrimDocumentStatus' }
+        reviews:
+          type: array
+          description: Hasil pemeriksaan per PPIU; di endpoint tenant hanya berisi review tenant itu.
+          items: { $ref: '#/components/schemas/DocumentReview' }
+    Booker:
+      type: object
+      required: [name, phone]
+      properties:
+        name: { type: string }
+        phone: { $ref: '#/components/schemas/Phone' }
+    ParticipantInput:
+      type: object
+      required: [room_type]
+      description: Isi `pilgrim_id` (data tersimpan) atau `pilgrim` (data baru).
+      properties:
+        pilgrim_id: { $ref: '#/components/schemas/Uuid' }
+        pilgrim: { $ref: '#/components/schemas/PilgrimInput' }
+        room_type: { $ref: '#/components/schemas/RoomType' }
+    BookingCreate:
+      type: object
+      required: [departure_id, participants, accept_package_terms]
+      properties:
+        departure_id: { $ref: '#/components/schemas/Uuid' }
+        participants: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ParticipantInput' } }
+        referral_code: { type: [string, 'null'], description: Dari cookie `uc_ref`; divalidasi ulang (CR-01). }
+        agent_code: { type: [string, 'null'], description: Kode agen yang diketik pemesan. }
+        accept_package_terms: { type: boolean, const: true }
+    BookingCreateByStaff:
+      allOf:
+        - $ref: '#/components/schemas/BookingCreate'
+        - type: object
+          required: [booker]
+          properties:
+            booker: { $ref: '#/components/schemas/Booker' }
+            agent_id: { type: [string, 'null'], format: uuid, description: Hanya untuk booking oleh PPIU; harus mitra Aktif. }
+    Participant:
+      type: object
+      required: [pilgrim_id, full_name, room_type, price_amount]
+      properties:
+        pilgrim_id: { $ref: '#/components/schemas/Uuid' }
+        full_name: { type: string }
+        gender: { $ref: '#/components/schemas/Gender' }
+        room_type: { $ref: '#/components/schemas/RoomType' }
+        price_amount: { $ref: '#/components/schemas/Money' }
+        nik_masked: { type: string, description: Hanya di endpoint tenant. }
+        passport_no_masked: { type: [string, 'null'], description: Hanya di endpoint tenant. }
+    Invoice:
+      type: object
+      required: [id, number, type, amount, paid_amount, due_at, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        number: { type: string, examples: ['INV/PPIUA/2026/0012'] }
+        booking_id: { $ref: '#/components/schemas/Uuid' }
+        booking_code: { type: string }
+        type: { $ref: '#/components/schemas/InvoiceType' }
+        amount: { $ref: '#/components/schemas/Money' }
+        paid_amount: { $ref: '#/components/schemas/Money' }
+        due_at: { $ref: '#/components/schemas/Timestamp' }
+        status: { $ref: '#/components/schemas/InvoiceStatus' }
+        pay_to: { $ref: '#/components/schemas/PayTo' }
+    ReceiptRef:
+      type: object
+      required: [id, number]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        number: { type: string, examples: ['KW/PPIUA/2026/0007'] }
+    Payment:
+      type: object
+      required: [id, invoice_id, method, claimed_amount, paid_on, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        invoice_id: { $ref: '#/components/schemas/Uuid' }
+        invoice_number: { type: string }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        claimed_amount: { $ref: '#/components/schemas/Money' }
+        verified_amount:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        paid_on: { $ref: '#/components/schemas/Date' }
+        sender_bank: { type: [string, 'null'] }
+        sender_name: { type: [string, 'null'] }
+        proof_file_id: { type: [string, 'null'], format: uuid }
+        status: { $ref: '#/components/schemas/PaymentStatus' }
+        reject_reason: { type: [string, 'null'] }
+        split_from_payment_id: { type: [string, 'null'], format: uuid }
+        receipt:
+          oneOf:
+            - $ref: '#/components/schemas/ReceiptRef'
+            - type: 'null'
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    PaymentUpload:
+      type: object
+      required: [amount, paid_on, proof_file_id]
+      properties:
+        amount: { $ref: '#/components/schemas/Money' }
+        paid_on: { $ref: '#/components/schemas/Date' }
+        sender_bank: { type: string }
+        sender_name: { type: string }
+        proof_file_id: { $ref: '#/components/schemas/Uuid' }
+    PaymentRecord:
+      type: object
+      required: [method, amount, paid_on]
+      properties:
+        method: { type: string, enum: [bank_transfer, cash, reallocation] }
+        amount: { $ref: '#/components/schemas/Money' }
+        paid_on: { $ref: '#/components/schemas/Date' }
+        sender_name: { type: string }
+        proof_file_id: { type: [string, 'null'], format: uuid }
+    VerifyPaymentResult:
+      type: object
+      required: [payments, invoices, booking]
+      properties:
+        payments: { type: array, items: { $ref: '#/components/schemas/Payment' } }
+        invoices:
+          type: array
+          items:
+            type: object
+            properties:
+              number: { type: string }
+              paid_amount: { $ref: '#/components/schemas/Money' }
+              status: { $ref: '#/components/schemas/InvoiceStatus' }
+        booking:
+          type: object
+          properties:
+            code: { type: string }
+            status: { $ref: '#/components/schemas/BookingStatus' }
+            paid_amount: { $ref: '#/components/schemas/Money' }
+    RefundInput:
+      type: object
+      required: [type, amount, paid_on, note]
+      properties:
+        type: { $ref: '#/components/schemas/RefundType' }
+        amount: { type: integer, minimum: 1 }
+        target_booking_id: { type: [string, 'null'], format: uuid, description: Wajib untuk reallocation. }
+        paid_on: { $ref: '#/components/schemas/Date' }
+        proof_file_id: { type: [string, 'null'], format: uuid }
+        note: { type: string, description: Dasar perhitungan refund. }
+    Refund:
+      allOf:
+        - $ref: '#/components/schemas/RefundInput'
+        - type: object
+          required: [id, booking_id, created_at]
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            booking_id: { $ref: '#/components/schemas/Uuid' }
+            recorded_by: { $ref: '#/components/schemas/Uuid' }
+            created_at: { $ref: '#/components/schemas/Timestamp' }
+    CancelRequest:
+      type: object
+      required: [status, requested_at]
+      properties:
+        status: { $ref: '#/components/schemas/CancelRequestStatus' }
+        requested_at: { $ref: '#/components/schemas/Timestamp' }
+        reason: { type: [string, 'null'] }
+    Booking:
+      type: object
+      required: [id, code, status, tenant, departure, attribution_source, participant_count, participants, total_amount, dp_amount, paid_amount]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string, examples: ['UC-2611-0001'] }
+        status: { $ref: '#/components/schemas/BookingStatus' }
+        tenant: { $ref: '#/components/schemas/TenantRef' }
+        package: { type: object, properties: { id: { $ref: '#/components/schemas/Uuid' }, name: { type: string } } }
+        departure:
+          type: object
+          properties:
+            id: { $ref: '#/components/schemas/Uuid' }
+            departure_date: { $ref: '#/components/schemas/Date' }
+            departure_city: { type: string }
+        agent:
+          oneOf:
+            - $ref: '#/components/schemas/AgentRef'
+            - type: 'null'
+        attribution_source: { $ref: '#/components/schemas/AttributionSource' }
+        channel: { $ref: '#/components/schemas/BookingChannel' }
+        booker: { $ref: '#/components/schemas/Booker' }
+        participant_count: { type: integer, minimum: 1 }
+        participants: { type: array, items: { $ref: '#/components/schemas/Participant' } }
+        total_amount: { $ref: '#/components/schemas/Money' }
+        dp_amount: { $ref: '#/components/schemas/Money' }
+        paid_amount: { $ref: '#/components/schemas/Money' }
+        hold_expires_at: { type: [string, 'null'], format: date-time }
+        invoices: { type: array, items: { $ref: '#/components/schemas/Invoice' } }
+        payments: { type: array, items: { $ref: '#/components/schemas/Payment' } }
+        refunds: { type: array, items: { $ref: '#/components/schemas/Refund' } }
+        pay_to: { $ref: '#/components/schemas/PayTo' }
+        cancel_request:
+          oneOf:
+            - $ref: '#/components/schemas/CancelRequest'
+            - type: 'null'
+        refund_decided_amount:
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        refund_basis: { type: [string, 'null'] }
+        confirmed_at: { $ref: '#/components/schemas/Timestamp' }
+        cancelled_at: { type: [string, 'null'], format: date-time }
+        cancel_reason: { type: [string, 'null'] }
+    BookingAgentView:
+      type: object
+      required: [id, code, status, tenant, participants, total_amount, paid_amount]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string }
+        status: { $ref: '#/components/schemas/BookingStatus' }
+        tenant: { $ref: '#/components/schemas/TenantRef' }
+        package: { type: object, properties: { id: { $ref: '#/components/schemas/Uuid' }, name: { type: string } } }
+        departure:
+          type: object
+          properties:
+            departure_date: { $ref: '#/components/schemas/Date' }
+            departure_city: { type: string }
+        booker: { $ref: '#/components/schemas/Booker' }
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              full_name: { type: string }
+              room_type: { $ref: '#/components/schemas/RoomType' }
+        total_amount: { $ref: '#/components/schemas/Money' }
+        paid_amount: { $ref: '#/components/schemas/Money' }
+        invoices: { type: array, items: { $ref: '#/components/schemas/Invoice' } }
+        cancel_request_status:
+          oneOf:
+            - $ref: '#/components/schemas/CancelRequestStatus'
+            - type: 'null'
+        refund_total_amount: { $ref: '#/components/schemas/Money' }
+    AttributionUpdate:
+      type: object
+      required: [agent_id, reason]
+      properties:
+        agent_id: { type: [string, 'null'], format: uuid, description: null = tanpa agen. }
+        reason: { type: string, minLength: 5 }
+    BookingCancel:
+      type: object
+      required: [reason, refund_amount, refund_basis]
+      properties:
+        reason: { type: string }
+        refund_amount: { $ref: '#/components/schemas/Money' }
+        refund_basis: { type: string }
+    Note:
+      type: object
+      required: [id, author, body, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        author: { type: object, properties: { id: { $ref: '#/components/schemas/Uuid' }, name: { type: string } } }
+        body: { type: string, minLength: 1 }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+
+    # ---- Komisi ----
+    Commission:
+      type: object
+      required: [id, booking, agent, tenant, amount, status]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        booking: { type: object, properties: { id: { $ref: '#/components/schemas/Uuid' }, code: { type: string } } }
+        agent: { $ref: '#/components/schemas/AgentRef' }
+        tenant: { $ref: '#/components/schemas/TenantRef' }
+        amount: { $ref: '#/components/schemas/Money' }
+        status: { $ref: '#/components/schemas/CommissionStatus' }
+        earned_at: { type: [string, 'null'], format: date-time }
+        approved_at: { type: [string, 'null'], format: date-time }
+        paid_at: { type: [string, 'null'], format: date-time }
+        payout_id: { type: [string, 'null'], format: uuid }
+    Payout:
+      type: object
+      required: [id, agent, total_amount, status, requested_at, commission_ids]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        tenant: { $ref: '#/components/schemas/TenantRef' }
+        agent: { $ref: '#/components/schemas/AgentRef' }
+        total_amount: { $ref: '#/components/schemas/Money' }
+        status: { $ref: '#/components/schemas/PayoutStatus' }
+        requested_by: { $ref: '#/components/schemas/Uuid' }
+        requested_at: { $ref: '#/components/schemas/Timestamp' }
+        paid_at: { type: [string, 'null'], format: date-time }
+        proof_file_id: { type: [string, 'null'], format: uuid }
+        reject_reason: { type: [string, 'null'] }
+        commission_ids: { type: array, items: { $ref: '#/components/schemas/Uuid' } }
+
+    # ---- Sistem ----
+    Notification:
+      type: object
+      required: [id, event, channel, created_at]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        event: { type: string, examples: [invoice.due_soon] }
+        channel: { type: string, enum: [in_app, email, whatsapp, push] }
+        payload: { type: object, additionalProperties: true }
+        read_at: { type: [string, 'null'], format: date-time }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    File:
+      type: object
+      required: [id, purpose, mime_type, size_bytes]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        purpose: { $ref: '#/components/schemas/FilePurpose' }
+        mime_type: { type: string, enum: [image/jpeg, image/png, image/webp, application/pdf] }
+        size_bytes: { type: integer }
+        url: { type: [string, 'null'], format: uri, description: Signed URL 10 menit untuk file privat; URL CDN untuk file publik. }
+    Report:
+      type: object
+      required: [columns, rows]
+      properties:
+        columns: { type: array, items: { type: string } }
+        rows: { type: array, items: { type: object, additionalProperties: true } }
+        totals: { type: object, additionalProperties: true }
+    SupportSession:
+      type: object
+      required: [id, tenant_id, reason, ticket_no, started_at, expires_at]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        tenant_id: { $ref: '#/components/schemas/Uuid' }
+        reason: { type: string }
+        ticket_no: { type: string, maxLength: 50 }
+        started_at: { $ref: '#/components/schemas/Timestamp' }
+        expires_at: { $ref: '#/components/schemas/Timestamp' }
+        ended_at: { type: [string, 'null'], format: date-time }
+    AuditLog:
+      type: object
+      required: [id, action, entity_type, entity_id, created_at]
+      properties:
+        id: { type: integer }
+        tenant_id: { type: [string, 'null'], format: uuid }
+        actor_user_id: { type: [string, 'null'], format: uuid }
+        actor_context: { type: string }
+        action: { type: string, examples: [booking.attribution_changed] }
+        entity_type: { type: string }
+        entity_id: { $ref: '#/components/schemas/Uuid' }
+        old_values: { type: [object, 'null'], additionalProperties: true }
+        new_values: { type: [object, 'null'], additionalProperties: true }
+        reason: { type: [string, 'null'] }
+        ip_address: { type: [string, 'null'] }
+        created_at: { $ref: '#/components/schemas/Timestamp' }
+    Setting:
+      type: object
+      required: [key, value]
+      properties:
+        key: { type: string, examples: [attribution.window_days] }
+        value: { description: Nilai JSON apa pun. }
+    ReasonInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3 }
+    IdsInput:
+      type: object
+      required: [commission_ids]
+      properties:
+        commission_ids: { type: array, minItems: 1, items: { $ref: '#/components/schemas/Uuid' } }
+
+paths:
+  # ============================ AUTH ============================
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Membuat akun
+      security: []
+      x-requirements: [FR-AUTH-01, FR-AUTH-08]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, password, terms_version, privacy_version]
+              properties:
+                name: { type: string, maxLength: 150 }
+                email: { type: string, format: email }
+                phone: { $ref: '#/components/schemas/Phone' }
+                password: { type: string, minLength: 8, format: password }
+                terms_version: { type: string }
+                privacy_version: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/otp/send:
+    post:
+      tags: [Auth]
+      operationId: sendOtp
+      summary: Mengirim OTP
+      security: []
+      x-requirements: [FR-AUTH-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, channel, purpose]
+              properties:
+                identifier: { type: string, description: Email atau nomor HP. }
+                channel: { type: string, enum: [email, whatsapp] }
+                purpose: { type: string, enum: [verify, reset, two_factor] }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      operationId: verifyOtp
+      summary: Memverifikasi OTP
+      security: []
+      x-requirements: [FR-AUTH-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, purpose, code]
+              properties:
+                identifier: { type: string }
+                purpose: { type: string, enum: [verify, reset, two_factor] }
+                code: { type: string, pattern: '^[0-9]{6}$' }
+      responses:
+        '200':
+          description: OTP valid; untuk purpose reset mengembalikan reset_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      verified: { type: boolean }
+                      reset_token: { type: [string, 'null'] }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Login web (sesi cookie)
+      description: Bila peran wajib 2FA, respons berisi `two_factor_required` dan `challenge_token`. 5 kali gagal mengunci akun 15 menit (423).
+      security: []
+      x-requirements: [FR-AUTH-02, FR-AUTH-04]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password]
+              properties:
+                identifier: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Login berhasil atau butuh tantangan 2FA
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                      - type: object
+                        required: [user]
+                        properties:
+                          user: { $ref: '#/components/schemas/User' }
+                      - type: object
+                        required: [two_factor_required, challenge_token]
+                        properties:
+                          two_factor_required: { type: boolean, const: true }
+                          challenge_token: { type: string }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/two-factor/challenge:
+    post:
+      tags: [Auth]
+      operationId: completeTwoFactorChallenge
+      summary: Menyelesaikan login dengan kode 2FA
+      security: []
+      x-requirements: [FR-AUTH-03]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [challenge_token, code]
+              properties:
+                challenge_token: { type: string }
+                code: { type: string, description: 'Kode TOTP, OTP, atau kode cadangan.' }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Mengakhiri sesi atau mencabut token aktif
+      x-requirements: [FR-AUTH-02]
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/password/reset:
+    post:
+      tags: [Auth]
+      operationId: resetPassword
+      summary: Mengganti kata sandi dengan reset_token dari OTP
+      security: []
+      x-requirements: [FR-AUTH-02]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reset_token, password]
+              properties:
+                reset_token: { type: string }
+                password: { type: string, minLength: 8, format: password }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/two-factor/setup:
+    post:
+      tags: [Auth]
+      operationId: setupTwoFactor
+      summary: Membuat rahasia TOTP dan QR
+      x-requirements: [FR-AUTH-03]
+      responses:
+        '200':
+          description: Rahasia dibuat; aktif setelah dikonfirmasi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [otpauth_url, qr_svg]
+                    properties:
+                      otpauth_url: { type: string }
+                      qr_svg: { type: string }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/two-factor/confirm:
+    post:
+      tags: [Auth]
+      operationId: confirmTwoFactor
+      summary: Mengaktifkan 2FA dan mengembalikan 8 kode cadangan
+      x-requirements: [FR-AUTH-03]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: '^[0-9]{6}$' }
+      responses:
+        '200':
+          description: 2FA aktif
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      recovery_codes: { type: array, minItems: 8, maxItems: 8, items: { type: string } }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /auth/tokens:
+    post:
+      tags: [Auth]
+      operationId: issueToken
+      summary: Login aplikasi mobile (Bearer token)
+      security: []
+      x-phase: 2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, password, device_name, ability]
+              properties:
+                identifier: { type: string }
+                password: { type: string, format: password }
+                device_name: { type: string }
+                ability: { type: string, enum: [agent, pilgrim] }
+      responses:
+        '200':
+          description: Token dibuat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    required: [token]
+                    properties:
+                      token: { type: string }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/contexts:
+    get:
+      tags: [Auth]
+      operationId: getContexts
+      summary: Konteks dan permission pengguna untuk membangun menu
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: '#/components/schemas/Contexts' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ PUBLIC ============================
+  /public/packages:
+    get:
+      tags: [Public]
+      operationId: listPublicPackages
+      summary: Katalog paket marketplace
+      security: []
+      x-requirements: [FR-MKT-01, FR-MKT-02, FR-MKT-03]
+      parameters:
+        - { name: price_min, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: price_max, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: duration_days, in: query, schema: { type: integer } }
+        - { name: month, in: query, description: 'Format YYYY-MM', schema: { type: string, pattern: '^[0-9]{4}-[0-9]{2}$' } }
+        - { name: airline, in: query, schema: { type: string } }
+        - { name: hotel_stars, in: query, schema: { type: integer, minimum: 1, maximum: 5 } }
+        - { name: tenant, in: query, description: Slug PPIU, schema: { type: string } }
+        - { name: departure_city, in: query, schema: { type: string } }
+        - { name: q, in: query, description: Teks bebas, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [price, -price, departure_date, -published_at] } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PackageSummaryList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/packages/{tenantSlug}/{packageSlug}:
+    get:
+      tags: [Public]
+      operationId: getPublicPackage
+      summary: Detail paket beserta keberangkatan dan harga resmi
+      security: []
+      x-requirements: [FR-MKT-04, FR-MKT-05, FR-MKT-10]
+      parameters:
+        - { name: tenantSlug, in: path, required: true, schema: { type: string } }
+        - { name: packageSlug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/PackagePublic' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/tenants:
+    get:
+      tags: [Public]
+      operationId: listPublicTenants
+      summary: Direktori PPIU terverifikasi
+      security: []
+      x-requirements: [FR-MKT-06]
+      parameters:
+        - { name: city, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/TenantPublicList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/tenants/{tenantSlug}:
+    get:
+      tags: [Public]
+      operationId: getPublicTenant
+      summary: Profil PPIU dan paket aktifnya
+      security: []
+      x-requirements: [FR-MKT-06]
+      parameters:
+        - { name: tenantSlug, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { $ref: '#/components/responses/TenantPublic' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/departures:
+    get:
+      tags: [Public]
+      operationId: listPublicDepartures
+      summary: Jadwal keberangkatan lintas PPIU
+      security: []
+      x-requirements: [FR-MKT-07]
+      parameters:
+        - { name: month, in: query, schema: { type: string, pattern: '^[0-9]{4}-[0-9]{2}$' } }
+        - { name: departure_city, in: query, schema: { type: string } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/DepartureScheduleList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/facets:
+    get:
+      tags: [Public]
+      operationId: getPublicFacets
+      summary: Nilai filter untuk UI pencarian
+      security: []
+      x-requirements: [FR-MKT-02]
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      airlines: { type: array, items: { type: string } }
+                      departure_cities: { type: array, items: { type: string } }
+                      price_min_amount: { $ref: '#/components/schemas/Money' }
+                      price_max_amount: { $ref: '#/components/schemas/Money' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/referrals/{code}:
+    get:
+      tags: [Public]
+      operationId: getReferral
+      summary: Nama tampilan dan WhatsApp agen untuk kode referral aktif
+      security: []
+      x-requirements: [FR-MKT-08, FR-MKT-10]
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      agent: { $ref: '#/components/schemas/AgentRef' }
+                      tenant: { $ref: '#/components/schemas/TenantRef' }
+                      package_slug: { type: [string, 'null'] }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /public/referrals/{code}/clicks:
+    post:
+      tags: [Public]
+      operationId: recordReferralClick
+      summary: Mencatat satu klik link referral (tanpa data pribadi)
+      security: []
+      x-requirements: [FR-AGT-06]
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ ME ============================
+  /me:
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: Profil akun
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Me]
+      operationId: updateMe
+      summary: Ubah profil akun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/data-export:
+    get:
+      tags: [Me]
+      operationId: requestDataExport
+      summary: Unduh data pribadi (disiapkan via antrean, tautan dikirim email)
+      x-requirements: [FR-AUTH-09]
+      responses:
+        '202': { $ref: '#/components/responses/Accepted' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/deletion-request:
+    post:
+      tags: [Me]
+      operationId: requestAccountDeletion
+      summary: Ajukan hapus akun; 409 bila ada booking aktif
+      x-requirements: [FR-AUTH-09]
+      responses:
+        '202': { $ref: '#/components/responses/Accepted' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/pilgrims:
+    get:
+      tags: [Me]
+      operationId: listMyPilgrims
+      summary: Data jamaah yang dikelola
+      x-requirements: [FR-JMH-01]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PilgrimList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Me]
+      operationId: createMyPilgrim
+      summary: Tambah data jamaah
+      x-requirements: [FR-JMH-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PilgrimInput'
+                - required: [full_name, nik, birth_place, birth_date, gender]
+      responses:
+        '201': { $ref: '#/components/responses/Pilgrim' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/pilgrims/{pilgrim}:
+    parameters:
+      - $ref: '#/components/parameters/PilgrimId'
+    get:
+      tags: [Me]
+      operationId: getMyPilgrim
+      summary: Detail data jamaah
+      x-requirements: [FR-JMH-01]
+      responses:
+        '200': { $ref: '#/components/responses/Pilgrim' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Me]
+      operationId: updateMyPilgrim
+      summary: Ubah data jamaah
+      x-requirements: [FR-JMH-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PilgrimInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Pilgrim' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Me]
+      operationId: deleteMyPilgrim
+      summary: Hapus data jamaah; 409 bila terdaftar di booking aktif
+      x-requirements: [FR-JMH-01]
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/pilgrims/{pilgrim}/documents:
+    parameters:
+      - $ref: '#/components/parameters/PilgrimId'
+    get:
+      tags: [Me]
+      operationId: listMyPilgrimDocuments
+      summary: Dokumen jamaah beserta status review per PPIU
+      x-requirements: [FR-JMH-06, FR-PPIU-22]
+      responses:
+        '200': { $ref: '#/components/responses/PilgrimDocumentList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Me]
+      operationId: uploadMyPilgrimDocument
+      summary: Unggah dokumen jamaah (dokumen lama sejenis menjadi replaced)
+      x-requirements: [FR-JMH-06]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, file_id]
+              properties:
+                type: { $ref: '#/components/schemas/PilgrimDocumentType' }
+                file_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/PilgrimDocument' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/bookings:
+    get:
+      tags: [Me]
+      operationId: listMyBookings
+      summary: Booking milik pemesan dan booking tempat ia menjadi peserta
+      x-requirements: [FR-JMH-07]
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/BookingStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/BookingList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Me]
+      operationId: createMyBooking
+      summary: Membuat booking (menahan kursi, menerbitkan invoice)
+      description: Harga diambil server dari departure_prices. 409 `seats_unavailable` bila kursi kurang, 409 `pilgrim_already_booked` bila jamaah sudah aktif di keberangkatan yang sama.
+      x-requirements: [FR-JMH-02, FR-JMH-03, FR-JMH-04, FR-JMH-05, CR-01, CR-03, CR-04]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/bookings/{booking}:
+    get:
+      tags: [Me]
+      operationId: getMyBooking
+      summary: Detail booking pemesan
+      x-requirements: [FR-JMH-07, FR-JMH-11]
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/bookings/{booking}/cancel-request:
+    post:
+      tags: [Me]
+      operationId: requestMyBookingCancellation
+      summary: Ajukan pembatalan booking
+      x-requirements: [FR-JMH-10]
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/invoices/{invoice}/pdf:
+    get:
+      tags: [Me]
+      operationId: downloadMyInvoicePdf
+      summary: Unduh invoice PDF
+      x-requirements: [FR-FIN-02]
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200': { $ref: '#/components/responses/Pdf' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/invoices/{invoice}/payments:
+    post:
+      tags: [Me]
+      operationId: uploadMyPayment
+      summary: Unggah bukti bayar
+      x-requirements: [FR-JMH-08]
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentUpload' }
+      responses:
+        '201': { $ref: '#/components/responses/Payment' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/receipts/{receipt}/pdf:
+    get:
+      tags: [Me]
+      operationId: downloadMyReceiptPdf
+      summary: Unduh kwitansi PDF
+      x-requirements: [FR-JMH-09]
+      parameters:
+        - $ref: '#/components/parameters/ReceiptId'
+      responses:
+        '200': { $ref: '#/components/responses/Pdf' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/notifications:
+    get:
+      tags: [Me]
+      operationId: listMyNotifications
+      summary: Pusat notifikasi
+      x-requirements: [FR-NTF-01]
+      parameters:
+        - { name: unread, in: query, schema: { type: boolean } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/NotificationList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /me/notifications/read:
+    post:
+      tags: [Me]
+      operationId: markMyNotificationsRead
+      summary: Tandai notifikasi sudah dibaca
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids: { type: array, items: { $ref: '#/components/schemas/Uuid' }, description: Kosong = semua. }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ AGENT ============================
+  /agent/profile:
+    get:
+      tags: [Agent]
+      operationId: getAgentProfile
+      summary: Profil agen (NIK tersamar)
+      x-requirements: [FR-AGT-01]
+      responses:
+        '200': { $ref: '#/components/responses/AgentProfile' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: registerAgent
+      summary: Mendaftar sebagai agen; 409 bila NIK sudah terdaftar
+      x-requirements: [FR-AGT-01, FR-AGT-02]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/AgentProfileInput'
+                - required: [nik, ktp_file_id, domicile_city, payout_bank_name, payout_account_no, payout_account_holder]
+      responses:
+        '201': { $ref: '#/components/responses/AgentProfile' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Agent]
+      operationId: updateAgentProfile
+      summary: Ubah profil dan rekening pencairan
+      x-requirements: [FR-AGT-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AgentProfileInput' }
+      responses:
+        '200': { $ref: '#/components/responses/AgentProfile' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/tenants:
+    get:
+      tags: [Agent]
+      operationId: listAgentTenants
+      summary: PPIU terverifikasi beserta status kemitraan agen
+      x-requirements: [FR-AGT-03]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/AgentTenantList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/partnerships:
+    get:
+      tags: [Agent]
+      operationId: listAgentPartnerships
+      summary: Kemitraan agen, termasuk undangan yang menunggu
+      x-requirements: [FR-AGT-04, FR-AGT-14]
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PartnershipStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/PartnershipList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: applyPartnership
+      summary: Mengajukan kemitraan ke PPIU
+      x-requirements: [FR-AGT-03]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, accepted_terms_version]
+              properties:
+                tenant_id: { $ref: '#/components/schemas/Uuid' }
+                message: { type: string }
+                accepted_terms_version: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/partnerships/{partnership}/accept:
+    post:
+      tags: [Agent]
+      operationId: acceptPartnershipInvitation
+      summary: Menerima undangan (invited -> active)
+      x-requirements: [FR-AGT-14]
+      parameters:
+        - $ref: '#/components/parameters/PartnershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accepted_terms_version]
+              properties:
+                accepted_terms_version: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/partnerships/{partnership}/decline:
+    post:
+      tags: [Agent]
+      operationId: declinePartnershipInvitation
+      summary: Menolak undangan (invited -> rejected)
+      x-requirements: [FR-AGT-14]
+      parameters:
+        - $ref: '#/components/parameters/PartnershipId'
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/partnerships/{partnership}/end:
+    post:
+      tags: [Agent]
+      operationId: endPartnershipByAgent
+      summary: Mengakhiri kemitraan
+      x-requirements: [ST-PART]
+      parameters:
+        - $ref: '#/components/parameters/PartnershipId'
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/packages:
+    get:
+      tags: [Agent]
+      operationId: listAgentPackages
+      summary: Paket terbit dari PPIU mitra aktif beserta skema komisi
+      x-requirements: [FR-AGT-05]
+      parameters:
+        - { name: tenant, in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/AgentPackageList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/referral-links:
+    get:
+      tags: [Agent]
+      operationId: listReferralLinks
+      summary: Link referral agen
+      x-requirements: [FR-AGT-05, FR-AGT-06]
+      responses:
+        '200': { $ref: '#/components/responses/ReferralLinkList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: createReferralLink
+      summary: Membuat link per PPIU atau per paket; 403 partnership_inactive bila kemitraan tidak aktif
+      x-requirements: [FR-AGT-05]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id]
+              properties:
+                tenant_id: { $ref: '#/components/schemas/Uuid' }
+                package_id: { type: [string, 'null'], format: uuid }
+      responses:
+        '201': { $ref: '#/components/responses/ReferralLink' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/referral-links/{link}/qr:
+    get:
+      tags: [Agent]
+      operationId: getReferralQr
+      summary: QR code link referral (PNG 1024 px)
+      x-requirements: [FR-AGT-05]
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+      responses:
+        '200':
+          description: Gambar PNG
+          content:
+            image/png:
+              schema: { type: string, contentMediaType: image/png }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/prospects:
+    get:
+      tags: [Agent]
+      operationId: listProspects
+      summary: Daftar prospek
+      x-requirements: [FR-AGT-07]
+      parameters:
+        - { name: 'filter[follow_up_status]', in: query, schema: { $ref: '#/components/schemas/FollowUpStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/ProspectList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: createProspect
+      summary: Tambah prospek
+      x-requirements: [FR-AGT-07]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Prospect' }
+      responses:
+        '201': { $ref: '#/components/responses/Prospect' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/prospects/{prospect}:
+    parameters:
+      - $ref: '#/components/parameters/ProspectId'
+    patch:
+      tags: [Agent]
+      operationId: updateProspect
+      summary: Ubah prospek
+      x-requirements: [FR-AGT-07]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Prospect' }
+      responses:
+        '200': { $ref: '#/components/responses/Prospect' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Agent]
+      operationId: deleteProspect
+      summary: Hapus prospek
+      x-requirements: [FR-AGT-07]
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/bookings:
+    get:
+      tags: [Agent]
+      operationId: listAgentBookings
+      summary: Booking teratribusi ke agen
+      x-requirements: [FR-AGT-09]
+      parameters:
+        - { name: 'filter[tenant_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/BookingStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/BookingAgentViewList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: createAgentBooking
+      summary: Booking atas nama jamaah (pemesan tanpa akun dibuatkan akun unclaimed)
+      x-requirements: [FR-AGT-08, BR-04]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingCreateByStaff' }
+      responses:
+        '201': { $ref: '#/components/responses/BookingAgentView' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/bookings/{booking}:
+    get:
+      tags: [Agent]
+      operationId: getAgentBooking
+      summary: Detail booking versi terbatas
+      x-requirements: [FR-AGT-09, BR-14]
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200': { $ref: '#/components/responses/BookingAgentView' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/invoices/{invoice}/payments:
+    post:
+      tags: [Agent]
+      operationId: uploadAgentPayment
+      summary: Unggah bukti bayar untuk booking milik agen
+      x-requirements: [BP-06]
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentUpload' }
+      responses:
+        '201': { $ref: '#/components/responses/Payment' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/commissions:
+    get:
+      tags: [Agent]
+      operationId: listAgentCommissions
+      summary: Komisi agen per PPIU dan status
+      x-requirements: [FR-AGT-10]
+      parameters:
+        - { name: 'filter[tenant_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/CommissionStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/CommissionList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /agent/payout-requests:
+    get:
+      tags: [Agent]
+      operationId: listAgentPayoutRequests
+      summary: Pengajuan pencairan agen
+      x-requirements: [FR-AGT-11]
+      responses:
+        '200': { $ref: '#/components/responses/PayoutList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Agent]
+      operationId: requestPayout
+      summary: Ajukan pencairan komisi berstatus approved di satu PPIU
+      x-requirements: [FR-AGT-11]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/IdsInput'
+                - type: object
+                  required: [tenant_id]
+                  properties:
+                    tenant_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/Payout' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: PROFIL, TIM, REKENING ============================
+  /tenants:
+    post:
+      tags: [Tenant]
+      operationId: registerTenant
+      summary: Mendaftarkan PPIU baru; pemanggil menjadi Owner, status draft
+      x-requirements: [FR-PPIU-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/TenantInput'
+                - required: [legal_name, brand_name, ppiu_license_no, license_expires_on, address, city, province, phone, email]
+      responses:
+        '201': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Tenant]
+      operationId: getTenant
+      summary: Profil dan status verifikasi PPIU
+      x-permission: tenant.profile.view
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Tenant]
+      operationId: updateTenant
+      summary: Ubah profil PPIU (field izin terkunci setelah terverifikasi)
+      x-permission: tenant.profile.update
+      x-requirements: [FR-PPIU-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TenantInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/documents:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Tenant]
+      operationId: listTenantDocuments
+      summary: Dokumen legalitas
+      x-permission: tenant.documents.manage
+      responses:
+        '200': { $ref: '#/components/responses/TenantDocumentList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Tenant]
+      operationId: uploadTenantDocument
+      summary: Unggah dokumen legalitas
+      x-permission: tenant.documents.manage
+      x-requirements: [FR-PPIU-01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, file_id]
+              properties:
+                type: { $ref: '#/components/schemas/TenantDocumentType' }
+                file_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/TenantDocument' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/verification-submissions:
+    post:
+      tags: [Tenant]
+      operationId: submitTenantVerification
+      summary: Kirim pengajuan verifikasi (draft/needs_revision -> pending_review)
+      x-permission: owner
+      x-requirements: [ST-TENANT, BP-01]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/members:
+    get:
+      tags: [Tenant]
+      operationId: listMembers
+      summary: Anggota tim PPIU
+      x-permission: member.view
+      x-requirements: [FR-AUTH-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { $ref: '#/components/responses/MemberList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/members/invitations:
+    post:
+      tags: [Tenant]
+      operationId: inviteMember
+      summary: Undang anggota lewat email
+      x-permission: member.manage
+      x-requirements: [FR-AUTH-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email: { type: string, format: email }
+                role: { type: string, enum: [admin, finance] }
+      responses:
+        '201': { $ref: '#/components/responses/Member' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/members/{member}:
+    patch:
+      tags: [Tenant]
+      operationId: updateMemberRole
+      summary: Ubah peran anggota
+      x-permission: member.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/MemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string, enum: [admin, finance] }
+      responses:
+        '200': { $ref: '#/components/responses/Member' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/members/{member}/deactivate:
+    post:
+      tags: [Tenant]
+      operationId: deactivateMember
+      summary: Nonaktifkan anggota; sesi dicabut
+      x-permission: member.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/MemberId'
+      responses:
+        '200': { $ref: '#/components/responses/Member' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/ownership-transfer:
+    post:
+      tags: [Tenant]
+      operationId: transferOwnership
+      summary: Alihkan peran Owner (wajib password dan kode 2FA)
+      x-permission: ownership.transfer
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [member_id, password, two_factor_code]
+              properties:
+                member_id: { $ref: '#/components/schemas/Uuid' }
+                password: { type: string, format: password }
+                two_factor_code: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/MemberList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bank-accounts:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Tenant]
+      operationId: listBankAccounts
+      summary: Rekening resmi PPIU
+      x-permission: bank_account.view
+      responses:
+        '200': { $ref: '#/components/responses/BankAccountList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Tenant]
+      operationId: createBankAccount
+      summary: Tambah rekening (pending sampai diverifikasi platform)
+      x-permission: bank_account.manage
+      x-requirements: [FR-PPIU-03]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bank_name, account_no, account_holder]
+              properties:
+                bank_name: { type: string }
+                account_no: { type: string }
+                account_holder: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/BankAccount' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bank-accounts/{account}:
+    patch:
+      tags: [Tenant]
+      operationId: updateBankAccount
+      summary: Jadikan default atau nonaktifkan rekening
+      x-permission: bank_account.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_default: { type: boolean }
+                status: { type: string, enum: [inactive] }
+      responses:
+        '200': { $ref: '#/components/responses/BankAccount' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/dashboard:
+    get:
+      tags: [Tenant]
+      operationId: getTenantDashboard
+      summary: Ringkasan booking, kursi, pembayaran menunggu, komisi menunggu, refund tertunda
+      x-permission: report.sales.view
+      x-requirements: [FR-PPIU-15]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { $ref: '#/components/responses/Summary' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: PAKET DAN KEBERANGKATAN ============================
+  /tenants/{tenant}/packages:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Catalog]
+      operationId: listPackages
+      summary: Paket milik PPIU
+      x-permission: package.view
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PackageStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PackageList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Catalog]
+      operationId: createPackage
+      summary: Buat paket (status draft)
+      x-permission: package.manage
+      x-requirements: [FR-PPIU-04]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PackageInput'
+                - required: [name, duration_days, airline]
+      responses:
+        '201': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/PackageId'
+    get:
+      tags: [Catalog]
+      operationId: getPackage
+      summary: Detail paket
+      x-permission: package.view
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Catalog]
+      operationId: updatePackage
+      summary: Ubah paket
+      x-permission: package.manage
+      x-requirements: [FR-PPIU-04]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PackageInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/duplicate:
+    post:
+      tags: [Catalog]
+      operationId: duplicatePackage
+      summary: Salin paket sebagai draft baru
+      x-permission: package.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      responses:
+        '201': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/archive:
+    post:
+      tags: [Catalog]
+      operationId: archivePackage
+      summary: Arsipkan paket (booking aktif tetap berjalan)
+      x-permission: package.manage
+      x-requirements: [BP-02]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/publish:
+    post:
+      tags: [Catalog]
+      operationId: publishPackage
+      summary: Terbitkan paket; 403 tenant_not_verified, 422 bila belum lengkap
+      x-permission: package.publish
+      x-requirements: [FR-PPIU-02, BP-02]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/unpublish:
+    post:
+      tags: [Catalog]
+      operationId: unpublishPackage
+      summary: Tarik paket dari marketplace
+      x-permission: package.publish
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/images:
+    post:
+      tags: [Catalog]
+      operationId: addPackageImage
+      summary: Tambah foto paket (maksimal 10)
+      x-permission: package.manage
+      x-requirements: [FR-PPIU-04]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [file_id]
+              properties:
+                file_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/images/{image}:
+    delete:
+      tags: [Catalog]
+      operationId: deletePackageImage
+      summary: Hapus foto paket
+      x-permission: package.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+        - $ref: '#/components/parameters/ImageId'
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/images/order:
+    put:
+      tags: [Catalog]
+      operationId: reorderPackageImages
+      summary: Urutan foto; foto pertama menjadi sampul
+      x-permission: package.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [image_ids]
+              properties:
+                image_ids: { type: array, items: { $ref: '#/components/schemas/Uuid' } }
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/packages/{package}/departures:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/PackageId'
+    get:
+      tags: [Catalog]
+      operationId: listDepartures
+      summary: Keberangkatan sebuah paket
+      x-permission: package.view
+      responses:
+        '200': { $ref: '#/components/responses/DepartureList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Catalog]
+      operationId: createDeparture
+      summary: Buat keberangkatan beserta harga per kamar
+      x-permission: departure.manage
+      x-requirements: [FR-PPIU-05]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepartureCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/DepartureId'
+    get:
+      tags: [Catalog]
+      operationId: getDeparture
+      summary: Detail keberangkatan dan kursi
+      x-permission: package.view
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    patch:
+      tags: [Catalog]
+      operationId: updateDeparture
+      summary: Ubah kuota, tanggal, DP; 409 bila kuota di bawah kursi terpakai atau tanggal diubah saat ada booking aktif
+      x-permission: departure.manage
+      x-requirements: [FR-PPIU-05, FR-PPIU-07, CR-03]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DepartureInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/prices:
+    put:
+      tags: [Catalog]
+      operationId: replaceDeparturePrices
+      summary: Ganti harga per kamar; booking lama tidak terpengaruh
+      x-permission: departure.price.update
+      x-requirements: [FR-PPIU-06, BR-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DepartureId'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prices]
+              properties:
+                prices: { type: array, minItems: 1, items: { $ref: '#/components/schemas/DeparturePrice' } }
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/close-sales:
+    post:
+      tags: [Catalog]
+      operationId: closeDepartureSales
+      summary: Tutup penjualan
+      x-permission: departure.manage
+      x-requirements: [FR-PPIU-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DepartureId'
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/open-sales:
+    post:
+      tags: [Catalog]
+      operationId: openDepartureSales
+      summary: Buka kembali penjualan
+      x-permission: departure.manage
+      x-requirements: [FR-PPIU-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DepartureId'
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/cancel:
+    post:
+      tags: [Catalog]
+      operationId: cancelDeparture
+      summary: Batalkan keberangkatan; respons berisi booking aktif yang harus diproses
+      x-permission: departure.manage
+      x-requirements: [BP-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DepartureId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/BookingList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/departures/{departure}/complete:
+    post:
+      tags: [Catalog]
+      operationId: completeDeparture
+      summary: Tandai selesai; booking departed menjadi completed
+      x-permission: departure.manage
+      x-requirements: [BP-10]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DepartureId'
+      responses:
+        '200': { $ref: '#/components/responses/Departure' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: KEMITRAAN DAN SKEMA KOMISI ============================
+  /tenants/{tenant}/partnerships:
+    get:
+      tags: [Partnership]
+      operationId: listTenantPartnerships
+      summary: Kemitraan agen
+      x-permission: partnership.view
+      x-requirements: [FR-PPIU-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PartnershipStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PartnershipList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/invitations:
+    post:
+      tags: [Partnership]
+      operationId: inviteAgent
+      summary: Undang agen dengan skema komisi (status invited)
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-09, BR-05]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { $ref: '#/components/schemas/Phone' }
+                email: { type: string, format: email }
+                commission_scheme_id: { type: [string, 'null'], format: uuid, description: null = pakai skema default. }
+      responses:
+        '201': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/{partnership}/approve:
+    post:
+      tags: [Partnership]
+      operationId: approvePartnership
+      summary: Setujui pengajuan dengan skema komisi
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PartnershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commission_scheme_id: { type: [string, 'null'], format: uuid }
+                new_scheme: { $ref: '#/components/schemas/CommissionSchemeInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/{partnership}/reject:
+    post:
+      tags: [Partnership]
+      operationId: rejectPartnership
+      summary: Tolak pengajuan
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PartnershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/{partnership}/suspend:
+    post:
+      tags: [Partnership]
+      operationId: suspendPartnership
+      summary: Tangguhkan kemitraan (link referral nonaktif)
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-10]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PartnershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/{partnership}/reactivate:
+    post:
+      tags: [Partnership]
+      operationId: reactivatePartnership
+      summary: Aktifkan kembali kemitraan
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-10]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PartnershipId'
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/partnerships/{partnership}/end:
+    post:
+      tags: [Partnership]
+      operationId: endPartnershipByTenant
+      summary: Akhiri kemitraan; komisi yang sudah diperoleh tetap dibayar
+      x-permission: partnership.manage
+      x-requirements: [FR-PPIU-10]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PartnershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Partnership' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/commission-schemes:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Partnership]
+      operationId: listCommissionSchemes
+      summary: Skema komisi aktif dan riwayat
+      x-permission: commission_scheme.view
+      x-requirements: [FR-PPIU-11]
+      parameters:
+        - { name: 'filter[scope]', in: query, schema: { $ref: '#/components/schemas/SchemeScope' } }
+        - { name: 'filter[package_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[agent_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[active]', in: query, schema: { type: boolean } }
+      responses:
+        '200': { $ref: '#/components/responses/CommissionSchemeList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Partnership]
+      operationId: createCommissionScheme
+      summary: Buat skema; skema aktif lama pada cakupan yang sama otomatis ditutup
+      x-permission: commission_scheme.manage
+      x-requirements: [FR-PPIU-11, BR-06, CR-02]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommissionSchemeInput' }
+      responses:
+        '201': { $ref: '#/components/responses/CommissionScheme' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/commission-schemes/{scheme}/end:
+    post:
+      tags: [Partnership]
+      operationId: endCommissionScheme
+      summary: Akhiri skema tanpa pengganti
+      x-permission: commission_scheme.manage
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/SchemeId'
+      responses:
+        '200': { $ref: '#/components/responses/CommissionScheme' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: BOOKING, DOKUMEN, CATATAN ============================
+  /tenants/{tenant}/bookings:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Booking]
+      operationId: listTenantBookings
+      summary: Daftar booking PPIU
+      x-permission: booking.view
+      x-requirements: [FR-PPIU-13]
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/BookingStatus' } }
+        - { name: 'filter[departure_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[agent_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[cancel_request_status]', in: query, schema: { $ref: '#/components/schemas/CancelRequestStatus' } }
+        - { name: 'filter[created_from]', in: query, schema: { $ref: '#/components/schemas/Date' } }
+        - { name: 'filter[created_to]', in: query, schema: { $ref: '#/components/schemas/Date' } }
+        - { name: q, in: query, description: Kode booking atau nama peserta, schema: { type: string } }
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/BookingList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Booking]
+      operationId: createTenantBooking
+      summary: Booking walk-in oleh staf PPIU
+      x-permission: booking.create
+      x-requirements: [FR-PPIU-12]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingCreateByStaff' }
+      responses:
+        '201': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}:
+    get:
+      tags: [Booking]
+      operationId: getTenantBooking
+      summary: Detail booking (NIK dan paspor tersamar)
+      x-permission: booking.view
+      x-requirements: [FR-PPIU-13]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/BookingId'
+        - { name: X-Support-Session, in: header, required: false, description: 'Diisi Admin Platform saat sesi dukungan; hanya GET yang diizinkan.', schema: { $ref: '#/components/schemas/Uuid' } }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}/attribution:
+    patch:
+      tags: [Booking]
+      operationId: updateBookingAttribution
+      summary: Ubah agen pada booking yang belum lunas (alasan wajib)
+      x-permission: booking.attribution.update
+      x-requirements: [FR-PPIU-14, BR-09]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AttributionUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}/cancel:
+    post:
+      tags: [Booking]
+      operationId: cancelBooking
+      summary: Batalkan booking (inisiatif PPIU atau menyetujui pengajuan) dan putuskan nominal refund
+      x-permission: booking.cancel
+      x-requirements: [FR-JMH-10, BP-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/BookingId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingCancel' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}/cancel-request/reject:
+    post:
+      tags: [Booking]
+      operationId: rejectCancelRequest
+      summary: Tolak pengajuan pembatalan
+      x-permission: booking.cancel
+      x-requirements: [BP-08]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Booking' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}/notes:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/BookingId'
+    get:
+      tags: [Booking]
+      operationId: listBookingNotes
+      summary: Linimasa catatan internal
+      x-permission: booking.note
+      x-requirements: [FR-PPIU-21]
+      responses:
+        '200': { $ref: '#/components/responses/NoteList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Booking]
+      operationId: createBookingNote
+      summary: Tambah catatan internal (tidak dapat diubah)
+      x-permission: booking.note
+      x-requirements: [FR-PPIU-21]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1 }
+      responses:
+        '201': { $ref: '#/components/responses/Note' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/pilgrims/{pilgrim}/identity:
+    get:
+      tags: [Booking]
+      operationId: getPilgrimIdentity
+      summary: NIK dan paspor utuh jamaah peserta booking aktif (tercatat di audit log)
+      x-permission: pilgrim.identity.view
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PilgrimId'
+      responses:
+        '200': { $ref: '#/components/responses/PilgrimIdentity' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/pilgrim-documents/{document}/file:
+    get:
+      tags: [Booking]
+      operationId: getPilgrimDocumentFile
+      summary: Signed URL dokumen jamaah (tercatat document.viewed)
+      x-permission: pilgrim.identity.view
+      x-requirements: [NFR-04]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200': { $ref: '#/components/responses/SignedUrl' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/pilgrim-documents/{document}/review:
+    put:
+      tags: [Booking]
+      operationId: reviewPilgrimDocument
+      summary: Simpan hasil pemeriksaan dokumen oleh PPIU ini
+      x-permission: pilgrim_document.review
+      x-requirements: [FR-PPIU-22]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/DocumentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DocumentReviewInput' }
+      responses:
+        '200': { $ref: '#/components/responses/DocumentReview' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: KEUANGAN ============================
+  /tenants/{tenant}/invoices:
+    get:
+      tags: [Finance]
+      operationId: listInvoices
+      summary: Daftar invoice
+      x-permission: invoice.view
+      x-requirements: [FR-FIN-01, FR-FIN-02]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/InvoiceStatus' } }
+        - { name: 'filter[due_before]', in: query, schema: { $ref: '#/components/schemas/Date' } }
+        - { name: 'filter[departure_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/InvoiceList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/invoices/{invoice}:
+    get:
+      tags: [Finance]
+      operationId: getInvoice
+      summary: Detail invoice
+      x-permission: invoice.view
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200': { $ref: '#/components/responses/Invoice' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/invoices/{invoice}/pdf:
+    get:
+      tags: [Finance]
+      operationId: downloadInvoicePdf
+      summary: Invoice PDF
+      x-permission: invoice.view
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200': { $ref: '#/components/responses/Pdf' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/invoices/{invoice}/payments:
+    post:
+      tags: [Finance]
+      operationId: recordPayment
+      summary: Catat pembayaran langsung (langsung terverifikasi)
+      x-permission: payment.record
+      x-requirements: [FR-FIN-06]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/InvoiceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRecord' }
+      responses:
+        '201': { $ref: '#/components/responses/VerifyPaymentResult' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payments:
+    get:
+      tags: [Finance]
+      operationId: listPayments
+      summary: Daftar pembayaran; filter[status]=pending sebagai antrean verifikasi
+      x-permission: payment.view
+      x-requirements: [FR-FIN-04]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PaymentStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PaymentList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payments/{payment}/verify:
+    post:
+      tags: [Finance]
+      operationId: verifyPayment
+      summary: Verifikasi bukti bayar; kelebihan bayar DP dipecah ke invoice pelunasan
+      description: 409 `already_processed` bila pembayaran sudah diputuskan pengguna lain.
+      x-permission: payment.verify
+      x-requirements: [FR-FIN-04, FR-FIN-05, FR-FIN-14]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PaymentId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verified_amount]
+              properties:
+                verified_amount: { type: integer, minimum: 1 }
+      responses:
+        '200': { $ref: '#/components/responses/VerifyPaymentResult' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payments/{payment}/reject:
+    post:
+      tags: [Finance]
+      operationId: rejectPayment
+      summary: Tolak bukti bayar
+      x-permission: payment.verify
+      x-requirements: [FR-FIN-04]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PaymentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Payment' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/receipts/{receipt}/pdf:
+    get:
+      tags: [Finance]
+      operationId: downloadReceiptPdf
+      summary: Kwitansi PDF
+      x-permission: invoice.view
+      x-requirements: [FR-FIN-05]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/ReceiptId'
+      responses:
+        '200': { $ref: '#/components/responses/Pdf' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/bookings/{booking}/refunds:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/BookingId'
+    get:
+      tags: [Finance]
+      operationId: listRefunds
+      summary: Refund sebuah booking
+      x-permission: payment.view
+      x-requirements: [FR-FIN-13]
+      responses:
+        '200': { $ref: '#/components/responses/RefundList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Finance]
+      operationId: recordRefund
+      summary: Catat refund atau pengalihan dana; 422 refund_exceeds_paid
+      x-permission: refund.record
+      x-requirements: [FR-FIN-13]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefundInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Refund' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/commissions:
+    get:
+      tags: [Finance]
+      operationId: listTenantCommissions
+      summary: Komisi agen di PPIU ini
+      x-permission: commission.view
+      x-requirements: [FR-FIN-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/CommissionStatus' } }
+        - { name: 'filter[agent_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[departure_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/CommissionList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/commissions/approve:
+    post:
+      tags: [Finance]
+      operationId: approveCommissions
+      summary: Setujui banyak komisi earned (tidak untuk komisi milik pemanggil)
+      x-permission: commission.approve
+      x-requirements: [FR-FIN-09]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IdsInput' }
+      responses:
+        '200': { $ref: '#/components/responses/CommissionList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payouts:
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    get:
+      tags: [Finance]
+      operationId: listPayouts
+      summary: Pengajuan pencairan dan payout
+      x-permission: commission.view
+      x-requirements: [FR-FIN-09]
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PayoutStatus' } }
+      responses:
+        '200': { $ref: '#/components/responses/PayoutList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Finance]
+      operationId: createPayout
+      summary: Buat payout langsung tanpa pengajuan agen
+      x-permission: payout.pay
+      x-requirements: [BP-07]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/IdsInput'
+                - type: object
+                  required: [agent_id]
+                  properties:
+                    agent_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/Payout' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payouts/{payout}/pay:
+    post:
+      tags: [Finance]
+      operationId: payPayout
+      summary: Catat transfer komisi ke agen; semua komisinya menjadi paid
+      x-permission: payout.pay
+      x-requirements: [FR-FIN-09]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PayoutId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paid_at, proof_file_id]
+              properties:
+                paid_at: { $ref: '#/components/schemas/Timestamp' }
+                proof_file_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '200': { $ref: '#/components/responses/Payout' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/payouts/{payout}/reject:
+    post:
+      tags: [Finance]
+      operationId: rejectPayout
+      summary: Tolak payout; komisi kembali approved
+      x-permission: payout.pay
+      x-requirements: [BP-07]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/PayoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Payout' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ TENANT: LAPORAN ============================
+  /tenants/{tenant}/reports/sales:
+    get:
+      tags: [Report]
+      operationId: getSalesReport
+      summary: Laporan penjualan
+      x-permission: report.sales.view
+      x-requirements: [FR-PPIU-16]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: group_by, in: query, required: true, schema: { type: string, enum: [package, departure, agent] } }
+        - { name: from, in: query, required: true, schema: { $ref: '#/components/schemas/Date' } }
+        - { name: to, in: query, required: true, schema: { $ref: '#/components/schemas/Date' } }
+      responses:
+        '200': { $ref: '#/components/responses/Report' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/reports/finance:
+    get:
+      tags: [Report]
+      operationId: getFinanceReport
+      summary: Laporan keuangan dasar
+      x-permission: report.finance.view
+      x-requirements: [FR-FIN-10]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: type, in: query, required: true, schema: { type: string, enum: [receipts, receivables, commissions_due, refunds] } }
+        - { name: from, in: query, schema: { $ref: '#/components/schemas/Date' } }
+        - { name: to, in: query, schema: { $ref: '#/components/schemas/Date' } }
+      responses:
+        '200': { $ref: '#/components/responses/Report' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/reports/{report}/export:
+    get:
+      tags: [Report]
+      operationId: exportReport
+      summary: Ekspor laporan (Admin hanya laporan penjualan); tanpa NIK, paspor, rekening utuh
+      x-permission: report.export
+      x-requirements: [FR-PPIU-16]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - { name: report, in: path, required: true, schema: { type: string, enum: [sales, finance] } }
+        - { name: format, in: query, required: true, schema: { type: string, enum: [xlsx, csv] } }
+      responses:
+        '202': { $ref: '#/components/responses/Accepted' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ PLATFORM ============================
+  /platform/dashboard:
+    get:
+      tags: [Platform]
+      operationId: getPlatformDashboard
+      summary: Angka global dan tren booking mingguan
+      x-permission: platform.dashboard.view
+      x-requirements: [FR-ADM-01]
+      responses:
+        '200': { $ref: '#/components/responses/Summary' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants:
+    get:
+      tags: [Platform]
+      operationId: listPlatformTenants
+      summary: Semua PPIU
+      x-permission: platform.tenant.view
+      x-requirements: [FR-ADM-02, FR-ADM-04]
+      parameters:
+        - { name: 'filter[verification_status]', in: query, schema: { $ref: '#/components/schemas/TenantVerificationStatus' } }
+        - { name: 'filter[license_expiring_within_days]', in: query, schema: { type: integer, minimum: 1 } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/TenantList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}:
+    get:
+      tags: [Platform]
+      operationId: getPlatformTenant
+      summary: Detail PPIU, dokumen, rekening, riwayat status
+      x-permission: platform.tenant.view
+      x-requirements: [FR-ADM-02]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}/verify:
+    post:
+      tags: [Platform]
+      operationId: decideTenantVerification
+      summary: Putuskan verifikasi PPIU
+      x-permission: platform.tenant.verify
+      x-requirements: [FR-ADM-02, BR-01]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [verified, needs_revision, rejected] }
+                note: { type: string }
+                document_notes:
+                  type: array
+                  items:
+                    type: object
+                    required: [document_id, status]
+                    properties:
+                      document_id: { $ref: '#/components/schemas/Uuid' }
+                      status: { type: string, enum: [accepted, rejected] }
+                      note: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}/suspend:
+    post:
+      tags: [Platform]
+      operationId: suspendTenant
+      summary: Tangguhkan PPIU (Super Admin)
+      x-permission: platform.tenant.suspend
+      x-requirements: [FR-ADM-03, BP-11]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}/restore:
+    post:
+      tags: [Platform]
+      operationId: restoreTenant
+      summary: Pulihkan PPIU menjadi terverifikasi
+      x-permission: platform.tenant.suspend
+      x-requirements: [BP-11]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}/license:
+    patch:
+      tags: [Platform]
+      operationId: updateTenantLicense
+      summary: Perbarui nomor dan masa berlaku izin setelah dokumen baru diverifikasi
+      x-permission: platform.tenant.verify
+      x-requirements: [BP-11]
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ppiu_license_no, license_expires_on]
+              properties:
+                ppiu_license_no: { type: string }
+                license_expires_on: { $ref: '#/components/schemas/Date' }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/tenants/{tenant}/owner-transfer:
+    post:
+      tags: [Platform]
+      operationId: forceOwnerTransfer
+      summary: Alihkan Owner bila Owner tidak dapat dihubungi (Super Admin)
+      x-permission: platform.tenant.suspend
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [member_id, reason]
+              properties:
+                member_id: { $ref: '#/components/schemas/Uuid' }
+                reason: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Tenant' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/bank-accounts/{account}/verify:
+    post:
+      tags: [Platform]
+      operationId: verifyBankAccount
+      summary: Verifikasi rekening PPIU
+      x-permission: platform.bank_account.verify
+      x-requirements: [FR-ADM-05]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200': { $ref: '#/components/responses/BankAccount' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/bank-accounts/{account}/reject:
+    post:
+      tags: [Platform]
+      operationId: rejectBankAccount
+      summary: Tolak rekening PPIU
+      x-permission: platform.bank_account.verify
+      x-requirements: [FR-ADM-05]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/BankAccount' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/packages:
+    get:
+      tags: [Platform]
+      operationId: listPlatformPackages
+      summary: Semua paket untuk moderasi
+      x-permission: platform.tenant.view
+      x-requirements: [FR-ADM-06]
+      parameters:
+        - { name: 'filter[status]', in: query, schema: { $ref: '#/components/schemas/PackageStatus' } }
+        - { name: 'filter[tenant_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/PackageList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/packages/{package}/take-down:
+    post:
+      tags: [Platform]
+      operationId: takeDownPackage
+      summary: Turunkan paket yang melanggar
+      x-permission: platform.package.take_down
+      x-requirements: [FR-ADM-06]
+      parameters:
+        - $ref: '#/components/parameters/PackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/users:
+    get:
+      tags: [Platform]
+      operationId: searchUsers
+      summary: Cari akun
+      x-permission: platform.user.view
+      x-requirements: [FR-ADM-07]
+      parameters:
+        - { name: q, in: query, description: 'Nama, email, atau nomor HP', schema: { type: string } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/UserList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/users/{user}/deactivate:
+    post:
+      tags: [Platform]
+      operationId: deactivateUser
+      summary: Nonaktifkan akun (Admin Platform hanya agen dan jamaah)
+      x-permission: platform.user.manage
+      x-requirements: [FR-ADM-07]
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/users/{user}/reactivate:
+    post:
+      tags: [Platform]
+      operationId: reactivateUser
+      summary: Aktifkan kembali akun
+      x-permission: platform.user.manage
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/support-sessions:
+    post:
+      tags: [Platform]
+      operationId: openSupportSession
+      summary: Buka akses dukungan baca-saja 60 menit; Owner diberi tahu
+      x-permission: platform.support_access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenant_id, reason, ticket_no]
+              properties:
+                tenant_id: { $ref: '#/components/schemas/Uuid' }
+                reason: { type: string }
+                ticket_no: { type: string, maxLength: 50 }
+      responses:
+        '201': { $ref: '#/components/responses/SupportSession' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/support-sessions/{session}:
+    delete:
+      tags: [Platform]
+      operationId: endSupportSession
+      summary: Akhiri sesi dukungan lebih awal
+      x-permission: platform.support_access
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/audit-logs:
+    get:
+      tags: [Platform]
+      operationId: listAuditLogs
+      summary: Audit log (Admin Platform hanya log tenant)
+      x-permission: platform.audit_log.view
+      x-requirements: [FR-ADM-08]
+      parameters:
+        - { name: 'filter[tenant_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[actor_user_id]', in: query, schema: { $ref: '#/components/schemas/Uuid' } }
+        - { name: 'filter[action]', in: query, schema: { type: string } }
+        - { name: 'filter[entity_type]', in: query, schema: { type: string } }
+        - { name: 'filter[from]', in: query, schema: { $ref: '#/components/schemas/Timestamp' } }
+        - { name: 'filter[to]', in: query, schema: { $ref: '#/components/schemas/Timestamp' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200': { $ref: '#/components/responses/AuditLogList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/settings/{key}:
+    parameters:
+      - { name: key, in: path, required: true, schema: { type: string } }
+    get:
+      tags: [Platform]
+      operationId: getSetting
+      summary: Baca pengaturan sistem
+      x-permission: platform.settings.manage
+      x-requirements: [FR-ADM-09]
+      responses:
+        '200': { $ref: '#/components/responses/Setting' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Platform]
+      operationId: putSetting
+      summary: Ubah pengaturan sistem
+      x-permission: platform.settings.manage
+      x-requirements: [FR-ADM-09]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { description: Nilai JSON apa pun. }
+      responses:
+        '200': { $ref: '#/components/responses/Setting' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/admins:
+    get:
+      tags: [Platform]
+      operationId: listPlatformAdmins
+      summary: Daftar Admin Platform
+      x-permission: platform.admin.manage
+      responses:
+        '200': { $ref: '#/components/responses/UserList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Platform]
+      operationId: addPlatformAdmin
+      summary: Jadikan user Admin Platform
+      x-permission: platform.admin.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { $ref: '#/components/schemas/Uuid' }
+      responses:
+        '201': { $ref: '#/components/responses/User' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/admins/{user}:
+    delete:
+      tags: [Platform]
+      operationId: removePlatformAdmin
+      summary: Cabut peran Admin Platform
+      x-permission: platform.admin.manage
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ FILES ============================
+  /files:
+    post:
+      tags: [Files]
+      operationId: uploadFile
+      summary: Unggah file; dirujuk dengan file_id oleh endpoint lain (tidak dirujuk 24 jam = dihapus)
+      description: Batas per purpose - foto paket dan logo 2 MB (JPG, PNG, WEBP); dokumen dan bukti 5 MB (JPG, PNG, PDF). Tipe dicek dari isi file.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, purpose]
+              properties:
+                file: { type: string, contentMediaType: application/octet-stream }
+                purpose: { $ref: '#/components/schemas/FilePurpose' }
+      responses:
+        '201': { $ref: '#/components/responses/File' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /files/{file}:
+    get:
+      tags: [Files]
+      operationId: getFile
+      summary: Metadata dan URL file (signed URL 10 menit untuk file privat)
+      parameters:
+        - $ref: '#/components/parameters/FileId'
+      responses:
+        '200': { $ref: '#/components/responses/File' }
+        '4XX': { $ref: '#/components/responses/Error' }
+
+  # ============================ WEBHOOKS (FASE 2) ============================
+  /webhooks/payments/{provider}:
+    post:
+      tags: [Webhooks]
+      operationId: receivePaymentWebhook
+      summary: Notifikasi payment gateway; diverifikasi tanda tangan, idempoten berdasarkan gateway_ref
+      security: []
+      x-phase: 2
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Diterima dan disimpan }
+        '401': { $ref: '#/components/responses/Error' }
+  /webhooks/whatsapp/{provider}:
+    post:
+      tags: [Webhooks]
+      operationId: receiveWhatsappWebhook
+      summary: Status kirim pesan WhatsApp
+      security: []
+      x-phase: 2
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200': { description: Diterima }
+        '401': { $ref: '#/components/responses/Error' }

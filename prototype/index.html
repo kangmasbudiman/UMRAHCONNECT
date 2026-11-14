@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UMRAH CONNECT — Prototipe alur jual inti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Token dari dokumen UI/UX Design v1.0 bagian 2 */
+  :root {
+    --primary-700: #0F5E4A; --primary-600: #157A60; --primary-50: #E8F4F0;
+    --gold-500: #C8A24A; --gold-700: #8A6A1F;
+    --ink-900: #1F2937; --ink-600: #4B5563; --surface: #F7F7F5; --white: #FFFFFF;
+    --border-input: #667085; --border-subtle: #D0D5DD;
+    --success: #067647; --success-bg: #ECFDF3; --warning: #B54708; --warning-bg: #FFFAEB;
+    --danger: #B42318; --danger-bg: #FEF3F2; --info: #175CD3; --info-bg: #EFF8FF;
+    --radius: 8px; --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--font); font-size: 16px; line-height: 24px; color: var(--ink-900); background: var(--surface); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: var(--primary-700); }
+  :focus-visible { outline: 2px solid var(--primary-600); outline-offset: 2px; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-600); }
+  .small { font-size: 14px; line-height: 20px; }
+  h1 { font-size: 24px; line-height: 32px; margin: 0 0 4px; }
+  h2 { font-size: 20px; line-height: 28px; margin: 24px 0 8px; }
+  h3 { font-size: 16px; line-height: 24px; margin: 16px 0 8px; }
+
+  /* Bilah demo */
+  .demobar { position: sticky; top: 0; z-index: 10; background: var(--ink-900); color: var(--white); padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .demobar strong { font-size: 14px; }
+  .demobar nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  .demobar a, .demobar button { color: var(--white); background: transparent; border: 1px solid #667085; border-radius: 999px; padding: 4px 12px; font-size: 13px; line-height: 20px; text-decoration: none; cursor: pointer; min-height: 32px; }
+  .demobar a[aria-current="page"] { background: var(--primary-700); border-color: var(--primary-700); }
+  .demobar .spacer { flex: 1; }
+  @media (max-width: 600px) {
+    .demobar { padding: 6px 12px; }
+    .demobar strong { font-size: 12px; flex: 1; }
+    .demobar .spacer { display: none; }
+    .demobar nav { order: 3; width: 100%; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+    .demobar a { white-space: nowrap; }
+  }
+
+  /* Bingkai ponsel untuk layar agen dan jamaah */
+  .stage { padding: 24px 16px 48px; display: flex; justify-content: center; }
+  .phone { width: 100%; max-width: 400px; background: var(--white); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 20px 16px 24px; min-height: 720px; position: relative; }
+  .desktop { width: 100%; max-width: 1200px; background: var(--white); border: 1px solid var(--border-subtle); border-radius: 12px; display: grid; grid-template-columns: 200px 1fr; min-height: 640px; overflow: hidden; }
+  .screen-id { font-size: 12px; color: var(--ink-600); letter-spacing: .02em; margin-bottom: 8px; }
+  .topbar { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; margin-bottom: 16px; }
+  .topbar a { text-decoration: none; font-size: 22px; line-height: 1; padding: 8px; margin-left: -8px; min-width: 40px; }
+  .topbar .title { font-weight: 600; }
+
+  /* Komponen */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: var(--radius); border: 1px solid var(--border-input); background: var(--white); cursor: pointer; font-weight: 600; text-decoration: none; color: var(--ink-900); }
+  .btn.primary { background: var(--primary-700); border-color: var(--primary-700); color: var(--white); }
+  .btn.primary:hover { background: var(--primary-600); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); }
+  .btn.block { width: 100%; }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-row > * { flex: 1; }
+  .card { border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: 12px 16px; margin: 8px 0; background: var(--white); }
+  .card.tint { background: var(--surface); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 2px 12px; font-size: 13px; line-height: 22px; font-weight: 600; border: 1px solid transparent; }
+  .badge.verified { background: var(--primary-50); color: var(--primary-700); border-color: var(--primary-700); }
+  .badge.warning { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); }
+  .badge.success { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+  .badge.danger { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+  .badge.info { background: var(--info-bg); color: var(--info); border-color: var(--info); }
+  .badge.gold { background: var(--gold-500); color: var(--ink-900); }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+  .row strong, .row span:last-child { text-align: right; }
+  .alert { border-radius: var(--radius); padding: 12px 16px; margin: 12px 0; border: 1px solid; }
+  .alert.danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+  .alert.info { background: var(--info-bg); border-color: var(--info); color: var(--info); }
+  .alert.warning { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+  .alert.success { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+  .img-ph { background: linear-gradient(135deg, #DDE8E3, #F1EBDC); border-radius: var(--radius); height: 168px; display: flex; align-items: center; justify-content: center; color: var(--ink-600); font-size: 14px; }
+  .option { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border-input); border-radius: var(--radius); padding: 12px 16px; margin: 8px 0; cursor: pointer; background: var(--white); }
+  .option input { margin-top: 4px; width: 20px; height: 20px; accent-color: var(--primary-700); }
+  .option.selected { border: 2px solid var(--primary-700); background: var(--primary-50); padding: 11px 15px; }
+  label.field { display: block; margin: 12px 0; }
+  label.field > span { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  input[type=text], input[type=date], select, textarea { width: 100%; min-height: 48px; border: 1px solid var(--border-input); border-radius: var(--radius); padding: 10px 12px; background: var(--white); }
+  .hint { font-size: 13px; line-height: 18px; color: var(--ink-600); margin-top: 4px; }
+  .steps { display: flex; gap: 4px; margin: 0 0 16px; }
+  .steps span { flex: 1; height: 6px; border-radius: 3px; background: var(--border-subtle); }
+  .steps span.done { background: var(--primary-700); }
+  .bottomnav { display: flex; border-top: 1px solid var(--border-subtle); margin-top: 24px; padding-top: 8px; }
+  .bottomnav a { flex: 1; text-align: center; text-decoration: none; color: var(--ink-600); font-size: 14px; padding: 8px 0; min-height: 44px; }
+  .bottomnav a.active { color: var(--primary-700); font-weight: 700; }
+  .wa-bubble { background: #E7F7E2; border-radius: 12px 12px 12px 2px; padding: 12px 14px; font-size: 14px; line-height: 20px; white-space: pre-line; }
+  .countdown { font-size: 20px; font-weight: 700; }
+  .money { font-size: 18px; font-weight: 700; }
+  .acc { font-size: 20px; font-weight: 700; letter-spacing: .04em; }
+  .proof-preview { max-width: 100%; max-height: 220px; border-radius: var(--radius); border: 1px solid var(--border-subtle); margin-top: 8px; }
+
+  /* Desktop PPIU */
+  .side { background: var(--surface); border-right: 1px solid var(--border-subtle); padding: 20px 12px; }
+  .side .brand { font-weight: 700; padding: 0 8px 16px; }
+  .side a { display: block; padding: 8px 12px; border-radius: var(--radius); text-decoration: none; color: var(--ink-600); margin: 2px 0; }
+  .side a.active { background: var(--primary-50); color: var(--primary-700); font-weight: 700; border: 1px solid var(--primary-700); }
+  .mainpane { padding: 24px; overflow: auto; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 16px; }
+  .chip { border: 1px solid var(--border-input); border-radius: 999px; padding: 4px 14px; font-size: 14px; background: var(--white); cursor: pointer; min-height: 36px; }
+  .chip.active { border: 2px solid var(--primary-700); background: var(--primary-50); font-weight: 700; }
+  table.queue { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; }
+  table.queue th { text-align: left; color: var(--ink-600); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--border-input); }
+  table.queue td { padding: 10px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+  table.queue tr.sel td { background: var(--primary-50); }
+  table.queue tr { cursor: pointer; }
+  table.queue tr.new td:first-child { box-shadow: inset 4px 0 0 var(--gold-500); }
+  .detail { display: grid; grid-template-columns: 220px 1fr; gap: 20px; border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: 16px; margin-top: 20px; }
+  .proofbox { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: var(--radius); min-height: 220px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--ink-600); font-size: 14px; overflow: hidden; }
+  .proofbox img { max-width: 100%; max-height: 260px; }
+  @media (max-width: 860px) {
+    .desktop { grid-template-columns: 1fr; }
+    .side { display: none; }
+    .detail { grid-template-columns: 1fr; }
+  }
+
+  /* Modal dan toast */
+  .modal-bg { position: fixed; inset: 0; background: rgba(17, 24, 39, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+  .modal { background: var(--white); border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink-900); color: var(--white); padding: 10px 16px; border-radius: var(--radius); font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+  #toast.show { opacity: 1; }
+  .guide { max-width: 720px; margin: 0 auto; }
+  .guide ol { padding-left: 20px; }
+  .guide li { margin: 8px 0; }
+</style>
+</head>
+<body>
+<header class="demobar" role="banner">
+  <strong>UMRAH CONNECT · Prototipe alur jual inti</strong>
+  <nav aria-label="Langkah demo" id="demo-nav"></nav>
+  <span class="spacer"></span>
+  <button type="button" data-action="reset">Reset demo</button>
+</header>
+<main id="app" tabindex="-1"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// ------------------------------------------------------------------
+// Data contoh (angka sama dengan API Documentation v1.0 bagian 11)
+// ------------------------------------------------------------------
+const PKG = {
+  name: 'Umrah Reguler 12 Hari', slug: 'umrah-reguler-12-hari',
+  tenant: 'PPIU A', tenantLegal: 'PT PPIU A', license: 'Izin PPIU (contoh) U.123/2023',
+  airline: 'Saudia', hotelStars: 4, days: 12,
+  prices: { quad: 32500000, triple: 35000000, double: 38000000 },
+  departures: [
+    { id: 'd1', date: '2027-02-10', city: 'Jambi', seats: 14 },
+    { id: 'd2', date: '2027-03-10', city: 'Jambi', seats: 2 },
+  ],
+  dpPerPax: 5000000, finalDue: '2027-01-11',
+  bank: { name: 'Bank Syariah Indonesia', no: '7xxxxxxxx1', holder: 'PT PPIU A' },
+  cancelPolicy: 'Batal > 45 hari sebelum berangkat: refund 75%. 30–45 hari: 50%. < 30 hari: DP hangus.',
+};
+const ROOM_LABEL = { quad: 'Quad (4 orang)', triple: 'Triple (3 orang)', double: 'Double (2 orang)' };
+const AGENT = { name: 'Budi', code: 'BUDI24', ref: 'Q7KX2M', wa: '+6281200000024', commissionPerPax: 1000000 };
+const FAMILY = [
+  { id: 'j1', name: 'Ahmad', gender: 'L', relation: 'Diri sendiri' },
+  { id: 'j2', name: 'Siti', gender: 'P', relation: 'Istri' },
+  { id: 'j3', name: 'Fatimah', gender: 'P', relation: 'Ibu' },
+  { id: 'j4', name: 'Umar', gender: 'L', relation: 'Anak' },
+];
+const OLD_QUEUE = [
+  { id: 'p-old1', code: 'UC-2611-0003', booker: 'Ahmad Fauzi', invType: 'DP', inv: 'INV-0016', claimed: 10000000, date: '2026-11-14', bank: 'BRI', ageH: 5, invAmount: 10000000 },
+  { id: 'p-old2', code: 'UC-2610-0042', booker: 'Nur Aini', invType: 'Pelunasan', inv: 'INV-0009', claimed: 60000000, date: '2026-11-13', bank: 'Mandiri', ageH: 26, invAmount: 60000000 },
+  { id: 'p-old3', code: 'UC-2610-0031', booker: 'Hasan Basri', invType: 'Pelunasan', inv: 'INV-0004', claimed: 25000000, date: '2026-11-12', bank: 'BSI', ageH: 50, invAmount: 25000000 },
+];
+
+const STORE_KEY = 'uc-proto-v1';
+const initialState = () => ({
+  refCookie: null,          // {code, at} — meniru cookie uc_ref 30 hari
+  draft: { departureId: 'd1', participants: [], rooms: {}, accept: false },
+  booking: null,            // booking hasil konfirmasi
+  oldQueue: OLD_QUEUE.map(q => ({ ...q, status: 'pending' })),
+  selectedPayment: null,
+  receiptSeq: 7,
+});
+let S = load();
+function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || initialState(); } catch (e) { return initialState(); } }
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+// ------------------------------------------------------------------
+// Format (pedoman microcopy bagian 8)
+// ------------------------------------------------------------------
+const rp = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const fmtDate = (iso, opts) => new Intl.DateTimeFormat('id-ID', Object.assign({ timeZone: 'Asia/Jakarta' }, opts)).format(new Date(iso));
+const longDate = iso => fmtDate(iso.length === 10 ? iso + 'T00:00:00+07:00' : iso, { day: 'numeric', month: 'short', year: 'numeric' });
+const dueText = iso => fmtDate(iso, { weekday: 'long', day: 'numeric', month: 'short' }) + ', ' + fmtDate(iso, { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '.') + ' WIB';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const digits = s => parseInt(String(s).replace(/\D/g, ''), 10) || 0;
+const dep = id => PKG.departures.find(d => d.id === id);
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ------------------------------------------------------------------
+// Aturan bisnis (SRS CR-01, CR-03, CR-04; BP-05, BP-06)
+// ------------------------------------------------------------------
+function seatsLeft(d) {
+  let used = 0;
+  if (S.booking && S.booking.departureId === d.id && S.booking.status !== 'expired') used = S.booking.participants.length;
+  return d.seats - used;
+}
+function activeAgent() {
+  // CR-01: referral tersimpan dalam 30 hari dan kemitraan Aktif (selalu aktif di prototipe)
+  if (!S.refCookie) return null;
+  const ageDays = (Date.now() - S.refCookie.at) / 864e5;
+  return ageDays <= 30 && S.refCookie.code === AGENT.ref ? AGENT : null;
+}
+function quote() {
+  const parts = S.draft.participants.map(id => {
+    const f = FAMILY.find(x => x.id === id);
+    const room = S.draft.rooms[id] || 'quad';
+    return { id, name: f.name, room, price: PKG.prices[room] };
+  });
+  const total = parts.reduce((a, p) => a + p.price, 0);
+  const dp = PKG.dpPerPax * parts.length;
+  return { parts, total, dp, final: total - dp };
+}
+function confirmBooking() {
+  const d = dep(S.draft.departureId);
+  const q = quote();
+  if (q.parts.length > seatsLeft(d)) {
+    return { error: 'seats_unavailable', message: `Maaf, sisa kursi tinggal ${seatsLeft(d)}. Kurangi peserta atau pilih keberangkatan lain.` };
+  }
+  const agent = activeAgent();
+  const now = Date.now();
+  S.booking = {
+    code: 'UC-2611-0001', createdAt: now, holdExpires: now + 48 * 3600e3,
+    departureId: d.id, participants: q.parts, total: q.total, dp: q.dp, paid: 0, status: 'awaiting_dp',
+    agent: agent ? { name: agent.name, code: agent.code } : null,
+    attribution: agent ? 'referral_link' : 'none',
+    commission: agent ? { amount: agent.commissionPerPax * q.parts.length, status: 'estimated' } : null,
+    invoices: [
+      { key: 'dp', no: 'INV/PPIUA/2026/0012', short: 'INV-0012', type: 'DP', amount: q.dp, paid: 0, due: new Date(now + 48 * 3600e3).toISOString() },
+      { key: 'final', no: 'INV/PPIUA/2026/0013', short: 'INV-0013', type: 'Pelunasan', amount: q.final, paid: 0, due: PKG.finalDue + 'T00:00:00+07:00' },
+    ],
+    payments: [], receipts: [],
+  };
+  save();
+  return { ok: true };
+}
+function invStatus(inv) { return inv.paid >= inv.amount ? 'Lunas' : inv.paid > 0 ? 'Sebagian' : 'Belum dibayar'; }
+function verifyPayment(payId, amount) {
+  const b = S.booking; const p = b.payments.find(x => x.id === payId);
+  if (!p || p.status !== 'pending') return { error: 'already_processed' };
+  // FR-FIN-14: kelebihan bayar DP dipecah ke invoice pelunasan
+  const dpInv = b.invoices[0], finInv = b.invoices[1];
+  const remDp = dpInv.amount - dpInv.paid;
+  const toDp = Math.min(amount, remDp);
+  const extra = toDp > 0 ? amount - toDp : 0;
+  const receipt = (amt, inv) => b.receipts.push({ no: `KW/PPIUA/2026/${String(S.receiptSeq++).padStart(4, '0')}`, amount: amt, inv: inv.short });
+  p.status = 'verified';
+  if (toDp > 0) {
+    p.verified = toDp; p.invoice = 'dp'; dpInv.paid += toDp; receipt(toDp, dpInv);
+    if (extra > 0) {
+      b.payments.push({ id: p.id + '-split', splitFrom: p.id, invoice: 'final', claimed: extra, verified: extra, date: p.date, bank: p.bank, sender: p.sender, status: 'verified' });
+      finInv.paid += extra; receipt(extra, finInv);
+    }
+  } else {
+    // DP sudah lunas: seluruh nominal untuk invoice pelunasan
+    p.verified = amount; p.invoice = 'final'; finInv.paid += amount; receipt(amount, finInv);
+  }
+  b.paid += amount;
+  if (dpInv.paid >= dpInv.amount && b.status === 'awaiting_dp') b.status = 'dp_verified';
+  if (b.paid >= b.total) { b.status = 'fully_paid'; if (b.commission) b.commission.status = 'earned'; }
+  save();
+  return { ok: true, split: extra };
+}
+function statusBadge(st) {
+  const m = { awaiting_dp: ['warning', 'Menunggu DP'], dp_verified: ['info', 'DP Diterima'], fully_paid: ['success', 'Lunas'], expired: ['danger', 'Kedaluwarsa'], cancelled: ['danger', 'Dibatalkan'] };
+  const [c, t] = m[st] || ['info', st];
+  const icon = c === 'success' ? '✓' : c === 'danger' ? '✕' : c === 'warning' ? '⏳' : 'ℹ';
+  return `<span class="badge ${c}"><span aria-hidden="true">${icon}</span>${t}</span>`;
+}
+
+// ------------------------------------------------------------------
+// Navigasi demo
+// ------------------------------------------------------------------
+const STEPS = [
+  ['#/', 'Panduan'], ['#/agen', '1 Agen'], ['#/agen/bagikan', '2 Bagikan'], ['#/paket', '3 Paket'],
+  ['#/booking/1', '4 Booking'], ['#/bayar', '5 Bayar'], ['#/ppiu', '6 PPIU verifikasi'], ['#/booking-saya', '7 Hasil jamaah'],
+];
+function renderNav(hash) {
+  const base = hash.split('?')[0];
+  document.getElementById('demo-nav').innerHTML = STEPS.map(([h, l]) => {
+    const cur = base === h || (h === '#/booking/1' && base.startsWith('#/booking/')) ? ' aria-current="page"' : '';
+    return `<a href="${h}"${cur}>${l}</a>`;
+  }).join('');
+}
+
+// ------------------------------------------------------------------
+// Layar
+// ------------------------------------------------------------------
+const phone = (id, body) => `<div class="stage"><section class="phone" aria-label="${esc(id)}"><div class="screen-id">${esc(id)}</div>${body}</section></div>`;
+const topBar = (back, title) => `<div class="topbar"><a href="${back}" aria-label="Kembali">‹</a><span class="title">${title}</span></div>`;
+
+const VIEWS = {
+  '#/': () => `<div class="stage"><section class="phone guide" style="max-width:720px">
+    <h1>Prototipe alur jual inti</h1>
+    <p class="muted">Prototipe klik untuk uji kegunaan (UI/UX Design v1.0, bagian 10). Data hanya contoh dan tersimpan di peramban ini; tidak ada server.</p>
+    <h2>Skenario uji</h2>
+    <ol>
+      <li><strong>Agen Budi</strong> membuka beranda lalu membagikan paket <em>Umrah Reguler 12 Hari</em> ke WhatsApp.</li>
+      <li><strong>Calon jamaah</strong> membuka link, memilih keberangkatan 10 Feb 2027, lalu booking untuk 3 orang (Ahmad, Siti, Fatimah; 2 Quad + 1 Double).</li>
+      <li>Jamaah melihat instruksi bayar, lalu mengunggah bukti transfer. Coba isi <strong>Rp20.000.000</strong> untuk menguji kelebihan bayar.</li>
+      <li><strong>Finance PPIU A</strong> memverifikasi bukti di antrean.</li>
+      <li>Jamaah dan agen melihat hasilnya: DP Diterima, kwitansi, dan komisi agen.</li>
+    </ol>
+    <h2>Kasus tambahan</h2>
+    <ul>
+      <li>Pilih keberangkatan 10 Mar 2027 (sisa 2 kursi) dengan 3 peserta untuk melihat pesan <code>seats_unavailable</code>.</li>
+      <li>Di antrean PPIU, tolak bukti dengan alasan untuk melihat alur unggah ulang.</li>
+      <li>Buka katalog tanpa link agen (<a href="#/katalog">Katalog</a>) untuk booking tanpa atribusi.</li>
+    </ul>
+    <div class="btn-row"><a class="btn primary" href="#/agen">Mulai sebagai agen</a><a class="btn" href="#/katalog">Mulai sebagai jamaah</a></div>
+  </section></div>`,
+
+  '#/agen': () => {
+    const b = S.booking;
+    const est = b && b.commission ? b.commission : null;
+    const recent = [];
+    if (b && b.agent) recent.push(`<div class="card"><strong>${b.code} · ${b.participants.length} jamaah</strong><div class="small muted">${PKG.tenant} · ${statusText(b)}</div></div>`);
+    recent.push(`<div class="card"><strong>UC-2610-0042 · 2 jamaah</strong><div class="small muted">${PKG.tenant} · Lunas</div></div>`);
+    recent.push(`<div class="card"><strong>UC-2610-0031 · 1 jamaah</strong><div class="small muted">PPIU B · DP Diterima</div></div>`);
+    return phone('AGT-01 Beranda agen', `
+      <h1>Assalamualaikum, ${AGENT.name}</h1>
+      <div class="small muted">Kode agen ${AGENT.code} · 2 PPIU mitra</div>
+      <div class="card tint">
+        <h3 style="margin-top:4px">Komisi Anda</h3>
+        ${est && est.status === 'estimated' ? `<div class="row small"><span>Estimasi (booking baru)</span><span class="num">${rp(est.amount)}</span></div>` : ''}
+        <div class="row"><span>Diperoleh</span><span class="num">${rp(3000000 + (est && est.status === 'earned' ? est.amount : 0))}</span></div>
+        <div class="row"><strong>Disetujui, siap dicairkan</strong><strong class="num">${rp(1000000)}</strong></div>
+        <div class="row muted"><span>Sudah dibayar</span><span class="num">${rp(2000000)}</span></div>
+      </div>
+      <div class="alert warning"><strong>Undangan kemitraan dari PPIU B</strong><div class="small">Komisi ${rp(1500000)} per jamaah · <a href="#/agen" data-action="toast" data-msg="Layar undangan (AGT-03) belum termasuk prototipe ini">Lihat</a></div></div>
+      <h2>Booking terbaru</h2>
+      ${recent.join('')}
+      <a class="btn primary block" style="margin-top:16px" href="#/agen/bagikan">Bagikan paket</a>
+      <nav class="bottomnav" aria-label="Menu agen"><a class="active" href="#/agen">Beranda</a><a href="#/agen/bagikan">Paket</a><a href="#/agen">Booking</a><a href="#/agen">Komisi</a></nav>`);
+  },
+
+  '#/agen/bagikan': () => {
+    const link = `umrahconnect.id/p/ppiu-a/${PKG.slug}?ref=${AGENT.ref}`;
+    const msg = `Assalamualaikum. Paket ${PKG.name} dari ${PKG.tenant} (berizin), berangkat ${longDate(PKG.departures[0].date)} dari ${PKG.departures[0].city}. Harga mulai ${rp(PKG.prices.quad)}.\nDetail dan daftar: ${link}`;
+    return phone('AGT-04 Bagikan link', `
+      ${topBar('#/agen', 'Bagikan paket')}
+      <div class="card"><strong>${PKG.name}</strong><div class="small muted">${PKG.tenant} · ${longDate(PKG.departures[0].date)} · mulai ${rp(PKG.prices.quad)}</div>
+        <div style="margin-top:8px"><span class="badge success">Komisi Anda ${rp(AGENT.commissionPerPax)} per jamaah</span></div></div>
+      <h3>Link Anda</h3>
+      <div class="card tint small" style="word-break:break-all">${esc(link)}</div>
+      <div class="small muted">Diklik 37 kali · 3 booking dari link ini</div>
+      <button type="button" class="btn primary block" style="margin-top:16px" data-action="share-wa">Bagikan ke WhatsApp</button>
+      <div class="btn-row"><button type="button" class="btn" data-action="copy" data-text="https://${esc(link)}">Salin link</button><button type="button" class="btn" data-action="toast" data-msg="QR diunduh (simulasi)">Unduh QR</button></div>
+      <h3>Pratinjau pesan WhatsApp</h3>
+      <div class="wa-bubble">${esc(msg)}</div>
+      <p class="hint">Agen dapat mengubah pesan sebelum mengirim. Link selalu membawa kode referral ${AGENT.ref}.</p>`);
+  },
+
+  '#/katalog': () => phone('MKT-01 Katalog', `
+      <h1>Paket umrah</h1>
+      <div class="small muted">Semua PPIU terverifikasi · harga resmi PPIU</div>
+      <div class="chips"><button class="chip active" type="button">Semua bulan</button><button class="chip" type="button" data-action="toast" data-msg="Filter belum aktif di prototipe">Feb 2027</button><button class="chip" type="button" data-action="toast" data-msg="Filter belum aktif di prototipe">Di bawah Rp35 juta</button></div>
+      <a class="card" href="#/paket" style="display:block;text-decoration:none;color:inherit">
+        <div class="img-ph" style="height:120px">Foto sampul paket</div>
+        <strong style="display:block;margin-top:8px">${PKG.name}</strong>
+        <span class="badge verified">✓ ${PKG.tenant} · Terverifikasi</span>
+        <div class="small muted" style="margin-top:4px">${PKG.airline} · ${PKG.days} hari · berangkat ${longDate(PKG.departures[0].date)}</div>
+        <div class="money num" style="margin-top:4px">mulai ${rp(PKG.prices.quad)}</div>
+      </a>
+      <div class="card" aria-disabled="true"><div class="img-ph" style="height:120px">Foto sampul paket</div><strong style="display:block;margin-top:8px">Umrah Plus Thaif 9 Hari</strong><span class="badge verified">✓ PPIU B · Terverifikasi</span> <span class="badge gold">Unggulan</span><div class="money num" style="margin-top:4px">mulai ${rp(29900000)}</div><div class="hint">Contoh kartu; tidak aktif di prototipe</div></div>`),
+
+  '#/paket': () => {
+    const agent = activeAgent();
+    const d = dep(S.draft.departureId);
+    return phone('MKT-02 Detail paket', `
+      ${topBar('#/katalog', 'Detail paket')}
+      <div class="img-ph">Foto sampul paket</div>
+      <h1 style="margin-top:12px">${PKG.name}</h1>
+      <span class="badge verified" title="${esc(PKG.license)}">✓ ${PKG.tenant} · Terverifikasi</span>
+      <div class="small muted" style="margin-top:6px">${PKG.airline} · Hotel bintang ${PKG.hotelStars} · ${PKG.days} hari · ${esc(PKG.license)}</div>
+      <h2>Pilih keberangkatan</h2>
+      <div role="radiogroup" aria-label="Keberangkatan">
+      ${PKG.departures.map(x => `<label class="option ${x.id === d.id ? 'selected' : ''}"><input type="radio" name="dep" value="${x.id}" ${x.id === d.id ? 'checked' : ''} data-action="pick-dep"><span><strong>${longDate(x.date)} · dari ${x.city}</strong><br><span class="small muted">Sisa ${seatsLeft(x)} kursi</span></span></label>`).join('')}
+      </div>
+      <h2>Harga resmi per orang</h2>
+      ${Object.keys(PKG.prices).map(k => `<div class="row"><span>${ROOM_LABEL[k]}</span><strong class="num">${rp(PKG.prices[k])}</strong></div>`).join('')}
+      <p class="hint">Harga sama di semua kanal, termasuk lewat agen. DP ${rp(PKG.dpPerPax)} per orang; pelunasan paling lambat ${longDate(PKG.finalDue)}.</p>
+      ${agent ? `<div class="alert info small">Dibantu agen <strong>${agent.name}</strong> (dari link referral)</div>` : ''}
+      <div class="btn-row"><button type="button" class="btn" data-action="wa" data-to="${agent ? 'agen ' + agent.name : PKG.tenant}">Tanya via WhatsApp</button><a class="btn primary" href="#/booking/1">Daftar sekarang</a></div>`);
+  },
+
+  '#/booking/1': () => {
+    if (S.booking) return alreadyBooked();
+    const sel = S.draft.participants;
+    return phone('JMH-03 Booking · langkah 1 dari 3', `
+      ${topBar('#/paket', 'Siapa yang berangkat?')}
+      <div class="steps" aria-hidden="true"><span class="done"></span><span></span><span></span></div>
+      <p class="small muted">${PKG.name} · ${longDate(dep(S.draft.departureId).date)}</p>
+      ${FAMILY.map(f => `<label class="option ${sel.includes(f.id) ? 'selected' : ''}"><input type="checkbox" value="${f.id}" ${sel.includes(f.id) ? 'checked' : ''} data-action="toggle-pax"><span><strong>${f.name}</strong><br><span class="small muted">${f.relation} · ${f.gender === 'L' ? 'Laki-laki' : 'Perempuan'} · data paspor tersimpan</span></span></label>`).join('')}
+      <button type="button" class="btn block" style="margin-top:8px" data-action="toast" data-msg="Form data jamaah baru (JMH-02) belum termasuk prototipe ini">+ Tambah data jamaah</button>
+      <button type="button" class="btn primary block" style="margin-top:16px" data-action="go" data-to="#/booking/2" ${sel.length ? '' : 'disabled'}>Lanjut (${sel.length} peserta)</button>`);
+  },
+
+  '#/booking/2': () => {
+    if (S.booking) return alreadyBooked();
+    if (!S.draft.participants.length) { location.hash = '#/booking/1'; return ''; }
+    return phone('JMH-03 Booking · langkah 2 dari 3', `
+      ${topBar('#/booking/1', 'Pilih kamar')}
+      <div class="steps" aria-hidden="true"><span class="done"></span><span class="done"></span><span></span></div>
+      ${S.draft.participants.map(id => { const f = FAMILY.find(x => x.id === id); const r = S.draft.rooms[id] || 'quad'; return `
+        <label class="field"><span>${f.name}</span>
+          <select data-action="room" data-id="${id}">${Object.keys(PKG.prices).map(k => `<option value="${k}" ${k === r ? 'selected' : ''}>${ROOM_LABEL[k]} — ${rp(PKG.prices[k])}</option>`).join('')}</select>
+        </label>`; }).join('')}
+      <p class="hint">Satu kamar diisi sesama mahram atau sesama jenis; PPIU mengatur pembagian kamar.</p>
+      <button type="button" class="btn primary block" style="margin-top:16px" data-action="go" data-to="#/booking/3">Lanjut ke ringkasan</button>`);
+  },
+
+  '#/booking/3': () => {
+    if (S.booking) return alreadyBooked();
+    if (!S.draft.participants.length) { location.hash = '#/booking/1'; return ''; }
+    const q = quote(); const d = dep(S.draft.departureId); const agent = activeAgent();
+    return phone('JMH-03 Booking · langkah 3 dari 3', `
+      ${topBar('#/booking/2', 'Ringkasan')}
+      <div class="steps" aria-hidden="true"><span class="done"></span><span class="done"></span><span class="done"></span></div>
+      <div id="book-error"></div>
+      <div class="card"><strong>${PKG.name}</strong><div class="small muted">${PKG.tenant} · ${longDate(d.date)} · dari ${d.city}</div></div>
+      <div class="card">
+        ${q.parts.map(p => `<div class="row"><span>${p.name} · ${ROOM_LABEL[p.room].split(' ')[0]}</span><span class="num">${rp(p.price)}</span></div>`).join('')}
+        <div class="row" style="border-top:1px solid var(--border-subtle);margin-top:4px;padding-top:8px"><strong>Total</strong><strong class="num">${rp(q.total)}</strong></div>
+        <div class="row"><span>DP (${q.parts.length} × ${rp(PKG.dpPerPax)})</span><strong class="num">${rp(q.dp)}</strong></div>
+        <div class="row muted"><span>Pelunasan, ${longDate(PKG.finalDue)}</span><span class="num">${rp(q.final)}</span></div>
+      </div>
+      <div class="card tint small"><strong>Pembayaran ke rekening resmi:</strong> ${PKG.bank.name} a.n. ${PKG.bank.holder}${agent ? `<br><strong>Agen:</strong> ${agent.name} (${agent.code})` : ''}</div>
+      <div class="card small"><strong>Kebijakan pembatalan</strong><br>${esc(PKG.cancelPolicy)}</div>
+      <label class="option ${S.draft.accept ? 'selected' : ''}"><input type="checkbox" data-action="accept" ${S.draft.accept ? 'checked' : ''}><span class="small">Saya sudah membaca syarat paket dan kebijakan pembatalan.</span></label>
+      <button type="button" class="btn primary block" style="margin-top:12px" data-action="confirm" ${S.draft.accept ? '' : 'disabled'}>Konfirmasi booking</button>
+      <p class="hint">Kursi ditahan 48 jam setelah konfirmasi sambil menunggu DP.</p>`);
+  },
+
+  '#/bayar': () => {
+    const b = S.booking; if (!b) return noBooking();
+    const pending = b.payments.find(p => p.status === 'pending');
+    const rejected = [...b.payments].reverse().find(p => p.status === 'rejected');
+    const dpInv = b.invoices[0];
+    return phone('JMH-04 Instruksi bayar', `
+      ${topBar('#/booking-saya', 'Booking ' + b.code)}
+      ${statusBadge(b.status)}
+      ${b.status === 'awaiting_dp' ? `
+        <p class="small muted" style="margin:16px 0 0">Bayar DP sebelum</p>
+        <div class="countdown">${dueText(new Date(b.holdExpires).toISOString())}</div>
+        <div class="small muted" id="countdown">${remaining(b.holdExpires)}</div>` : `<div class="alert success">DP sudah diterima. Pelunasan ${rp(b.invoices[1].amount - b.invoices[1].paid)} jatuh tempo ${longDate(PKG.finalDue)}.</div>`}
+      ${pending ? `<div class="alert info small">Bukti ${rp(pending.claimed)} sedang diperiksa ${PKG.tenant}. Batas DP tidak berlaku selama bukti diperiksa.</div>` : ''}
+      ${rejected && !pending && b.status === 'awaiting_dp' ? `<div class="alert danger small"><strong>Bukti ditolak:</strong> ${esc(rejected.reason)}. Silakan unggah ulang.</div>` : ''}
+      <div class="card">
+        <div class="row"><span>Total ${b.participants.length} jamaah</span><span class="num">${rp(b.total)}</span></div>
+        <div class="row"><strong>DP${b.status === 'awaiting_dp' ? ', bayar sekarang' : ''}</strong><strong class="num">${rp(dpInv.amount)}</strong></div>
+        <div class="row"><span>Pelunasan, ${longDate(PKG.finalDue)}</span><span class="num">${rp(b.invoices[1].amount)}</span></div>
+        <div class="row muted"><span>Sudah dibayar (terverifikasi)</span><span class="num">${rp(b.paid)}</span></div>
+      </div>
+      <div class="card tint">
+        <strong>Transfer ke rekening resmi PPIU</strong>
+        <div>${PKG.bank.name}</div>
+        <div class="row" style="align-items:center"><span class="acc num">${PKG.bank.no}</span><button type="button" class="btn" style="min-height:40px;padding:0 14px" data-action="copy" data-text="${PKG.bank.no}">Salin</button></div>
+        <div class="small muted">a.n. ${PKG.bank.holder}</div>
+      </div>
+      <p class="small muted">Transfer hanya ke rekening atas nama PPIU. UMRAH CONNECT tidak menerima dana jamaah.</p>
+      ${pending ? '' : `<a class="btn primary block" href="#/unggah">Unggah bukti transfer</a>`}
+      <button type="button" class="btn block" style="margin-top:8px" data-action="wa" data-to="${b.agent ? 'agen ' + b.agent.name : PKG.tenant}">Tanya ${b.agent ? 'agen' : PKG.tenant} via WhatsApp</button>
+      <p style="text-align:center"><a href="#/bayar" data-action="toast" data-msg="Invoice PDF (simulasi)">Lihat invoice PDF</a></p>`);
+  },
+
+  '#/unggah': () => {
+    const b = S.booking; if (!b) return noBooking();
+    const dpRem = b.invoices[0].amount - b.invoices[0].paid;
+    const inv = dpRem > 0 ? b.invoices[0] : b.invoices[1];
+    const def = inv.amount - inv.paid;
+    return phone('JMH-06 Unggah bukti', `
+      ${topBar('#/bayar', 'Unggah bukti transfer')}
+      <div class="card tint small">Invoice <strong>${inv.type}</strong> ${inv.no}<br>Sisa tagihan <strong class="num">${rp(def)}</strong></div>
+      <form id="upload-form" novalidate>
+        <label class="field"><span>Nominal yang ditransfer</span><input type="text" inputmode="numeric" id="f-amount" value="${def.toLocaleString('id-ID')}" aria-describedby="h-amount" required><div class="hint" id="h-amount">Tulis sesuai bukti. Bila lebih dari sisa DP, kelebihannya dicatat untuk pelunasan.</div></label>
+        <label class="field"><span>Tanggal transfer</span><input type="date" id="f-date" value="${new Date().toISOString().slice(0, 10)}" required></label>
+        <label class="field"><span>Bank pengirim</span><select id="f-bank"><option>BSI</option><option>BRI</option><option>Mandiri</option><option>BNI</option><option>Bank 9 Jambi</option><option>Lainnya</option></select></label>
+        <label class="field"><span>Nama pemilik rekening pengirim</span><input type="text" id="f-sender" value="Siti Rahma" autocomplete="name" required></label>
+        <label class="field"><span>Foto atau PDF bukti</span><input type="file" id="f-file" accept="image/jpeg,image/png,application/pdf" aria-describedby="h-file"><div class="hint" id="h-file">JPG, PNG, atau PDF, maksimal 5 MB. Foto dikompres otomatis.</div></label>
+        <div id="file-preview"></div>
+        <button type="button" class="btn block" data-action="sample-proof">Pakai bukti contoh (untuk uji)</button>
+        <div id="upload-error"></div>
+        <button type="submit" class="btn primary block" style="margin-top:16px">Kirim bukti</button>
+      </form>`);
+  },
+
+  '#/booking-saya': () => {
+    const b = S.booking; if (!b) return noBooking();
+    const d = dep(b.departureId);
+    return phone('JMH-05 Detail booking', `
+      ${topBar('#/bayar', 'Booking saya')}
+      <h1>${b.code}</h1>
+      ${statusBadge(b.status)}
+      <p class="small muted" style="margin-top:8px">${statusText(b)}</p>
+      <div class="card"><strong>${PKG.name}</strong><div class="small muted">${PKG.tenant} · ${longDate(d.date)} · dari ${d.city}</div>
+        ${b.participants.map(p => `<div class="row small"><span>${p.name} · ${ROOM_LABEL[p.room].split(' ')[0]}</span><span class="num">${rp(p.price)}</span></div>`).join('')}</div>
+      <h2>Tagihan</h2>
+      ${b.invoices.map(i => `<div class="card"><div class="row"><strong>${i.type}</strong><span class="badge ${i.paid >= i.amount ? 'success' : i.paid > 0 ? 'info' : 'warning'}">${invStatus(i)}</span></div><div class="row small"><span>${i.no}</span><span class="num">${rp(i.paid)} / ${rp(i.amount)}</span></div></div>`).join('')}
+      <h2>Kwitansi</h2>
+      ${b.receipts.length ? b.receipts.map(r => `<div class="row small"><a href="#/booking-saya" data-action="toast" data-msg="Kwitansi PDF (simulasi)">${r.no}</a><span class="num">${rp(r.amount)} · ${r.inv}</span></div>`).join('') : '<p class="small muted">Kwitansi terbit setelah PPIU memverifikasi pembayaran.</p>'}
+      ${b.agent ? `<div class="card tint small" style="margin-top:16px">Agen Anda: <strong>${b.agent.name}</strong> · <a href="#/booking-saya" data-action="wa" data-to="agen ${b.agent.name}">Chat WhatsApp</a></div>` : ''}
+      <div class="btn-row"><a class="btn" href="#/bayar">Instruksi bayar</a><a class="btn" href="#/agen">Lihat sisi agen</a></div>`);
+  },
+
+  '#/ppiu': () => {
+    const b = S.booking;
+    const rows = [];
+    if (b) b.payments.filter(p => !p.splitFrom).forEach(p => rows.push({
+      id: p.id, code: b.code, booker: p.sender, invKey: p.invoice, invType: p.invoice === 'final' ? 'Pelunasan' : 'DP', inv: p.invoice === 'final' ? 'INV-0013' : 'INV-0012', claimed: p.claimed, date: p.date, bank: p.bank,
+      ageH: Math.max(0, Math.round((Date.now() - p.at) / 3600e3)), status: p.status, isNew: true, reason: p.reason, proof: p.proof }));
+    S.oldQueue.forEach(q => rows.push(q));
+    const pending = rows.filter(r => r.status === 'pending');
+    const sel = rows.find(r => r.id === S.selectedPayment && r.status === 'pending') || pending[0];
+    const age = h => h < 24 ? `${h || '<1'} jam` : `${Math.floor(h / 24)} hari`;
+    return `<div class="stage"><section class="desktop" aria-label="PPIU-09 Antrean verifikasi pembayaran">
+      <nav class="side" aria-label="Menu PPIU"><div class="brand">PPIU A</div>
+        ${['Dashboard', 'Paket', 'Booking', 'Agen'].map(m => `<a href="#/ppiu" data-action="toast" data-msg="Menu ${m} belum termasuk prototipe">${m}</a>`).join('')}
+        <a class="active" href="#/ppiu" aria-current="page">Pembayaran</a>
+        ${['Komisi', 'Laporan', 'Pengaturan'].map(m => `<a href="#/ppiu" data-action="toast" data-msg="Menu ${m} belum termasuk prototipe">${m}</a>`).join('')}
+      </nav>
+      <div class="mainpane">
+        <div class="screen-id">PPIU-09 · masuk sebagai Finance PPIU A</div>
+        <h1>Antrean verifikasi pembayaran</h1>
+        <div class="small muted">${pending.length} menunggu${pending.length ? ' · tertua ' + age(Math.max(...pending.map(r => r.ageH))) : ''}</div>
+        <div class="chips"><button class="chip active" type="button">Semua (${pending.length})</button><button class="chip" type="button" data-action="toast" data-msg="Filter belum aktif di prototipe">DP</button><button class="chip" type="button" data-action="toast" data-msg="Filter belum aktif di prototipe">Pelunasan</button><button class="chip" type="button" data-action="toast" data-msg="Filter belum aktif di prototipe">Lebih 24 jam</button></div>
+        ${pending.length ? `<table class="queue"><thead><tr><th scope="col">Booking / pemesan</th><th scope="col">Invoice</th><th scope="col">Diklaim</th><th scope="col">Transfer</th><th scope="col">Menunggu</th></tr></thead><tbody>
+          ${pending.map(r => `<tr class="${sel && r.id === sel.id ? 'sel' : ''} ${r.isNew ? 'new' : ''}" data-action="select-pay" data-id="${r.id}" tabindex="0" aria-selected="${sel && r.id === sel.id}">
+            <td><strong>${r.code}</strong><br><span class="muted">${esc(r.booker)}</span></td><td>${r.invType}<br><span class="muted">${r.inv}</span></td>
+            <td class="num">${rp(r.claimed)}</td><td>${longDate(r.date)}<br><span class="muted">${esc(r.bank)}</span></td><td>${r.ageH >= 24 ? '<strong>' + age(r.ageH) + '</strong>' : age(r.ageH)}</td></tr>`).join('')}
+        </tbody></table>` : `<div class="alert success">Semua bukti bayar sudah diperiksa.</div>`}
+        ${sel ? detailPanel(sel) : ''}
+        ${b ? `<p class="small muted" style="margin-top:20px">Selesai memverifikasi? <a href="#/booking-saya">Lihat hasil di sisi jamaah</a> · <a href="#/agen">sisi agen</a></p>` : `<p class="small muted" style="margin-top:20px">Belum ada bukti dari skenario uji. <a href="#/agen">Mulai dari agen</a>.</p>`}
+      </div></section></div>`;
+  },
+};
+
+function detailPanel(r) {
+  const isFlow = !!r.isNew;
+  const b = S.booking;
+  const inv = isFlow ? b.invoices[r.invKey === 'final' ? 1 : 0] : null;
+  const dpRem = isFlow ? inv.amount - inv.paid : r.invAmount;
+  const extra = isFlow && r.invKey !== 'final' ? Math.max(0, r.claimed - dpRem) : 0;
+  return `<div class="detail" aria-label="Detail pembayaran terpilih">
+    <div class="proofbox">${r.proof ? `<img src="${r.proof}" alt="Bukti transfer dari ${esc(r.booker)}">` : 'Bukti transfer<br>(contoh)'}</div>
+    <div>
+      <h3 style="margin-top:0">${r.code} · Invoice ${r.invType} ${rp(isFlow ? inv.amount : r.invAmount)}</h3>
+      <div class="small muted">Diklaim ${rp(r.claimed)} · ${longDate(r.date)} · ${esc(r.bank)} a.n. ${esc(r.booker)}</div>
+      ${isFlow && extra > 0 ? `<div class="alert info small">Kelebihan ${rp(extra)} otomatis dicatat sebagai pembayaran invoice pelunasan.</div>` : ''}
+      ${isFlow && b.agent ? `<div class="small muted" style="margin-top:6px">Agen: ${b.agent.name} · komisi estimasi ${rp(b.commission.amount)}</div>` : ''}
+      <form id="verify-form" data-id="${r.id}" novalidate>
+        <label class="field"><span>Nominal diterima di rekening</span><input type="text" inputmode="numeric" id="v-amount" value="${r.claimed.toLocaleString('id-ID')}" aria-describedby="v-hint"><div class="hint" id="v-hint">Cocokkan dengan mutasi rekening ${PKG.bank.name}.</div></label>
+        <div id="verify-error"></div>
+        <div class="btn-row" style="max-width:420px"><button type="submit" class="btn primary">Verifikasi</button><button type="button" class="btn danger" data-action="reject" data-id="${r.id}">Tolak</button></div>
+        <p class="hint">Kwitansi terbit otomatis setelah verifikasi.</p>
+      </form>
+    </div></div>`;
+}
+function statusText(b) {
+  if (b.status === 'awaiting_dp') {
+    const pend = b.payments.some(p => p.status === 'pending');
+    return pend ? 'Bukti DP sedang diperiksa PPIU' : `Bayar DP ${rp(b.invoices[0].amount - b.invoices[0].paid)} sebelum ${dueText(new Date(b.holdExpires).toISOString())}`;
+  }
+  if (b.status === 'dp_verified') return `Pelunasan ${rp(b.invoices[1].amount - b.invoices[1].paid)} jatuh tempo ${longDate(PKG.finalDue)}`;
+  if (b.status === 'fully_paid') return 'Pembayaran lengkap. Lengkapi dokumen sebelum berangkat.';
+  return '';
+}
+function remaining(ts) {
+  const ms = ts - Date.now();
+  if (ms <= 0) return 'Batas waktu DP sudah lewat';
+  const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60e3);
+  return `Sisa ${h} jam ${m} menit`;
+}
+function alreadyBooked() {
+  const b = S.booking;
+  return phone('JMH-03 Booking', `${topBar('#/paket', 'Booking')}
+    <div class="alert warning">${b.participants.map(p => p.name).join(', ')} sudah terdaftar di keberangkatan ini (${b.code}).</div>
+    <p class="small muted">Satu jamaah tidak dapat terdaftar dua kali di keberangkatan yang sama (pesan <code>pilgrim_already_booked</code>). Tekan Reset demo untuk mengulang skenario.</p>
+    <a class="btn primary block" href="#/booking-saya">Lihat booking</a>`);
+}
+function noBooking() {
+  return phone('Belum ada booking', `<div class="alert info">Anda belum punya booking.</div><a class="btn primary block" href="#/katalog">Lihat paket umrah</a>`);
+}
+
+// ------------------------------------------------------------------
+// Router dan event
+// ------------------------------------------------------------------
+function route() {
+  let hash = location.hash || '#/';
+  const [path, qs] = hash.split('?');
+  if (path === '#/paket' && qs) {
+    const ref = new URLSearchParams(qs).get('ref');
+    if (ref) { S.refCookie = { code: ref, at: Date.now() }; save(); }   // meniru cookie uc_ref (ditimpa link terbaru)
+  }
+  const view = VIEWS[path] || VIEWS['#/'];
+  renderNav(hash);
+  document.getElementById('app').innerHTML = view();
+  document.title = 'UMRAH CONNECT — ' + ((document.querySelector('.screen-id') || {}).textContent || 'Prototipe');
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const a = el.dataset.action;
+  if (a === 'toast') { e.preventDefault(); toast(el.dataset.msg); }
+  if (a === 'reset') { localStorage.removeItem(STORE_KEY); S = initialState(); location.hash = '#/'; route(); toast('Demo direset'); }
+  if (a === 'go') location.hash = el.dataset.to;
+  if (a === 'copy') { e.preventDefault(); (navigator.clipboard ? navigator.clipboard.writeText(el.dataset.text) : Promise.reject()).then(() => toast('Disalin'), () => toast('Salin: ' + el.dataset.text)); }
+  if (a === 'wa') { e.preventDefault(); toast('Membuka WhatsApp ke ' + el.dataset.to + ' (simulasi)'); }
+  if (a === 'share-wa') openShareModal();
+  if (a === 'open-as-jamaah') { closeModal(); location.hash = `#/paket?ref=${AGENT.ref}`; }
+  if (a === 'close-modal') closeModal();
+  if (a === 'confirm') {
+    const r = confirmBooking();
+    if (r.error) document.getElementById('book-error').innerHTML = `<div class="alert danger" role="alert">${r.message}<br><a href="#/paket">Pilih keberangkatan lain</a></div>`;
+    else { location.hash = '#/bayar'; toast('Booking dibuat, kursi ditahan 48 jam'); }
+  }
+  if (a === 'sample-proof') { useSampleProof(); }
+  if (a === 'select-pay') { S.selectedPayment = el.dataset.id; save(); route(); }
+  if (a === 'reject') openRejectModal(el.dataset.id);
+  if (a === 'do-reject') doReject(el.dataset.id);
+});
+document.addEventListener('keydown', e => {
+  const row = e.target.closest && e.target.closest('tr[data-action="select-pay"]');
+  if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); row.click(); }
+  if (e.key === 'Escape') closeModal();
+});
+document.addEventListener('change', e => {
+  const el = e.target; const a = el.dataset.action;
+  if (a === 'pick-dep') { S.draft.departureId = el.value; save(); route(); }
+  if (a === 'toggle-pax') {
+    const set = new Set(S.draft.participants);
+    el.checked ? set.add(el.value) : set.delete(el.value);
+    S.draft.participants = FAMILY.map(f => f.id).filter(id => set.has(id)); save(); route();
+  }
+  if (a === 'room') { S.draft.rooms[el.dataset.id] = el.value; save(); }
+  if (a === 'accept') { S.draft.accept = el.checked; save(); route(); }
+  if (el.id === 'f-file' && el.files[0]) {
+    const f = el.files[0];
+    if (f.size > 5 * 1024 * 1024) { document.getElementById('upload-error').innerHTML = '<div class="alert danger" role="alert">File lebih dari 5 MB. Pilih file yang lebih kecil.</div>'; el.value = ''; return; }
+    compressImage(f).then(url => { pendingProof = url; document.getElementById('file-preview').innerHTML = url ? `<img class="proof-preview" src="${url}" alt="Pratinjau bukti transfer">` : '<p class="small">PDF dipilih: ' + esc(f.name) + '</p>'; });
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'upload-form') submitProof();
+  if (e.target.id === 'verify-form') {
+    const id = e.target.dataset.id; const amt = digits(document.getElementById('v-amount').value);
+    if (!amt) { document.getElementById('verify-error').innerHTML = '<div class="alert danger" role="alert">Isi nominal yang diterima.</div>'; return; }
+    const flowPay = S.booking && S.booking.payments.find(p => p.id === id);
+    if (flowPay) {
+      const r = verifyPayment(id, amt);
+      if (r.error) { toast('Pembayaran ini sudah diproses oleh rekan Anda.'); route(); return; }
+      toast(r.split ? `Terverifikasi. Kelebihan ${rp(r.split)} dicatat untuk pelunasan` : 'Terverifikasi. Kwitansi terbit');
+    } else {
+      const q = S.oldQueue.find(x => x.id === id); q.status = 'verified'; save(); toast('Terverifikasi (data contoh)');
+    }
+    S.selectedPayment = null; save(); route();
+  }
+});
+
+let pendingProof = null;
+function compressImage(file) {
+  // NFR/UI bagian 9: foto dikompres di peramban, sisi terpanjang maks. 1.600 px
+  if (!file.type.startsWith('image/')) return Promise.resolve(null);
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      // pratinjau kecil agar muat di localStorage
+      const t = document.createElement('canvas'); const s2 = Math.min(1, 480 / Math.max(c.width, c.height));
+      t.width = Math.round(c.width * s2); t.height = Math.round(c.height * s2); t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+      res(t.toDataURL('image/jpeg', 0.7)); URL.revokeObjectURL(img.src);
+    };
+    img.onerror = () => res(null);
+    img.src = URL.createObjectURL(file);
+  });
+}
+function useSampleProof() {
+  const c = document.createElement('canvas'); c.width = 360; c.height = 480; const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 360, 480); g.fillStyle = '#0F5E4A'; g.fillRect(0, 0, 360, 64);
+  g.fillStyle = '#ffffff'; g.font = 'bold 20px sans-serif'; g.fillText('Transfer Berhasil', 20, 40);
+  g.fillStyle = '#1F2937'; g.font = '16px sans-serif';
+  const amt = digits(document.getElementById('f-amount').value);
+  ['Ke: ' + PKG.bank.holder, 'Rek: ' + PKG.bank.no, 'Nominal: ' + rp(amt), 'Tanggal: ' + document.getElementById('f-date').value, 'Dari: ' + document.getElementById('f-sender').value, '(BUKTI CONTOH)']
+    .forEach((l, i) => g.fillText(l, 20, 110 + i * 34));
+  pendingProof = c.toDataURL('image/jpeg', 0.7);
+  document.getElementById('file-preview').innerHTML = `<img class="proof-preview" src="${pendingProof}" alt="Pratinjau bukti transfer contoh">`;
+}
+function submitProof() {
+  const amt = digits(document.getElementById('f-amount').value);
+  const sender = document.getElementById('f-sender').value.trim();
+  const err = [];
+  if (!amt) err.push('Isi nominal transfer.');
+  if (!sender) err.push('Isi nama pemilik rekening pengirim.');
+  if (!pendingProof && !document.getElementById('f-file').files[0]) err.push('Lampirkan foto atau PDF bukti, atau pakai bukti contoh.');
+  if (err.length) { document.getElementById('upload-error').innerHTML = `<div class="alert danger" role="alert">${err.join('<br>')}</div>`; return; }
+  const b = S.booking;
+  const invKey = b.invoices[0].paid < b.invoices[0].amount ? 'dp' : 'final';
+  b.payments.push({ id: 'pay-' + Date.now(), invoice: invKey, claimed: amt, date: document.getElementById('f-date').value, bank: document.getElementById('f-bank').value, sender, status: 'pending', at: Date.now(), proof: pendingProof });
+  pendingProof = null; save();
+  toast('Bukti terkirim. PPIU A akan memeriksa.');
+  location.hash = '#/bayar';
+}
+function openShareModal() {
+  const wrap = document.createElement('div'); wrap.className = 'modal-bg'; wrap.id = 'modal';
+  wrap.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title"><h2 id="m-title" style="margin-top:0">Simulasi WhatsApp</h2>
+    <p>Pesan dan link terkirim ke calon jamaah. Lanjutkan skenario dengan membuka link sebagai calon jamaah.</p>
+    <div class="btn-row"><button type="button" class="btn" data-action="close-modal">Tutup</button><button type="button" class="btn primary" data-action="open-as-jamaah">Buka link sebagai jamaah</button></div></div>`;
+  document.body.appendChild(wrap); wrap.querySelector('.primary').focus();
+}
+function openRejectModal(id) {
+  const wrap = document.createElement('div'); wrap.className = 'modal-bg'; wrap.id = 'modal';
+  wrap.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="r-title"><h2 id="r-title" style="margin-top:0">Tolak bukti bayar</h2>
+    <label class="field"><span>Alasan (dikirim ke pemesan dan agen)</span><select id="r-reason"><option>Nominal tidak masuk ke rekening</option><option>Bukti tidak terbaca</option><option>Transfer ke rekening lain</option></select></label>
+    <div class="btn-row"><button type="button" class="btn" data-action="close-modal">Batal</button><button type="button" class="btn danger" data-action="do-reject" data-id="${id}">Tolak bukti</button></div></div>`;
+  document.body.appendChild(wrap); wrap.querySelector('select').focus();
+}
+function doReject(id) {
+  const reason = document.getElementById('r-reason').value;
+  const p = S.booking && S.booking.payments.find(x => x.id === id);
+  if (p) { p.status = 'rejected'; p.reason = reason; } else { const q = S.oldQueue.find(x => x.id === id); if (q) q.status = 'rejected'; }
+  S.selectedPayment = null; save(); closeModal(); route(); toast('Bukti ditolak; pemesan dan agen diberi tahu');
+}
+function closeModal() { const m = document.getElementById('modal'); if (m) m.remove(); }
+
+setInterval(() => { const c = document.getElementById('countdown'); if (c && S.booking) c.textContent = remaining(S.booking.holdExpires); }, 30000);
+route();
+</script>
+</body>
+</html>
