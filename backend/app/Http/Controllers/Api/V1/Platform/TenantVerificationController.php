@@ -123,6 +123,9 @@ class TenantVerificationController extends Controller
             Audit::log('tenant.verification_decided', $tenant, ['verification_status' => $old], ['verification_status' => $data['decision']], $data['note'] ?? null, $tenant->id, 'platform');
         });
 
+        $label = ['verified' => 'terverifikasi dan sudah tampil di marketplace', 'needs_revision' => 'perlu revisi', 'rejected' => 'ditolak'][$data['decision']];
+        app(\App\Services\NotificationService::class)->toTenant($tenant->id, ['owner'], 'tenant.verification_decided', ['body' => "PPIU {$tenant->brand_name} {$label}.".(! empty($data['note']) ? " Catatan: {$data['note']}" : ''), 'url' => "/dasbor/ppiu/{$tenant->id}"], true);
+
         return $this->show($tenant->fresh());
     }
 

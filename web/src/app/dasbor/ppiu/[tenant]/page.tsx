@@ -6,6 +6,8 @@ import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { BankAccount, Member, TenantDoc, TenantFull } from '@/lib/tenant-types';
 import { tanggal } from '@/lib/format';
 import { BankAccountsPanel, DocumentsPanel, SubmitVerification, TeamPanel, TenantProfileForm } from '../tenant-forms';
+import { TenantNav } from '../tenant-nav';
+import { DashboardCards } from '../dashboard-cards';
 
 export const metadata = { title: 'Dasbor PPIU' };
 
@@ -13,7 +15,7 @@ const STATUS_COPY: Record<string, { tone: 'info' | 'warning' | 'danger' | 'succe
   draft: { tone: 'info', title: 'Lengkapi pendaftaran', body: 'Isi profil, unggah 5 dokumen legalitas, tambahkan rekening resmi, lalu kirim pengajuan verifikasi.' },
   pending_review: { tone: 'warning', title: 'Sedang ditinjau tim UMRAH CONNECT', body: 'Biasanya selesai dalam 2 hari kerja. Data terkunci selama peninjauan; kami kabari hasilnya lewat email.' },
   needs_revision: { tone: 'danger', title: 'Perlu revisi', body: 'Perbaiki data sesuai catatan peninjau, lalu kirim ulang pengajuan.' },
-  verified: { tone: 'success', title: 'PPIU terverifikasi', body: 'PPIU Anda tampil di marketplace. Pengelolaan paket dan keberangkatan dibuka di tahap berikutnya.' },
+  verified: { tone: 'success', title: 'PPIU terverifikasi', body: 'PPIU Anda tampil di marketplace. Kelola paket, foto, keberangkatan, dan harga di tab Paket.' },
   rejected: { tone: 'danger', title: 'Pengajuan ditolak', body: 'Hubungi tim UMRAH CONNECT bila Anda ingin mengajukan keberatan.' },
   suspended: { tone: 'danger', title: 'PPIU ditangguhkan', body: 'Paket tidak tampil di marketplace selama penangguhan. Hubungi tim UMRAH CONNECT.' },
 };
@@ -64,7 +66,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
   return (
     <>
       <section className="bg-hero text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-4 px-4 py-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-4 px-4 pt-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-gold-500">Dasbor PPIU · {membership.role === 'owner' ? 'Owner' : membership.role === 'admin' ? 'Admin' : 'Finance'}</p>
             <h1 className="mt-1 text-3xl font-extrabold">{tenant.brand_name}</h1>
@@ -72,10 +74,12 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
           </div>
           <div className="rounded-[10px] bg-white px-3 py-2"><StatusPill status={st} /></div>
         </div>
+        <div className="mx-auto max-w-6xl px-4"><TenantNav tenantId={id} active="ringkasan" permissions={membership.permissions} /></div>
       </section>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
+          {st === 'verified' && can('report.sales.view') && <DashboardCards tenantId={id} />}
           {sp.baru === '1' && st === 'draft' && <Alert tone="success" title="PPIU tersimpan sebagai draf">Lanjutkan dengan mengunggah dokumen legalitas dan menambahkan rekening resmi.</Alert>}
           <Alert tone={copy.tone} title={copy.title}>
             {copy.body}

@@ -21,3 +21,32 @@ export const DOC_TYPES: { type: string; label: string; hint: string }[] = [
   { type: 'pic_ktp', label: 'KTP penanggung jawab', hint: 'KTP direktur/penanggung jawab yang terbaca jelas' },
 ];
 export const DOC_LABEL: Record<string, string> = Object.fromEntries([...DOC_TYPES.map((d) => [d.type, d.label]), ['other', 'Dokumen lain']]);
+
+export type RoomType = 'quad' | 'triple' | 'double';
+export type ItineraryDay = { day: number; title: string; activities: string[] };
+export type PackageImage = { id: string; file_id: string; url: string | null; sort_order: number };
+export type DepartureManaged = {
+  id: string; package_id: string; departure_date: string; return_date: string; departure_city: string;
+  quota: number; seats_held: number; seats_confirmed: number; seats_remaining: number;
+  dp_min_per_pax_amount: number; dp_deadline_hours: number; final_payment_due_on: string;
+  prices: { room_type: RoomType; price_amount: number }[];
+  sales_status: 'open' | 'closed' | 'full'; status: 'scheduled' | 'departed' | 'completed' | 'cancelled'; etag: string;
+};
+export type PackageManaged = {
+  id: string; slug: string; status: 'draft' | 'published' | 'archived' | 'taken_down'; taken_down_reason: string | null;
+  name: string; duration_days: number; airline: string;
+  hotel_makkah: string | null; hotel_makkah_stars: number | null; hotel_makkah_distance_m: number | null;
+  hotel_madinah: string | null; hotel_madinah_stars: number | null; hotel_madinah_distance_m: number | null;
+  description: string | null; itinerary: ItineraryDay[]; facilities: string[]; includes: string[]; excludes: string[];
+  document_requirements: string | null; payment_terms: string | null; cancellation_terms: string | null;
+  published_at: string | null; updated_at: string | null; images: PackageImage[];
+  departures_count: number; price_from_amount: number | null; next_departure_date: string | null; etag: string;
+  departures?: DepartureManaged[];
+  publish_checklist?: { items: Record<string, boolean>; complete: boolean; has_images: boolean };
+};
+
+export const PUBLISH_ITEMS: Record<string, string> = {
+  description: 'Deskripsi paket', hotels: 'Hotel Makkah dan Madinah', itinerary: 'Rencana perjalanan',
+  includes: 'Daftar yang termasuk', payment_terms: 'Ketentuan pembayaran', cancellation_terms: 'Kebijakan pembatalan',
+  departure: 'Minimal satu keberangkatan mendatang dengan harga',
+};

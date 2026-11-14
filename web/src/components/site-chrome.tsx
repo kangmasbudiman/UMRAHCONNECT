@@ -1,18 +1,24 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { getContexts } from '@/lib/session';
+import { getContexts, serverApi } from '@/lib/session';
 import { MobileMenu } from './mobile-menu';
 
 /** Tombol kanan header: tamu → Masuk/Daftar; sudah masuk → Akun. Dibaca per permintaan (cookie sesi). */
 async function SignedInActions() {
   const ctx = await getContexts().catch(() => null);
-  return <HeaderActions user={ctx ? { name: ctx.user.name } : null} />;
+  const unread = ctx ? await serverApi<{ meta: { unread: number } }>('/me/notifications?unread=1&limit=1').then((r) => r.meta.unread).catch(() => 0) : 0;
+  return <HeaderActions user={ctx ? { name: ctx.user.name } : null} unread={unread} />;
 }
 
-function HeaderActions({ user }: { user: { name: string } | null }) {
+function HeaderActions({ user, unread = 0 }: { user: { name: string } | null; unread?: number }) {
   if (user) {
     return (
       <>
+        <Link href="/akun/notifikasi" className="relative inline-flex h-12 w-12 items-center justify-center rounded-lg text-primary-800 hover:bg-primary-50"
+          aria-label={unread > 0 ? `Notifikasi, ${unread} belum dibaca` : 'Notifikasi'}>
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+          {unread > 0 && <span className="num absolute right-1.5 top-1.5 min-w-5 rounded-full bg-gold-500 px-1 text-center text-xs font-bold text-ink-900">{unread > 9 ? '9+' : unread}</span>}
+        </Link>
         <Link href="/akun" className="btn btn-outline px-3 sm:px-4">
           <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-700 text-sm font-bold text-white">{user.name.trim()[0]?.toUpperCase()}</span>
           <span className="max-w-32 truncate">Akun</span>

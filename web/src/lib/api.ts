@@ -32,6 +32,7 @@ export type PackageDetail = {
   facilities: string[]; includes: string[]; excludes: string[];
   document_requirements: string | null; payment_terms: string | null; cancellation_terms: string | null;
   tenant: TenantPublic; departures: DeparturePublic[];
+  images: { id: string; url: string | null; sort_order: number }[];
 };
 export type ScheduleItem = DeparturePublic & {
   package: { slug: string; name: string; duration_days: number; airline: string };

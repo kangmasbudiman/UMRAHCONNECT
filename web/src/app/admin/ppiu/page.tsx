@@ -6,6 +6,8 @@ import { tanggal } from '@/lib/format';
 import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { TenantFull } from '@/lib/tenant-types';
 
+import { AdminHeader } from '../admin-nav';
+
 export const metadata = { title: 'Verifikasi PPIU' };
 
 type Row = TenantFull & { owner: { name: string; email: string | null; phone: string | null } | null };
@@ -85,13 +87,7 @@ async function Queue({ searchParams }: PageProps<'/admin/ppiu'>) {
 export default function AdminTenantsPage(props: PageProps<'/admin/ppiu'>) {
   return (
     <>
-      <section className="bg-hero text-white">
-        <div className="mx-auto max-w-6xl px-4 py-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-gold-500">Platform</p>
-          <h1 className="mt-1 text-3xl font-extrabold">Verifikasi PPIU</h1>
-          <p className="mt-1 text-white/85">Hanya PPIU terverifikasi yang tampil di marketplace (BR-01).</p>
-        </div>
-      </section>
+      <AdminHeader active="ppiu" title="Verifikasi PPIU" sub="Hanya PPIU terverifikasi yang tampil di marketplace (BR-01)." />
       <div className="mx-auto max-w-6xl px-4 py-6">
         <Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Queue {...props} /></Suspense>
       </div>

@@ -29,14 +29,14 @@ async function ensureCsrf(): Promise<void> {
   if (!xsrfToken()) await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' });
 }
 
-type Options = { method?: string; json?: unknown; form?: FormData };
+type Options = { method?: string; json?: unknown; form?: FormData; headers?: Record<string, string> };
 
 export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
   const method = opts.method ?? (opts.json !== undefined || opts.form ? 'POST' : 'GET');
   if (method !== 'GET') await ensureCsrf();
 
   const doFetch = () => {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: 'application/json', ...opts.headers };
     const token = xsrfToken();
     if (token) headers['X-XSRF-TOKEN'] = token;
     if (opts.json !== undefined) headers['Content-Type'] = 'application/json';

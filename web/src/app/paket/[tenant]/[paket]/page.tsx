@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getPackage, getReferral, type PackageDetail } from '@/lib/api';
 import { ROOM_LABEL, rupiah, tanggal, waLink } from '@/lib/format';
-import { CoverPlaceholder, SeatsPill, Stars, VerifiedBadge, WhatsAppButton } from '@/components/ui';
+import { Cover, SeatsPill, Stars, VerifiedBadge, WhatsAppButton } from '@/components/ui';
 import { IconBank, IconCalendar, IconCheck, IconClock, IconHotel, IconPin, IconPlane, IconTag, IconX } from '@/components/icons';
 
 type Props = PageProps<'/paket/[tenant]/[paket]'>;
@@ -53,9 +53,10 @@ async function PackageBody({ params }: { params: Props['params'] }) {
         </nav>
 
         <div className="mt-3 grid h-56 grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl md:h-80">
-          <CoverPlaceholder title={p.name} className="col-span-4 row-span-2 md:col-span-3" label="Foto paket segera tersedia" />
-          <div className="hidden md:block"><CoverPlaceholder title="Makkah" className="h-full" label="Makkah" /></div>
-          <div className="hidden md:block"><CoverPlaceholder title="Madinah" className="h-full" label="Madinah" /></div>
+          <Cover url={p.images[0]?.url} title={p.name} className="col-span-4 row-span-2 md:col-span-3" priority
+            label={p.images.length ? (p.images.length > 1 ? `${p.images.length} foto` : undefined) : 'Foto paket segera tersedia'} />
+          <div className="hidden md:block"><Cover url={p.images[1]?.url} title="Makkah" className="h-full" label={p.images[1] ? undefined : 'Makkah'} /></div>
+          <div className="hidden md:block"><Cover url={p.images[2]?.url} title="Madinah" className="h-full" label={p.images[2] ? undefined : 'Madinah'} /></div>
         </div>
       </div>
 
@@ -215,7 +216,7 @@ async function ReferralBox({ pkg }: { pkg: PackageDetail }) {
       <WhatsAppButton
         className="mt-4 w-full"
         href={waLink(viaAgent?.agent.whatsapp ?? pkg.tenant.whatsapp, text)}
-        label={viaAgent ? `Tanya agen ${viaAgent.agent.display_name}` : `Tanya ${pkg.tenant.brand_name}`}
+        label={viaAgent?.agent.whatsapp ? `Tanya agen ${viaAgent.agent.display_name}` : `Tanya ${pkg.tenant.brand_name}`}
       />
     </>
   );

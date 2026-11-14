@@ -55,10 +55,10 @@ async function Account() {
           <h2 id="ruang-kerja" className="text-xl font-extrabold">Ruang kerja</h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ctx.platform_role && (
-              <Link href="/admin/ppiu" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+              <Link href="/admin" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
                 <span className="text-sm font-semibold text-gold-700">Platform · {ctx.platform_role === 'super_admin' ? 'Super Admin' : 'Admin Platform'}</span>
-                <span className="text-lg font-extrabold group-hover:text-primary-700">Verifikasi PPIU</span>
-                <span className="text-ink-600">Tinjau pengajuan PPIU, dokumen, dan rekening.</span>
+                <span className="text-lg font-extrabold group-hover:text-primary-700">Dasbor platform</span>
+                <span className="text-ink-600">Verifikasi PPIU, angka global, audit log, akses dukungan.</span>
               </Link>
             )}
             {ctx.tenants.map((t) => (
@@ -73,10 +73,23 @@ async function Account() {
               <span className="text-lg font-extrabold text-primary-800">+ Daftarkan PPIU</span>
               <span className="text-ink-600">Isi profil, unggah legalitas, lalu ajukan verifikasi.</span>
             </Link>
-            <Link href="/paket" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+            {ctx.agent ? (
+              <Link href="/agen" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
+                <span className="text-sm font-semibold text-gold-700">Agen · kode {ctx.agent.code}</span>
+                <span className="text-lg font-extrabold group-hover:text-primary-700">Dasbor agen</span>
+                <span className="text-ink-600">{ctx.agent.active_partnerships} PPIU mitra aktif. Bagikan link paket.</span>
+              </Link>
+            ) : (
+              <Link href="/agen/daftar" className="flex flex-col gap-1 rounded-[12px] border border-dashed border-gold-600 bg-gold-50 p-5 hover:bg-gold-100">
+                <span className="text-sm font-semibold text-gold-700">Untuk agen pemasaran</span>
+                <span className="text-lg font-extrabold text-primary-800">+ Jadi agen</span>
+                <span className="text-ink-600">Bermitra dengan PPIU dan terima komisi resmi.</span>
+              </Link>
+            )}
+            <Link href="/akun/booking" className="card group flex flex-col gap-1 p-5 hover:border-primary-600">
               <span className="text-sm font-semibold text-gold-700">Jamaah</span>
-              <span className="text-lg font-extrabold group-hover:text-primary-700">Cari paket umrah</span>
-              <span className="text-ink-600">Pemesanan online dibuka di tahap berikutnya.</span>
+              <span className="text-lg font-extrabold group-hover:text-primary-700">Booking saya</span>
+              <span className="text-ink-600">Status booking, tagihan DP dan pelunasan, rekening tujuan.</span>
             </Link>
           </div>
         </section>

@@ -1,7 +1,21 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AgentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CommissionController;
+use App\Http\Controllers\Api\V1\CommissionSchemeController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\Platform\PlatformOpsController;
+use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\PartnershipController;
 use App\Http\Controllers\Api\V1\BankAccountController;
+use App\Http\Controllers\Api\V1\BookingController;
+use App\Http\Controllers\Api\V1\BookingOpsController;
+use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\PilgrimDocumentController;
+use App\Http\Controllers\Api\V1\PilgrimController;
+use App\Http\Controllers\Api\V1\DepartureController;
+use App\Http\Controllers\Api\V1\PackageController;
 use App\Http\Controllers\Api\V1\FileController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MemberController;
@@ -16,7 +30,7 @@ use Illuminate\Support\Facades\Route;
 | Base: /api/v1
 */
 // Parameter ID berbentuk UUID; selain itu 404 (bukan error database).
-foreach (['tenant', 'member', 'account', 'file'] as $param) {
+foreach (['tenant', 'member', 'account', 'file', 'package', 'departure', 'image', 'partnership', 'scheme', 'link', 'pilgrim', 'booking', 'invoice', 'payment', 'receipt', 'document', 'payout', 'session'] as $param) {
     Route::pattern($param, '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 }
 
@@ -56,11 +70,56 @@ Route::prefix('v1')->group(function () {
         Route::get('me', [MeController::class, 'show']);
         Route::patch('me', [MeController::class, 'update']);
         Route::get('me/contexts', [MeController::class, 'contexts']);
+        Route::get('me/notifications', [NotificationController::class, 'index']);
+        Route::post('me/notifications/read', [NotificationController::class, 'read']);
         Route::post('me/invitations/{member}/accept', fn (\Illuminate\Http\Request $r, string $member) => app(MemberController::class)->respond($r, $member, 'accept'))->whereUuid('member');
         Route::post('me/invitations/{member}/decline', fn (\Illuminate\Http\Request $r, string $member) => app(MemberController::class)->respond($r, $member, 'decline'))->whereUuid('member');
 
+        // Data jamaah & booking milik pengguna (Sprint 4, FR-JMH)
+        Route::get('me/pilgrims', [PilgrimController::class, 'index']);
+        Route::post('me/pilgrims', [PilgrimController::class, 'store']);
+        Route::get('me/pilgrims/{pilgrim}', [PilgrimController::class, 'show']);
+        Route::patch('me/pilgrims/{pilgrim}', [PilgrimController::class, 'update']);
+        Route::delete('me/pilgrims/{pilgrim}', [PilgrimController::class, 'destroy']);
+        Route::get('me/bookings', [BookingController::class, 'myIndex']);
+        Route::get('me/bookings/{booking}', [BookingController::class, 'myShow']);
+        Route::post('me/bookings', [BookingController::class, 'myStore'])->middleware(['contact.verified', 'idempotent']);
+        // Sprint 5: bukti bayar, kwitansi, pembatalan, dokumen jamaah
+        Route::post('me/invoices/{invoice}/payments', [PaymentController::class, 'myUpload'])->middleware('idempotent');
+        Route::get('me/invoices/{invoice}/pdf', [PaymentController::class, 'myInvoicePdf']);
+        Route::get('me/receipts/{receipt}/pdf', [PaymentController::class, 'myReceiptPdf']);
+        Route::post('me/bookings/{booking}/cancel-request', [BookingOpsController::class, 'myCancelRequest']);
+        Route::get('me/pilgrims/{pilgrim}/documents', [PilgrimDocumentController::class, 'index']);
+        Route::post('me/pilgrims/{pilgrim}/documents', [PilgrimDocumentController::class, 'store']);
+
         Route::post('files', [FileController::class, 'store']);
         Route::get('files/{file}', [FileController::class, 'show']);
+
+        // Agen (Sprint 3, BP-03/BP-04)
+        Route::prefix('agent')->group(function () {
+            Route::get('profile', [AgentController::class, 'showProfile']);
+            Route::post('profile', [AgentController::class, 'register'])->middleware('contact.verified');
+            Route::middleware('agent')->group(function () {
+                Route::patch('profile', [AgentController::class, 'updateProfile']);
+                Route::get('tenants', [AgentController::class, 'tenants']);
+                Route::get('packages', [AgentController::class, 'packages']);
+                Route::get('referral-links', [AgentController::class, 'links']);
+                Route::post('referral-links', [AgentController::class, 'createLink']);
+                Route::get('referral-links/{link}/qr', [AgentController::class, 'qr']);
+                Route::get('partnerships', [PartnershipController::class, 'agentIndex']);
+                Route::post('partnerships', [PartnershipController::class, 'apply']);
+                Route::post('partnerships/{partnership}/accept', [PartnershipController::class, 'accept']);
+                Route::post('partnerships/{partnership}/decline', [PartnershipController::class, 'decline']);
+                Route::post('partnerships/{partnership}/end', [PartnershipController::class, 'agentEnd']);
+                Route::get('bookings', [BookingController::class, 'agentIndex']);
+                Route::get('bookings/{booking}', [BookingController::class, 'agentShow']);
+                Route::post('bookings', [BookingController::class, 'agentStore'])->middleware('idempotent');
+                Route::post('invoices/{invoice}/payments', [PaymentController::class, 'agentUpload'])->middleware('idempotent');
+                Route::get('commissions', [CommissionController::class, 'agentIndex']);
+                Route::get('payout-requests', [CommissionController::class, 'agentPayouts']);
+                Route::post('payout-requests', [CommissionController::class, 'agentRequestPayout'])->middleware('idempotent');
+            });
+        });
 
         // Pendaftaran PPIU (BP-01)
         Route::post('tenants', [TenantController::class, 'store'])->middleware('contact.verified');
@@ -82,6 +141,82 @@ Route::prefix('v1')->group(function () {
             Route::post('members/invitations', [MemberController::class, 'invite'])->middleware('perm:member.manage');
             Route::patch('members/{member}', [MemberController::class, 'update'])->whereUuid('member')->middleware('perm:member.manage');
             Route::post('members/{member}/deactivate', [MemberController::class, 'deactivate'])->whereUuid('member')->middleware('perm:member.manage');
+
+            // Booking PPIU (Sprint 4, FR-PPIU-12/13)
+            Route::get('bookings', [BookingController::class, 'tenantIndex'])->middleware('perm:booking.view');
+            Route::post('bookings', [BookingController::class, 'tenantStore'])->middleware(['perm:booking.create', 'idempotent']);
+            Route::get('bookings/{booking}', [BookingController::class, 'tenantShow'])->middleware('perm:booking.view');
+
+            // Keuangan & operasional booking (Sprint 5, BP-06/08/09)
+            Route::get('payments', [PaymentController::class, 'tenantIndex'])->middleware('perm:payment.view');
+            Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->middleware(['perm:payment.verify', 'idempotent']);
+            Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->middleware('perm:payment.verify');
+            Route::post('invoices/{invoice}/payments', [PaymentController::class, 'record'])->middleware(['perm:payment.record', 'idempotent']);
+            Route::get('invoices/{invoice}/pdf', [PaymentController::class, 'invoicePdf'])->middleware('perm:invoice.view');
+            Route::get('receipts/{receipt}/pdf', [PaymentController::class, 'receiptPdf'])->middleware('perm:invoice.view');
+            Route::post('bookings/{booking}/cancel', [BookingOpsController::class, 'cancel'])->middleware(['perm:booking.cancel', 'idempotent']);
+            Route::patch('bookings/{booking}/attribution', [BookingOpsController::class, 'changeAttribution'])->middleware('perm:booking.attribution.change');
+            Route::post('bookings/{booking}/cancel-request/reject', [BookingOpsController::class, 'rejectCancelRequest'])->middleware('perm:booking.cancel');
+            Route::get('bookings/{booking}/refunds', [BookingOpsController::class, 'refunds'])->middleware('perm:payment.view');
+            Route::post('bookings/{booking}/refunds', [BookingOpsController::class, 'recordRefund'])->middleware(['perm:refund.record', 'idempotent']);
+            Route::get('bookings/{booking}/notes', [BookingOpsController::class, 'notes'])->middleware('perm:booking.note');
+            Route::post('bookings/{booking}/notes', [BookingOpsController::class, 'addNote'])->middleware('perm:booking.note');
+            Route::get('pilgrims/{pilgrim}/identity', [BookingOpsController::class, 'identity'])->middleware('perm:pilgrim.identity.view');
+            Route::get('pilgrim-documents/{document}/file', [BookingOpsController::class, 'documentFile'])->middleware('perm:pilgrim.identity.view');
+            Route::put('pilgrim-documents/{document}/review', [BookingOpsController::class, 'reviewDocument'])->middleware('perm:pilgrim_document.review');
+
+            // Komisi, payout, laporan, dasbor (Sprint 6, BP-07)
+            Route::get('commissions', [CommissionController::class, 'tenantIndex'])->middleware('perm:commission.view');
+            Route::post('commissions/approve', [CommissionController::class, 'approve'])->middleware('perm:commission.approve');
+            Route::get('payouts', [CommissionController::class, 'payouts'])->middleware('perm:commission.view');
+            Route::post('payouts', [CommissionController::class, 'createPayout'])->middleware(['perm:payout.pay', 'idempotent']);
+            Route::post('payouts/{payout}/pay', [CommissionController::class, 'pay'])->middleware(['perm:payout.pay', 'idempotent']);
+            Route::post('payouts/{payout}/reject', [CommissionController::class, 'reject'])->middleware('perm:payout.pay');
+            Route::get('reports/sales', [ReportController::class, 'sales'])->middleware('perm:report.sales.view');
+            Route::get('reports/finance', [ReportController::class, 'finance'])->middleware('perm:report.finance.view');
+            Route::get('reports/sales/export', [ReportController::class, 'export'])->defaults('report', 'sales')->middleware('perm:report.export:sales');
+            Route::get('reports/finance/export', [ReportController::class, 'export'])->defaults('report', 'finance')->middleware('perm:report.export:finance');
+            Route::get('dashboard', [ReportController::class, 'dashboard'])->middleware('perm:report.sales.view');
+
+            // Kemitraan agen & skema komisi (Sprint 3, BP-03)
+            Route::controller(PartnershipController::class)->group(function () {
+                Route::get('partnerships', 'tenantIndex')->middleware('perm:partnership.view');
+                Route::post('partnerships/invitations', 'invite')->middleware('perm:partnership.manage');
+                Route::post('partnerships/{partnership}/approve', 'approve')->middleware('perm:partnership.manage');
+                Route::post('partnerships/{partnership}/reject', 'reject')->middleware('perm:partnership.manage');
+                Route::post('partnerships/{partnership}/suspend', 'suspend')->middleware('perm:partnership.manage');
+                Route::post('partnerships/{partnership}/reactivate', 'reactivate')->middleware('perm:partnership.manage');
+                Route::post('partnerships/{partnership}/end', 'tenantEnd')->middleware('perm:partnership.manage');
+            });
+            Route::get('commission-schemes', [CommissionSchemeController::class, 'index'])->middleware('perm:commission_scheme.view');
+            Route::post('commission-schemes', [CommissionSchemeController::class, 'store'])->middleware('perm:commission_scheme.manage');
+            Route::post('commission-schemes/{scheme}/end', [CommissionSchemeController::class, 'end'])->middleware('perm:commission_scheme.manage');
+
+            // Katalog paket (Sprint 2, BP-02)
+            Route::controller(PackageController::class)->group(function () {
+                Route::get('packages', 'index')->middleware('perm:package.view');
+                Route::post('packages', 'store')->middleware('perm:package.manage');
+                Route::get('packages/{package}', 'show')->middleware('perm:package.view');
+                Route::patch('packages/{package}', 'update')->middleware('perm:package.manage');
+                Route::post('packages/{package}/duplicate', 'duplicate')->middleware('perm:package.manage');
+                Route::post('packages/{package}/archive', 'archive')->middleware('perm:package.manage');
+                Route::post('packages/{package}/publish', 'publish')->middleware('perm:package.publish');
+                Route::post('packages/{package}/unpublish', 'unpublish')->middleware('perm:package.publish');
+                Route::post('packages/{package}/images', 'addImage')->middleware('perm:package.manage');
+                Route::put('packages/{package}/images/order', 'reorderImages')->middleware('perm:package.manage');
+                Route::delete('packages/{package}/images/{image}', 'deleteImage')->middleware('perm:package.manage');
+            });
+            Route::controller(DepartureController::class)->group(function () {
+                Route::get('packages/{package}/departures', 'index')->middleware('perm:package.view');
+                Route::post('packages/{package}/departures', 'store')->middleware('perm:departure.manage');
+                Route::get('departures/{departure}', 'show')->middleware('perm:package.view');
+                Route::patch('departures/{departure}', 'update')->middleware('perm:departure.manage');
+                Route::put('departures/{departure}/prices', 'replacePrices')->middleware('perm:departure.price.update');
+                Route::post('departures/{departure}/close-sales', 'closeSales')->middleware('perm:departure.manage');
+                Route::post('departures/{departure}/open-sales', 'openSales')->middleware('perm:departure.manage');
+                Route::post('departures/{departure}/cancel', 'cancel')->middleware('perm:departure.manage');
+                Route::post('departures/{departure}/complete', 'complete')->middleware('perm:departure.manage');
+            });
         });
 
         // Platform (FR-ADM) — staf platform, 2FA wajib
@@ -92,6 +227,13 @@ Route::prefix('v1')->group(function () {
             Route::post('tenants/{tenant}/suspend', 'suspend')->whereUuid('tenant')->middleware('platform:platform.tenant.suspend');
             Route::post('tenants/{tenant}/restore', 'restore')->whereUuid('tenant')->middleware('platform:platform.tenant.suspend');
             Route::post('bank-accounts/{account}/verify', 'verifyBankAccount')->whereUuid('account')->middleware('platform:platform.bank_account.verify');
+        });
+        Route::prefix('platform')->middleware('2fa')->controller(PlatformOpsController::class)->group(function () {
+            Route::get('dashboard', 'dashboard')->middleware('platform:platform.dashboard.view');
+            Route::get('audit-logs', 'auditLogs')->middleware('platform:platform.audit_log.view:tenant');
+            Route::get('support-sessions', 'supportSessions')->middleware('platform:platform.support_access');
+            Route::post('support-sessions', 'openSupport')->middleware('platform:platform.support_access');
+            Route::delete('support-sessions/{session}', 'endSupport')->middleware('platform:platform.support_access');
         });
     });
 });

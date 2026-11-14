@@ -8,11 +8,23 @@ const API = process.env.API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
  * Server tetap memvalidasi kemitraan saat booking, jadi cookie yang diubah tidak bisa menghasilkan komisi.
  */
 export const SESSION_COOKIE = 'umrah-connect-session';
-const PROTECTED = ['/akun', '/dasbor', '/admin'];
+const PROTECTED = ['/akun', '/dasbor', '/admin', '/agen'];
 
 export async function proxy(req: NextRequest) {
-  // Area akun: tanpa cookie sesi langsung ke halaman masuk (cek sesi sebenarnya tetap di server API).
   const path = req.nextUrl.pathname;
+  // Unduhan API lewat navigasi langsung (mis. PDF kwitansi dibuka di tab baru) tidak membawa Referer, sehingga
+  // Sanctum tidak memakai sesi cookie. Untuk GET same-origin tanpa Referer/Origin, tandai asal web ini.
+  // Aman: GET tidak mengubah data, dan POST tetap wajib token CSRF.
+  if (path.startsWith('/api/v1/')) {
+    if (req.method === 'GET' && !req.headers.get('referer') && !req.headers.get('origin')) {
+      const headers = new Headers(req.headers);
+      headers.set('referer', `${req.nextUrl.origin}/`);
+      return NextResponse.next({ request: { headers } });
+    }
+    return NextResponse.next();
+  }
+
+  // Area akun: tanpa cookie sesi langsung ke halaman masuk (cek sesi sebenarnya tetap di server API).
   if (PROTECTED.some((p) => path === p || path.startsWith(p + '/')) && !req.cookies.has(SESSION_COOKIE)) {
     const login = req.nextUrl.clone();
     login.pathname = '/masuk';
@@ -43,5 +55,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|sanctum/).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sanctum/).*)'],
 };

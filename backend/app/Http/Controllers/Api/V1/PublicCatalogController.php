@@ -77,7 +77,7 @@ class PublicCatalogController extends Controller
             ->selectSub($minPrice, 'price_from_amount')
             ->selectSub($nextDate, 'next_departure_date')
             ->whereHas('departures', $depFilter)
-            ->with(['tenant', 'images', 'departures' => fn ($q) => $q->where('status', 'scheduled')->whereDate('departure_date', '>=', $today)->orderBy('departure_date')]);
+            ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->where('status', 'scheduled')->whereDate('departure_date', '>=', $today)->orderBy('departure_date')]);
 
         if (! empty($v['duration_days'])) {
             $query->where('duration_days', $v['duration_days']);
@@ -121,7 +121,7 @@ class PublicCatalogController extends Controller
         $package = Package::publiclyVisible()
             ->whereHas('tenant', fn ($t) => $t->where('slug', $tenantSlug))
             ->where('slug', $packageSlug)
-            ->with(['tenant', 'images', 'departures' => fn ($q) => $q->upcoming()->orderBy('departure_date'), 'departures.prices'])
+            ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->upcoming()->orderBy('departure_date'), 'departures.prices'])
             ->firstOrFail();
 
         return response()->json(['data' => array_merge($this->packageFull($package), [
@@ -151,7 +151,7 @@ class PublicCatalogController extends Controller
         $packages = Package::publiclyVisible()
             ->where('packages.tenant_id', $tenant->id)
             ->whereHas('departures', fn ($q) => $q->upcoming())
-            ->with(['tenant', 'images', 'departures' => fn ($q) => $q->upcoming()->orderBy('departure_date'), 'departures.prices'])
+            ->with(['tenant', 'images.file', 'departures' => fn ($q) => $q->upcoming()->orderBy('departure_date'), 'departures.prices'])
             ->orderBy('name')->get();
 
         return response()->json(['data' => array_merge($this->tenantPublic($tenant), [
@@ -267,7 +267,7 @@ class PublicCatalogController extends Controller
             'id' => $p->id, 'slug' => $p->slug, 'name' => $p->name,
             'tenant' => ['slug' => $p->tenant->slug, 'brand_name' => $p->tenant->brand_name, 'verified' => true, 'ppiu_license_no' => $p->tenant->ppiu_license_no],
             'duration_days' => $p->duration_days, 'airline' => $p->airline, 'hotel_makkah_stars' => $p->hotel_makkah_stars,
-            'cover_image_url' => null,
+            'cover_image_url' => ($img = $p->images->first()) ? \App\Support\CatalogPresenter::image($img)['url'] : null,
             'price_from_amount' => (int) $priceFrom,
             'next_departure' => $next ? [
                 'departure_date' => $next->departure_date->toDateString(),
@@ -288,7 +288,7 @@ class PublicCatalogController extends Controller
             'includes' => $p->includes, 'excludes' => $p->excludes,
             'document_requirements' => $p->document_requirements, 'payment_terms' => $p->payment_terms, 'cancellation_terms' => $p->cancellation_terms,
             'published_at' => $p->published_at?->toIso8601ZuluString(),
-            'images' => [],
+            'images' => $p->images->map(fn ($i) => \App\Support\CatalogPresenter::image($i))->values(),
         ];
     }
 

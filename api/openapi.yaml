@@ -3097,7 +3097,7 @@ paths:
       tags: [Booking]
       operationId: updateBookingAttribution
       summary: Ubah agen pada booking yang belum lunas (alasan wajib)
-      x-permission: booking.attribution.update
+      x-permission: booking.attribution.change
       x-requirements: [FR-PPIU-14, BR-09]
       parameters:
         - $ref: '#/components/parameters/TenantId'

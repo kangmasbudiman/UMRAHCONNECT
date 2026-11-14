@@ -9,7 +9,7 @@ export const metadata = { title: 'Daftar akun' };
 
 async function Form({ searchParams }: PageProps<'/daftar'>) {
   const peran = (await searchParams).peran;
-  if (await getContexts()) redirect(peran === 'ppiu' ? '/dasbor/ppiu/daftar' : '/akun');
+  if (await getContexts()) redirect(peran === 'ppiu' ? '/dasbor/ppiu/daftar' : peran === 'agen' ? '/agen' : '/akun');
   const role = peran === 'ppiu' || peran === 'agen' ? peran : 'jamaah';
   return <RegisterForm initialRole={role} />;
 }

@@ -18,10 +18,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 /** Unggah file (API §Files). Tipe dicek dari isi file; file privat diakses lewat signed URL 10 menit. */
 class FileController extends Controller
 {
-    /** purpose => [visibility, max KB, mime yang diizinkan]. Sprint 1: dokumen PPIU dan logo. */
+    /** purpose => [visibility, max KB, mime yang diizinkan]. Sprint 1–2: dokumen PPIU, logo, foto paket. */
     private const RULES = [
         'tenant_document' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
         'logo' => ['public', 2048, ['image/jpeg', 'image/png', 'image/webp']],
+        'package_image' => ['public', 2048, ['image/jpeg', 'image/png', 'image/webp']],
+        'ktp' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
+        'payment_proof' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
+        'refund_proof' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
+        'pilgrim_document' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
+        'payout_proof' => ['private', 5120, ['image/jpeg', 'image/png', 'application/pdf']],
     ];
 
     public function store(Request $request): JsonResponse
@@ -39,6 +45,13 @@ class FileController extends Controller
 
         $upload = $request->file('file');
         $mime = $upload->getMimeType(); // dari isi file (finfo), bukan dari nama
+        // TC-SEC-07: PDF berisi skrip atau aksi otomatis ditolak; gambar wajib bisa dibaca sebagai gambar sungguhan.
+        if ($mime === 'application/pdf' && preg_match('#/(JavaScript|JS|Launch|EmbeddedFile|RichMedia|XFA)\b#', (string) file_get_contents($upload->getRealPath()))) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'PDF ini memuat skrip atau aksi otomatis. Simpan ulang sebagai PDF biasa (mis. "Print to PDF"), lalu unggah lagi.']);
+        }
+        if (str_starts_with($mime, 'image/') && @getimagesize($upload->getRealPath()) === false) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'File gambar rusak atau bukan gambar.']);
+        }
         $disk = $visibility === 'public' ? 'public' : 'local';
         $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'][$mime];
         $path = $upload->storeAs('files/'.now()->format('Y/m'), Str::uuid().'.'.$ext, $disk);
@@ -107,6 +120,17 @@ class FileController extends Controller
             || Permissions::platformAllows($user, 'platform.tenant.view');
         if (! $ok) {
             throw new NotFoundHttpException;
+        }
+
+        return $f;
+    }
+
+    /** File pribadi (KTP agen): milik pengunggah, purpose cocok, tidak terikat tenant. */
+    public static function claimPersonal(Request $request, string $fileId, string $purpose): File
+    {
+        $f = Str::isUuid($fileId) ? File::find($fileId) : null;
+        if (! $f || $f->uploaded_by !== $request->user()->id || $f->purpose !== $purpose || $f->tenant_id) {
+            throw new ApiException(422, 'file_invalid', 'File tidak ditemukan atau bukan unggahan Anda. Unggah ulang.', errors: [$purpose === 'ktp' ? 'ktp_file_id' : 'file_id' => ['File tidak valid.']]);
         }
 
         return $f;

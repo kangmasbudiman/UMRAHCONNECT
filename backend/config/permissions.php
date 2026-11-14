@@ -11,8 +11,8 @@ return [
         'tenant.profile.view', 'tenant.profile.update', 'tenant.documents.manage', 'tenant.settings.update',
         'member.view', 'member.manage', 'ownership.transfer',
         'bank_account.view', 'bank_account.manage',
-        'package.view', 'package.create', 'package.update', 'package.publish', 'package.archive',
-        'departure.view', 'departure.create', 'departure.update', 'departure.cancel',
+        'package.view', 'package.manage', 'package.publish',
+        'departure.manage', 'departure.price.update',
         'partnership.view', 'partnership.manage', 'commission_scheme.view', 'commission_scheme.manage',
         'booking.view', 'booking.create', 'booking.cancel', 'booking.note', 'booking.attribution.change',
         'pilgrim.identity.view', 'pilgrim_document.review',
@@ -32,6 +32,9 @@ return [
             'partnership.view', 'commission_scheme.view', 'booking.view',
             'invoice.view', 'payment.*', 'commission.*', 'payout.pay', 'refund.record', 'booking.note',
             'report.*'],
+        // Staf platform lewat akses dukungan (baca-saja, 60 menit, X-Support-Session).
+        'support' => ['tenant.profile.view', 'member.view', 'bank_account.view', 'package.view', 'partnership.view', 'commission_scheme.view',
+            'booking.view', 'invoice.view', 'payment.view', 'commission.view', 'report.sales.view', 'report.finance.view'],
     ],
 
     'platform' => [

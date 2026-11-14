@@ -6,3 +6,6 @@ export function safeNext(v: string | string[] | undefined, fallback = '/akun'): 
 
 /** Versi dokumen hukum yang disetujui saat daftar; harus sama dengan config('app.legal') di API. */
 export const LEGAL = { terms_version: '2026-11-v1', privacy_version: '2026-11-v1' } as const;
+
+/** Versi ketentuan kemitraan agen–PPIU; harus sama dengan config('app.legal.partnership_terms_version'). */
+export const PARTNERSHIP_TERMS_VERSION = '2026-11-v1';

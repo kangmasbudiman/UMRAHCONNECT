@@ -15,6 +15,9 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // NFR-10: batas permintaan publik per IP per menit. Hanya dinaikkan untuk uji beban (TC-PERF), jangan di produksi.
+    'public_rate_limit' => (int) env('PUBLIC_RATE_LIMIT', 120),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment
@@ -104,7 +107,11 @@ return [
     'legal' => [
         'terms_version' => env('LEGAL_TERMS_VERSION', '2026-11-v1'),
         'privacy_version' => env('LEGAL_PRIVACY_VERSION', '2026-11-v1'),
+        'partnership_terms_version' => env('LEGAL_PARTNERSHIP_VERSION', '2026-11-v1'),
     ],
+
+    // Origin website publik (untuk URL link referral agen).
+    'web_url' => env('WEB_URL', 'http://localhost:3000'),
 
     'key' => env('APP_KEY'),
 

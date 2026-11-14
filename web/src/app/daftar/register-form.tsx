@@ -23,7 +23,7 @@ export function RegisterForm({ initialRole }: { initialRole: Role }) {
   const [error, setError] = useState<ApiClientError | string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const after = role === 'ppiu' ? '/dasbor/ppiu/daftar' : '/akun';
+  const after = role === 'ppiu' ? '/dasbor/ppiu/daftar' : role === 'agen' ? '/agen/daftar' : '/akun';
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,7 +66,7 @@ export function RegisterForm({ initialRole }: { initialRole: Role }) {
             </label>
           ))}
         </div>
-        {role === 'agen' && <p className="mt-2 text-sm text-ink-600">Profil agen dan kemitraan dengan PPIU dibuka di tahap berikutnya. Buat akun dulu sekarang.</p>}
+        {role === 'agen' && <p className="mt-2 text-sm text-ink-600">Setelah akun dibuat, Anda melengkapi data agen (NIK, KTP, rekening komisi) lalu mengajukan kemitraan ke PPIU.</p>}
         {role === 'ppiu' && <p className="mt-2 text-sm text-ink-600">Setelah akun dibuat, Anda mengisi data PPIU, mengunggah dokumen legalitas, dan mengajukan verifikasi.</p>}
       </fieldset>
 

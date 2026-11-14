@@ -30,7 +30,7 @@ export class ServerApiError extends Error {
   }
 }
 
-export async function serverApi<T>(path: string): Promise<T> {
+export async function serverApi<T>(path: string, extraHeaders: Record<string, string> = {}): Promise<T> {
   const jar = await cookies();
   const h = await headers();
   const res = await fetch(`${API}${path}`, {
@@ -39,6 +39,7 @@ export async function serverApi<T>(path: string): Promise<T> {
       Cookie: jar.toString(),
       Referer: `${WEB_ORIGIN}/`,
       'X-Forwarded-For': h.get('x-forwarded-for') ?? '',
+      ...extraHeaders,
     },
     cache: 'no-store',
   });

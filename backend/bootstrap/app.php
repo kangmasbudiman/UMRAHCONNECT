@@ -35,16 +35,21 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         // Server Next.js lokal meneruskan IP pengunjung lewat X-Forwarded-For (rate limit per pengunjung, bukan per server).
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
         // Web (Next.js) memakai sesi cookie Sanctum SPA lewat proxy same-origin (API Documentation §2).
         $middleware->statefulApi();
+        // API tidak pernah mengalihkan ke halaman login: tamu mendapat 401 JSON (route 'login' memang tidak ada).
+        $middleware->redirectGuestsTo(fn (Request $r) => $r->is('api/*') ? null : '/masuk');
         $middleware->alias([
             'tenant' => \App\Http\Middleware\ResolveTenant::class,
             'perm' => \App\Http\Middleware\RequireTenantPermission::class,
             'platform' => \App\Http\Middleware\RequirePlatformPermission::class,
             '2fa' => \App\Http\Middleware\EnsureTwoFactorEnrolled::class,
             'contact.verified' => \App\Http\Middleware\EnsureContactVerified::class,
+            'agent' => \App\Http\Middleware\EnsureAgent::class,
+            'idempotent' => \App\Http\Middleware\Idempotent::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) use ($apiError): void {

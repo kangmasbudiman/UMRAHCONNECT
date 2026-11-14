@@ -16,7 +16,7 @@ class EnsureTwoFactorEnrolled
         if (Permissions::enforceTwoFactor() && ! $user->two_factor_enabled) {
             $member = $request->attributes->get('membership');
             $platform = $request->is('api/v1/platform/*') && $user->platform_role;
-            $tenantRole = $member && in_array($member->role, config('permissions.two_factor_required.tenant'), true);
+            $tenantRole = $member && (in_array($member->role, config('permissions.two_factor_required.tenant'), true) || $member->role === 'support');
             if ($platform || $tenantRole) {
                 throw new ApiException(403, 'two_factor_required', 'Aktifkan verifikasi dua langkah (2FA) di halaman Akun sebelum melanjutkan.');
             }

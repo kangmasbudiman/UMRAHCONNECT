@@ -6,6 +6,7 @@ import { tanggal } from '@/lib/format';
 import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { BankAccount, Member, TenantDoc, TenantFull } from '@/lib/tenant-types';
 import { ReviewPanel } from './review-panel';
+import { SupportPanel, type SupportSession } from './support-panel';
 
 export const metadata = { title: 'Tinjau PPIU' };
 
@@ -35,6 +36,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
   }
   const perms = ctx.platform_permissions;
   const allows = (p: string) => perms.includes('platform.*') || perms.includes(p);
+  const sessions = allows('platform.support_access') ? (await serverApi<{ data: SupportSession[] }>('/platform/support-sessions')).data : [];
   const owner = t.members.find((m) => m.role === 'owner');
   const rows: [string, string | null][] = [
     ['Nama badan usaha', t.legal_name], ['Nomor izin PPIU', t.ppiu_license_no],
@@ -59,6 +61,12 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
         <ReviewPanel tenantId={t.id} status={t.verification_status} docs={t.documents} banks={t.bank_accounts}
           canVerify={allows('platform.tenant.verify')} canSuspend={allows('platform.tenant.suspend')} />
         <aside className="space-y-6">
+          {allows('platform.support_access') && (
+            <section className="card p-5" aria-labelledby="sp-h">
+              <h2 id="sp-h" className="text-lg font-extrabold">Akses dukungan</h2>
+              <div className="mt-3"><SupportPanel tenantId={t.id} session={sessions.find((s) => s.tenant_id === t.id && s.active) ?? null} /></div>
+            </section>
+          )}
           <section className="card p-5">
             <h2 className="text-lg font-extrabold">Profil</h2>
             <dl className="mt-3 space-y-2">

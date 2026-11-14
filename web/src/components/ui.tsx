@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { rupiah, tanggal } from '@/lib/format';
 import type { PackageSummary, ScheduleItem, TenantPublic } from '@/lib/api';
@@ -46,6 +47,17 @@ export function CoverPlaceholder({ title, className = '', label }: { title: stri
   );
 }
 
+/** Foto sampul dari API (foto pertama paket) atau placeholder bila belum ada foto. */
+export function Cover({ url, title, className = '', label, priority = false }: { url: string | null | undefined; title: string; className?: string; label?: string; priority?: boolean }) {
+  if (!url) return <CoverPlaceholder title={title} className={className} label={label} />;
+  return (
+    <div className={`relative overflow-hidden bg-primary-50 ${className}`}>
+      <Image src={url} alt={`Foto ${title}`} fill unoptimized priority={priority} sizes="(min-width: 1024px) 400px, 100vw" className="object-cover" />
+      {label && <span className="absolute bottom-2 left-2 rounded-md bg-primary-900/75 px-2 py-0.5 text-xs font-semibold text-white">{label}</span>}
+    </div>
+  );
+}
+
 const pkgHref = (p: PackageSummary) => `/paket/${p.tenant.slug}/${p.slug}`;
 
 /** Kartu grid (beranda, profil PPIU). */
@@ -53,7 +65,7 @@ export function PackageCard({ p }: { p: PackageSummary }) {
   return (
     <Link href={pkgHref(p)} className="card group flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-raised">
       <div className="relative">
-        <CoverPlaceholder title={p.name} className="h-40" />
+        <Cover url={p.cover_image_url} title={p.name} className="h-40" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-bold text-primary-800">
           <IconClock className="h-3.5 w-3.5" />{p.duration_days} hari
         </span>
@@ -81,7 +93,7 @@ export function PackageCard({ p }: { p: PackageSummary }) {
 export function PackageRow({ p }: { p: PackageSummary }) {
   return (
     <article className="card group relative grid overflow-hidden transition hover:shadow-raised sm:grid-cols-[200px_1fr] lg:grid-cols-[220px_1fr_220px]">
-      <CoverPlaceholder title={p.name} className="h-40 sm:h-full sm:min-h-44" label={`${p.duration_days} hari`} />
+      <Cover url={p.cover_image_url} title={p.name} className="h-40 sm:h-full sm:min-h-44" label={`${p.duration_days} hari`} />
       <div className="flex min-w-0 flex-col gap-2 p-4">
         <h3 className="text-lg font-bold leading-6">
           <Link href={pkgHref(p)} className="after:absolute after:inset-0 hover:text-primary-700 focus-visible:outline-none">{p.name}</Link>

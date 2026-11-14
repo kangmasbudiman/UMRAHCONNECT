@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // NFR-10 / API Documentation §1: 120 permintaan/menit per IP untuk endpoint publik.
-        RateLimiter::for('public', fn (Request $r) => Limit::perMinute(120)->by($r->ip()));
+        RateLimiter::for('public', fn (Request $r) => Limit::perMinute((int) config('app.public_rate_limit', 120))->by($r->ip()));
         RateLimiter::for('referral-click', fn (Request $r) => Limit::perMinute(20)->by($r->ip()));
         // Auth: per IP + identitas agar tebak kata sandi/OTP dibatasi (FR-AUTH-04).
         RateLimiter::for('auth', fn (Request $r) => [
