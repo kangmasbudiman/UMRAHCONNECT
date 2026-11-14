@@ -1,6 +1,7 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 /**
  * Akses API atas nama pengguna yang sedang masuk, dari Server Component.
@@ -50,8 +51,8 @@ export async function serverApi<T>(path: string, extraHeaders: Record<string, st
   return body as T;
 }
 
-/** Konteks pengguna; null bila belum masuk. */
-export async function getContexts(): Promise<Contexts | null> {
+/** Konteks pengguna; null bila belum masuk. Di-dedupe per permintaan (React cache) agar header dan isi halaman tidak memanggil API dua kali. */
+export const getContexts = cache(async (): Promise<Contexts | null> => {
   const jar = await cookies();
   if (!jar.has('umrah-connect-session')) return null;
   try {
@@ -60,7 +61,7 @@ export async function getContexts(): Promise<Contexts | null> {
     if (e instanceof ServerApiError && e.status === 401) return null;
     throw e;
   }
-}
+});
 
 /** Wajib masuk; selain itu diarahkan ke /masuk?next=… */
 export async function requireContexts(next: string): Promise<Contexts> {

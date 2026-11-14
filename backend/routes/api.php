@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::get('tenants/{tenantSlug}', 'tenant');
         Route::get('departures', 'departures');
         Route::get('facets', 'facets');
+        Route::get('config', 'config');
         Route::get('referrals/{code}', 'referral');
         Route::post('referrals/{code}/clicks', 'referralClick')->middleware('throttle:referral-click');
     });
@@ -118,6 +119,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('commissions', [CommissionController::class, 'agentIndex']);
                 Route::get('payout-requests', [CommissionController::class, 'agentPayouts']);
                 Route::post('payout-requests', [CommissionController::class, 'agentRequestPayout'])->middleware('idempotent');
+                Route::get('prospects', [\App\Http\Controllers\Api\V1\ProspectController::class, 'index']);
+                Route::post('prospects', [\App\Http\Controllers\Api\V1\ProspectController::class, 'store']);
+                Route::patch('prospects/{prospect}', [\App\Http\Controllers\Api\V1\ProspectController::class, 'update'])->whereUuid('prospect');
+                Route::delete('prospects/{prospect}', [\App\Http\Controllers\Api\V1\ProspectController::class, 'destroy'])->whereUuid('prospect');
             });
         });
 
@@ -141,6 +146,7 @@ Route::prefix('v1')->group(function () {
             Route::post('members/invitations', [MemberController::class, 'invite'])->middleware('perm:member.manage');
             Route::patch('members/{member}', [MemberController::class, 'update'])->whereUuid('member')->middleware('perm:member.manage');
             Route::post('members/{member}/deactivate', [MemberController::class, 'deactivate'])->whereUuid('member')->middleware('perm:member.manage');
+            Route::post('ownership-transfer', [MemberController::class, 'transferOwnership'])->middleware(['perm:ownership.transfer', 'throttle:reauth']);
 
             // Booking PPIU (Sprint 4, FR-PPIU-12/13)
             Route::get('bookings', [BookingController::class, 'tenantIndex'])->middleware('perm:booking.view');
@@ -227,6 +233,20 @@ Route::prefix('v1')->group(function () {
             Route::post('tenants/{tenant}/suspend', 'suspend')->whereUuid('tenant')->middleware('platform:platform.tenant.suspend');
             Route::post('tenants/{tenant}/restore', 'restore')->whereUuid('tenant')->middleware('platform:platform.tenant.suspend');
             Route::post('bank-accounts/{account}/verify', 'verifyBankAccount')->whereUuid('account')->middleware('platform:platform.bank_account.verify');
+        });
+        Route::prefix('platform')->middleware('2fa')->controller(\App\Http\Controllers\Api\V1\Platform\PlatformAdminController::class)->group(function () {
+            Route::get('packages', 'packages')->middleware('platform:platform.tenant.view');
+            Route::post('packages/{package}/take-down', 'takeDown')->whereUuid('package')->middleware('platform:platform.package.take_down');
+            Route::post('packages/{package}/restore', 'restorePackage')->whereUuid('package')->middleware('platform:platform.package.take_down');
+            Route::get('users', 'users')->middleware('platform:platform.user.view');
+            Route::post('users/{user}/deactivate', 'deactivateUser')->whereUuid('user')->middleware('platform:platform.user.manage:limited');
+            Route::post('users/{user}/reactivate', 'reactivateUser')->whereUuid('user')->middleware('platform:platform.user.manage:limited');
+            Route::get('admins', 'admins')->middleware('platform:platform.admin.manage');
+            Route::post('admins', 'addAdmin')->middleware('platform:platform.admin.manage');
+            Route::delete('admins/{user}', 'removeAdmin')->whereUuid('user')->middleware('platform:platform.admin.manage');
+            Route::get('settings', 'settings')->middleware('platform:platform.settings.manage');
+            Route::get('settings/{key}', 'setting')->middleware('platform:platform.settings.manage');
+            Route::put('settings/{key}', 'putSetting')->middleware('platform:platform.settings.manage');
         });
         Route::prefix('platform')->middleware('2fa')->controller(PlatformOpsController::class)->group(function () {
             Route::get('dashboard', 'dashboard')->middleware('platform:platform.dashboard.view');

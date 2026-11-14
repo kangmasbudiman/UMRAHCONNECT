@@ -14,6 +14,7 @@ const TABS = [
   { key: 'ringkasan', href: '/agen', label: 'Ringkasan' },
   { key: 'mitra', href: '/agen/mitra', label: 'Mitra PPIU' },
   { key: 'paket', href: '/agen/paket', label: 'Paket & link' },
+  { key: 'prospek', href: '/agen/prospek', label: 'Prospek' },
   { key: 'booking', href: '/agen/booking', label: 'Booking' },
   { key: 'komisi', href: '/agen/komisi', label: 'Komisi' },
   { key: 'profil', href: '/agen/profil', label: 'Profil' },

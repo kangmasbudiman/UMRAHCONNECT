@@ -308,4 +308,11 @@ class PublicCatalogController extends Controller
             'prices' => $prices->map(fn ($p) => ['room_type' => $p->room_type, 'price_amount' => $p->price_amount])->values(),
         ];
     }
+
+    /** Pengaturan publik yang dibutuhkan web (mis. jendela atribusi cookie referral, CR-01). */
+    public function config(): JsonResponse
+    {
+        return response()->json(['data' => ['attribution_window_days' => (int) \App\Support\Settings::get('attribution.window_days')]])
+            ->header('Cache-Control', 'public, max-age=300');
+    }
 }

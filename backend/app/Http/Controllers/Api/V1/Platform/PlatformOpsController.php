@@ -77,15 +77,15 @@ class PlatformOpsController extends Controller
         return response()->json(['data' => $rows->map(fn ($s) => self::presentSession($s) + ['tenant_name' => $tenants[$s->tenant_id] ?? null])->values()]);
     }
 
-    /** Akses baca-saja 60 menit ke data satu PPIU, Owner diberi tahu, setiap akses tercatat. */
+    /** Akses baca-saja (lama sesi: pengaturan support_access.max_minutes, bawaan 60 menit) ke data satu PPIU, Owner diberi tahu, setiap akses tercatat. */
     public function openSupport(Request $request, NotificationService $notify): JsonResponse
     {
         $d = $request->validate(['tenant_id' => ['required', 'uuid'], 'reason' => ['required', 'string', 'min:5', 'max:500'], 'ticket_no' => ['required', 'string', 'max:50']]);
         $tenant = Tenant::findOrFail($d['tenant_id']);
         $s = SupportSession::create(['admin_user_id' => $request->user()->id, 'tenant_id' => $tenant->id, 'reason' => $d['reason'], 'ticket_no' => $d['ticket_no'],
-            'started_at' => now(), 'expires_at' => now()->addMinutes(60)]);
+            'started_at' => now(), 'expires_at' => now()->addMinutes((int) \App\Support\Settings::get('support_access.max_minutes'))]);
         Audit::log('support.opened', $s, null, ['ticket_no' => $d['ticket_no']], $d['reason'], $tenant->id, 'platform');
-        $notify->toTenant($tenant->id, ['owner'], 'support.opened', ['body' => "Tim UMRAH CONNECT ({$request->user()->name}) membuka akses baca-saja 60 menit untuk tiket {$d['ticket_no']}: {$d['reason']}"], true);
+        $notify->toTenant($tenant->id, ['owner'], 'support.opened', ['body' => "Tim UMRAH CONNECT ({$request->user()->name}) membuka akses baca-saja ".(int) round($s->started_at->diffInMinutes($s->expires_at))." menit untuk tiket {$d['ticket_no']}: {$d['reason']}"], true);
 
         return response()->json(['data' => self::presentSession($s)], 201);
     }

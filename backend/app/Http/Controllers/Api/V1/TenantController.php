@@ -31,7 +31,7 @@ class TenantController extends Controller
                 'code' => $this->uniqueCode($data['brand_name']),
                 'slug' => $this->uniqueSlug($data['brand_name']),
                 'verification_status' => 'draft',
-                'settings' => ['dp_deadline_hours_default' => 48, 'commission_earn_on_default' => 'fully_paid'],
+                'settings' => ['dp_deadline_hours_default' => (int) \App\Support\Settings::get('booking.dp_deadline_hours_default'), 'commission_earn_on_default' => \App\Support\Settings::get('commission.earn_on_default')],
             ]);
             TenantMember::create([
                 'tenant_id' => $tenant->id,

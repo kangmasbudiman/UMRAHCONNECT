@@ -1683,6 +1683,14 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/DepartureScheduleList' }
         '4XX': { $ref: '#/components/responses/Error' }
+  /public/config:
+    get:
+      tags: [Public]
+      operationId: getPublicConfig
+      summary: Pengaturan publik untuk web (jendela atribusi referral, CR-01)
+      security: []
+      responses:
+        '200': { description: 'OK, data.attribution_window_days (integer)' }
   /public/facets:
     get:
       tags: [Public]
@@ -3748,6 +3756,23 @@ paths:
       responses:
         '200': { $ref: '#/components/responses/Package' }
         '4XX': { $ref: '#/components/responses/Error' }
+  /platform/packages/{package}/restore:
+    post:
+      tags: [Platform]
+      operationId: restorePackage
+      summary: Izinkan paket yang diturunkan terbit lagi (status kembali ke arsip; PPIU menerbitkan sendiri)
+      x-permission: platform.package.take_down
+      x-requirements: [FR-ADM-06]
+      parameters:
+        - $ref: '#/components/parameters/PackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReasonInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Package' }
+        '4XX': { $ref: '#/components/responses/Error' }
   /platform/users:
     get:
       tags: [Platform]
@@ -3839,6 +3864,16 @@ paths:
         - $ref: '#/components/parameters/Cursor'
       responses:
         '200': { $ref: '#/components/responses/AuditLogList' }
+        '4XX': { $ref: '#/components/responses/Error' }
+  /platform/settings:
+    get:
+      tags: [Platform]
+      operationId: listSettings
+      summary: Daftar pengaturan yang bisa diubah beserta nilai dan bawaannya
+      x-permission: platform.settings.manage
+      x-requirements: [FR-ADM-09]
+      responses:
+        '200': { description: OK }
         '4XX': { $ref: '#/components/responses/Error' }
   /platform/settings/{key}:
     parameters:

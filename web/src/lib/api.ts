@@ -113,6 +113,17 @@ export async function getFacets(): Promise<Facets> {
   return (await get<{ data: Facets }>('/public/facets')).data;
 }
 
+/** Pengaturan publik platform (mis. jendela atribusi referral, diatur Super Admin). */
+export async function getPublicConfig(): Promise<{ attribution_window_days: number }> {
+  'use cache';
+  cacheLife('minutes');
+  try {
+    return (await get<{ data: { attribution_window_days: number } }>('/public/config')).data;
+  } catch {
+    return { attribution_window_days: 30 };
+  }
+}
+
 export async function getReferral(code: string): Promise<Referral | null> {
   'use cache';
   cacheLife('minutes');

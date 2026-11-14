@@ -5,7 +5,7 @@ import { Alert, StatusPill } from '@/components/form';
 import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { BankAccount, Member, TenantDoc, TenantFull } from '@/lib/tenant-types';
 import { tanggal } from '@/lib/format';
-import { BankAccountsPanel, DocumentsPanel, SubmitVerification, TeamPanel, TenantProfileForm } from '../tenant-forms';
+import { BankAccountsPanel, DocumentsPanel, OwnershipTransfer, SubmitVerification, TeamPanel, TenantProfileForm } from '../tenant-forms';
 import { TenantNav } from '../tenant-nav';
 import { DashboardCards } from '../dashboard-cards';
 
@@ -111,6 +111,7 @@ async function Dashboard({ params, searchParams }: PageProps<'/dasbor/ppiu/[tena
             <section id="tim" className="card scroll-mt-24 p-5 md:p-6">
               <h2 className="text-xl font-extrabold">Tim</h2>
               <div className="mt-2"><TeamPanel tenantId={id} members={members} canManage={can('member.manage')} meId={ctx.user.id} /></div>
+              {can('ownership.transfer') && <div className="mt-4"><OwnershipTransfer tenantId={id} brandName={tenant.brand_name} members={members} meId={ctx.user.id} twoFactorEnabled={ctx.user.two_factor_enabled} /></div>}
             </section>
           )}
         </div>

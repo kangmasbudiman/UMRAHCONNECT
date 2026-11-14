@@ -36,3 +36,13 @@ export const PARTNER_STATUS: Record<Partnership['status'], string> = {
   invited: 'Diundang', applied: 'Menunggu persetujuan', active: 'Aktif', rejected: 'Ditolak', suspended: 'Ditangguhkan', ended: 'Berakhir',
 };
 export const EARN_ON: Record<Scheme['earn_on'], string> = { fully_paid: 'saat booking lunas', dp_verified: 'saat DP terverifikasi' };
+
+export type FollowUpStatus = 'new' | 'contacted' | 'interested' | 'booked' | 'lost';
+export type Prospect = {
+  id: string; name: string; phone: string; notes: string | null; follow_up_status: FollowUpStatus; next_follow_up_on: string | null;
+  tenant: { id: string; slug: string; brand_name: string } | null; package: { id: string; slug: string; name: string } | null;
+  created_at: string | null; updated_at: string | null;
+};
+export const FOLLOW_UP: Record<FollowUpStatus, string> = {
+  new: 'Baru', contacted: 'Sudah dihubungi', interested: 'Tertarik', booked: 'Sudah booking', lost: 'Tidak lanjut',
+};

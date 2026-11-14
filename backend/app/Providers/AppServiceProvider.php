@@ -37,5 +37,7 @@ class AppServiceProvider extends ServiceProvider
             Limit::perHour(10)->by('id:'.strtolower((string) $r->input('identifier'))),
         ]);
         RateLimiter::for('user', fn (Request $r) => Limit::perMinute(300)->by($r->user()?->id ?: $r->ip()));
+        // Aksi yang meminta ulang kata sandi + 2FA (mis. pengalihan kepemilikan): 5 percobaan/menit per pengguna.
+        RateLimiter::for('reauth', fn (Request $r) => Limit::perMinute(5)->by('reauth:'.($r->user()?->id ?: $r->ip())));
     }
 }

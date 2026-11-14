@@ -314,3 +314,70 @@ export function SubmitVerification({ tenantId, ready }: { tenantId: string; read
     </div>
   );
 }
+
+/** Pengalihan kepemilikan (User Role §5): Owner menyerahkan peran ke anggota aktif; wajib kata sandi + kode 2FA. */
+export function OwnershipTransfer({ tenantId, brandName, members, meId, twoFactorEnabled }: {
+  tenantId: string; brandName: string; members: Member[]; meId: string; twoFactorEnabled: boolean;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<ApiClientError | string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const eligible = members.filter((m) => m.status === 'active' && m.role !== 'owner' && m.user.id !== meId);
+  const apiErr = error instanceof ApiClientError ? error : null;
+
+  if (!open) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-dashed border-border-input p-4">
+        <p className="text-sm text-ink-600">Pindahkan peran Owner ke anggota tim lain. Anda akan menjadi Admin.</p>
+        <button type="button" className="btn btn-outline" onClick={() => setOpen(true)} disabled={eligible.length === 0}
+          title={eligible.length === 0 ? 'Belum ada anggota aktif yang bisa menerima' : undefined}>Alihkan kepemilikan</button>
+      </div>
+    );
+  }
+  return (
+    <form className="space-y-3 rounded-[12px] border border-danger/40 bg-danger-bg/40 p-4" noValidate onSubmit={async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const target = eligible.find((m) => m.id === fd.get('member_id'));
+      if (!target || !confirm(`Alihkan kepemilikan ${brandName} ke ${target.user.name}? Anda akan menjadi Admin dan tidak bisa membatalkannya sendiri.`)) return;
+      setBusy(true);
+      setError(null);
+      try {
+        await api(`/tenants/${tenantId}/ownership-transfer`, { json: { member_id: target.id, password: fd.get('password'), two_factor_code: String(fd.get('code') ?? '').trim() } });
+        setOpen(false);
+        router.refresh();
+      } catch (err) { setError(err instanceof ApiClientError ? err : errorMessage(err)); }
+      setBusy(false);
+    }}>
+      <p className="font-bold">Alihkan kepemilikan</p>
+      <p className="text-sm text-ink-600">Owner baru memegang semua akses, termasuk rekening, tim, dan pengalihan berikutnya. Owner wajib memakai 2FA.</p>
+      {!twoFactorEnabled ? (
+        <Alert tone="warning">Aktifkan verifikasi dua langkah (2FA) di <a href="/akun#keamanan" className="font-bold underline">halaman Akun</a> sebelum mengalihkan kepemilikan.</Alert>
+      ) : (
+        <>
+          <Field id="ot-member" label="Owner baru" error={apiErr?.field('member_id')}>
+            <select id="ot-member" name="member_id" className="input" defaultValue="">
+              <option value="" disabled>Pilih anggota tim</option>
+              {eligible.map((m) => <option key={m.id} value={m.id}>{m.user.name} · {ROLE_LABEL[m.role]}</option>)}
+            </select>
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field id="ot-password" label="Kata sandi Anda" error={apiErr?.field('password')}>
+              <input id="ot-password" name="password" type="password" autoComplete="current-password" className="input" />
+            </Field>
+            <Field id="ot-code" label="Kode 2FA" hint="6 angka dari aplikasi autentikator" error={apiErr?.field('two_factor_code')}>
+              <input id="ot-code" name="code" inputMode="numeric" autoComplete="one-time-code" className="input num" />
+            </Field>
+          </div>
+        </>
+      )}
+      {apiErr && !apiErr.errors && <Alert tone="danger">{apiErr.message}</Alert>}
+      {typeof error === 'string' && <Alert tone="danger">{error}</Alert>}
+      <div className="flex gap-2">
+        {twoFactorEnabled && <button className="btn border border-danger bg-white text-danger hover:bg-danger-bg" disabled={busy}>{busy && <Spinner />}Alihkan sekarang</button>}
+        <button type="button" className="btn text-primary-700 hover:bg-primary-50" onClick={() => { setOpen(false); setError(null); }}>Batal</button>
+      </div>
+    </form>
+  );
+}

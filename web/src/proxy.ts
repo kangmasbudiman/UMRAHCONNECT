@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const API = process.env.API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1';
 
 /**
- * Link agen ?ref=KODE (BP-04, CR-01): simpan kode di cookie first-party uc_ref selama 30 hari
+ * Link agen ?ref=KODE (BP-04, CR-01): simpan kode di cookie first-party uc_ref (masa berlaku mengikuti pengaturan platform, bawaan 30 hari)
  * (ditimpa link terbaru = last-click), catat satu klik ke API, lalu bersihkan URL.
  * Server tetap memvalidasi kemitraan saat booking, jadi cookie yang diubah tidak bisa menghasilkan komisi.
  */
@@ -39,7 +39,7 @@ export async function proxy(req: NextRequest) {
   clean.searchParams.delete('ref');
   const res = NextResponse.redirect(clean);
   res.cookies.set('uc_ref', JSON.stringify({ code: ref.toUpperCase(), at: Date.now() }), {
-    maxAge: 60 * 60 * 24 * 30, httpOnly: true, sameSite: 'lax', path: '/',
+    maxAge: 60 * 60 * 24 * 90, // batas atas pengaturan; masa berlaku sebenarnya dicek dari attribution_window_days httpOnly: true, sameSite: 'lax', path: '/',
   });
 
   try {

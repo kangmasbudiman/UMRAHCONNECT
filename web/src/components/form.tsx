@@ -66,6 +66,8 @@ export const STATUS_LABEL: Record<string, { label: string; tone: keyof typeof TO
   active: { label: 'Aktif', tone: 'success' },
   invited: { label: 'Diundang', tone: 'warning' },
   deactivated: { label: 'Nonaktif', tone: 'info' },
+  locked: { label: 'Terkunci', tone: 'warning' },
+  unclaimed: { label: 'Belum diklaim', tone: 'info' },
   published: { label: 'Terbit', tone: 'success' },
   archived: { label: 'Arsip', tone: 'info' },
   taken_down: { label: 'Diturunkan', tone: 'danger' },
