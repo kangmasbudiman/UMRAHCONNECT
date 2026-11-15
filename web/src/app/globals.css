@@ -33,6 +33,11 @@
   --shadow-raised: 0 2px 4px rgb(16 24 40 / 0.06), 0 12px 32px rgb(8 53 40 / 0.18);
 }
 
+/* inline: variabel Fraunces hanya ada di halaman yang memuatnya (masuk), jadi harus di-resolve di elemen, bukan di :root. */
+@theme inline {
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
 html { color-scheme: light; scroll-behavior: smooth; }
 body { background: var(--color-surface); color: var(--color-ink-900); }
 :focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 2px; }

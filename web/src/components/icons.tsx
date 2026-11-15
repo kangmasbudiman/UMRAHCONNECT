@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Activity, ArrowLeft, ArrowRightLeft, BadgeCheck, Ban, Banknote, Bell, BookOpen, Briefcase, Building2, CalendarClock, CalendarDays,
   ChartColumn, ChevronRight, CircleCheck, CircleDollarSign, CircleX, ClipboardCheck, ClipboardList, Copy, CreditCard, Crown, Download,
-  ExternalLink, Eye, FileCheck2, FileSpreadsheet, FileText, Flag, FolderOpen, HandCoins, Handshake, Headset, History, House, IdCard,
+  ExternalLink, Eye, EyeOff, FileCheck2, FileSpreadsheet, FileText, Flag, FolderOpen, HandCoins, Handshake, Headset, History, House, IdCard,
   ImagePlus, Inbox, Info, KeyRound, Landmark, LayoutDashboard, Link2, ListChecks, Lock, LogOut, Luggage, Mail, MapPin, Megaphone,
   MessageCircle, Package, PackageCheck, PackageX, Pencil, Percent, Phone, Plus, QrCode, Receipt, ReceiptText, RefreshCw, ScrollText,
   Send, Settings, ShieldAlert, ShieldCheck, Sparkles, Star, StickyNote, Store, Ticket, Timer, Trash2, TrendingUp, TriangleAlert, Undo2,
@@ -76,6 +76,7 @@ export const IconCrown = wrap(Crown);
 export const IconDownload = wrap(Download);
 export const IconExternal = wrap(ExternalLink);
 export const IconEye = wrap(Eye);
+export const IconEyeOff = wrap(EyeOff);
 export const IconFileCheck = wrap(FileCheck2);
 export const IconSpreadsheet = wrap(FileSpreadsheet);
 export const IconFile = wrap(FileText);
