@@ -4,18 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Alert, Field, Spinner, StatusPill } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
+import { RegionSelect } from '@/components/region-select';
 import { DOC_LABEL, DOC_TYPES, type BankAccount, type Member, type TenantDoc, type TenantFull } from '@/lib/tenant-types';
 
 const FIELDS: { name: keyof TenantFull; label: string; type?: string; hint?: string; optional?: boolean; span?: boolean; locked?: boolean; autoComplete?: string }[] = [
   { name: 'brand_name', label: 'Nama brand (tampil di marketplace)', hint: 'Contoh: Amanah Baitullah Tour' },
-  { name: 'legal_name', label: 'Nama badan usaha', hint: 'Sesuai akta, contoh: PT Amanah Baitullah Jambi', locked: true },
+  { name: 'legal_name', label: 'Nama badan usaha', hint: 'Sesuai akta, contoh: PT Amanah Baitullah Tour', locked: true },
   { name: 'ppiu_license_no', label: 'Nomor izin PPIU', locked: true },
   { name: 'license_expires_on', label: 'Izin berlaku sampai', type: 'date', locked: true },
   { name: 'nib', label: 'NIB', optional: true },
   { name: 'npwp', label: 'NPWP', optional: true },
-  { name: 'address', label: 'Alamat kantor', span: true, autoComplete: 'street-address' },
-  { name: 'city', label: 'Kota/Kabupaten', autoComplete: 'address-level2' },
-  { name: 'province', label: 'Provinsi', autoComplete: 'address-level1' },
   { name: 'phone', label: 'Telepon kantor', type: 'tel', hint: 'Contoh: 0741 123456' },
   { name: 'whatsapp', label: 'WhatsApp layanan', type: 'tel', optional: true, hint: 'Tampil di halaman paket untuk calon jamaah' },
   { name: 'email', label: 'Email kantor', type: 'email' },
@@ -37,6 +35,10 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
       if (licenseLocked && f.locked) continue;
       const v = String(fd.get(f.name) ?? '').trim();
       body[f.name] = v === '' ? null : v;
+    }
+    for (const k of ['region_code', 'address', 'postal_code']) {
+      const v = String(fd.get(k) ?? '').trim();
+      body[k] = v === '' ? null : v;
     }
     setBusy(true);
     setError(null);
@@ -68,16 +70,28 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
         {FIELDS.map((f) => (
           <div key={f.name} className={f.span ? 'md:col-span-2' : ''}>
             <Field id={`t-${f.name}`} label={f.label} hint={f.hint} optional={f.optional} error={apiErr?.field(f.name)}>
-              {f.name === 'address' ? (
-                <textarea id={`t-${f.name}`} name={f.name} rows={2} className="input" defaultValue={(tenant?.[f.name] as string) ?? ''} required autoComplete={f.autoComplete} />
-              ) : (
-                <input id={`t-${f.name}`} name={f.name} type={f.type ?? 'text'} className="input disabled:bg-surface"
-                  defaultValue={(tenant?.[f.name] as string) ?? (f.name === 'province' && !tenant ? 'Jambi' : '')}
-                  disabled={licenseLocked && f.locked} required={!f.optional} autoComplete={f.autoComplete} />
-              )}
+              <input id={`t-${f.name}`} name={f.name} type={f.type ?? 'text'} className="input disabled:bg-surface"
+                defaultValue={(tenant?.[f.name] as string) ?? ''}
+                disabled={licenseLocked && f.locked} required={!f.optional} autoComplete={f.autoComplete} />
             </Field>
           </div>
         ))}
+        <div className="md:col-span-2 border-t border-border-subtle pt-4">
+          <p className="font-bold">Alamat kantor</p>
+          <p className="text-sm text-ink-600">Sesuai alamat di izin PPIU. Dipakai jamaah untuk mencari travel di daerahnya.</p>
+        </div>
+        <div className="md:col-span-2">
+          <RegionSelect idPrefix="t-region" initial={tenant?.region ?? null} error={apiErr?.field('region_code')} disabled={readOnly} after={<>
+            <div className="sm:col-span-2">
+              <Field id="t-address" label="Nama jalan, nomor, RT/RW" hint="Contoh: Jl. Sultan Thaha No. 12, RT 05/RW 02" error={apiErr?.field('address')}>
+                <textarea id="t-address" name="address" rows={2} className="input" defaultValue={tenant?.address ?? ''} required autoComplete="street-address" />
+              </Field>
+            </div>
+            <Field id="t-postal_code" label="Kode pos" optional error={apiErr?.field('postal_code')}>
+              <input id="t-postal_code" name="postal_code" className="input num" inputMode="numeric" maxLength={5} pattern="[0-9]{5}" defaultValue={tenant?.postal_code ?? ''} autoComplete="postal-code" />
+            </Field>
+          </>} />
+        </div>
       </fieldset>
       {!readOnly && (
         <button className="btn btn-primary" disabled={busy}>{busy && <Spinner />}{tenant ? 'Simpan profil' : 'Daftarkan PPIU'}</button>
@@ -215,7 +229,7 @@ export function BankAccountsPanel({ tenantId, accounts, canManage }: { tenantId:
           <Field id="b-holder" label="Atas nama" hint="Harus atas nama badan usaha" error={apiErr?.field('account_holder')}>
             <input id="b-holder" name="account_holder" className="input" required />
           </Field>
-          <datalist id="bank-list">{['BSI', 'Bank Mandiri', 'BRI', 'BNI', 'BCA', 'Bank Muamalat', 'Bank Jambi Syariah', 'CIMB Niaga Syariah'].map((b) => <option key={b} value={b} />)}</datalist>
+          <datalist id="bank-list">{['BSI', 'Bank Mandiri', 'BRI', 'BNI', 'BCA', 'Bank Muamalat', 'CIMB Niaga Syariah', 'Bank Mega Syariah', 'BPD setempat'].map((b) => <option key={b} value={b} />)}</datalist>
           <div className="flex gap-2 md:col-span-3">
             <button className="btn btn-primary" disabled={busy === 'add'}>{busy === 'add' && <Spinner />}Simpan rekening</button>
             {accounts.length > 0 && <button type="button" className="btn text-primary-700 hover:bg-primary-50" onClick={() => setOpen(false)}>Batal</button>}

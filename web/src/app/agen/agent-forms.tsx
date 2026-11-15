@@ -7,10 +7,11 @@ import { Alert, Field, Spinner } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { PARTNERSHIP_TERMS_VERSION } from '@/lib/nav';
 import type { AgentProfile, ReferralLink } from '@/lib/agent-types';
+import { RegionSelect } from '@/components/region-select';
 
 type Err = ApiClientError | string | null;
 const msgOf = (e: Err) => (typeof e === 'string' ? e : e?.message);
-const BANKS = ['BSI', 'Bank Mandiri', 'BRI', 'BNI', 'BCA', 'Bank Muamalat', 'Bank Jambi Syariah'];
+const BANKS = ['BSI', 'Bank Mandiri', 'BRI', 'BNI', 'BCA', 'Bank Muamalat', 'CIMB Niaga Syariah', 'Bank Mega Syariah', 'BPD setempat'];
 
 /** AGT-01 Daftar agen: NIK + foto KTP + rekening komisi (FR-AGT-01/02). */
 export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
@@ -29,7 +30,7 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
     setSaved(false);
     try {
       const body: Record<string, unknown> = {
-        domicile_city: fd.get('domicile_city'), payout_bank_name: fd.get('payout_bank_name'), payout_account_holder: fd.get('payout_account_holder'),
+        payout_bank_name: fd.get('payout_bank_name'), payout_account_holder: fd.get('payout_account_holder'),
       };
       const acct = String(fd.get('payout_account_no') ?? '').trim();
       if (acct || creating) body.payout_account_no = acct;
@@ -44,6 +45,11 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
         throw new Error('Unggah foto KTP Anda.');
       }
       if (creating) body.nik = fd.get('nik');
+      const region = String(fd.get('region_code') ?? '');
+      if (region || creating) body.region_code = region || null;
+      const street = String(fd.get('address') ?? '').trim();
+      if (street || creating) body.address = street || null;
+      body.postal_code = String(fd.get('postal_code') ?? '').trim() || null;
       await api('/agent/profile', { method: creating ? 'POST' : 'PATCH', json: body });
       if (creating) { router.replace('/agen/mitra?baru=1'); router.refresh(); return; }
       setSaved(true);
@@ -66,10 +72,22 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
       <Field id="ktp" label={creating ? 'Foto KTP' : 'Ganti foto KTP'} optional={!creating} hint="JPG, PNG, atau PDF, maksimal 5 MB." error={apiErr?.field('ktp_file_id') ?? apiErr?.field('file')}>
         <input id="ktp" name="ktp" type="file" accept="image/jpeg,image/png,application/pdf" className="input py-2.5" required={creating} />
       </Field>
-      <Field id="domicile_city" label="Kota domisili" error={apiErr?.field('domicile_city')}>
-        <input id="domicile_city" name="domicile_city" className="input" defaultValue={profile?.domicile_city ?? 'Kota Jambi'} required />
-      </Field>
-      <div className="hidden md:block" />
+      <div className="md:col-span-2 border-t border-border-subtle pt-4">
+        <p className="font-bold">Domisili</p>
+        <p className="text-sm text-ink-600">Dipakai calon jamaah untuk menemukan agen terdekat. Alamat lengkap tidak ditampilkan.</p>
+      </div>
+      <div className="md:col-span-2">
+        <RegionSelect idPrefix="agent-region" initial={profile?.region ?? null} error={apiErr?.field('region_code')} after={<>
+          <div className="sm:col-span-2">
+            <Field id="agent-address" label="Nama jalan, nomor rumah, RT/RW" hint="Contoh: Jl. Kapten Pattimura No. 12, RT 03/RW 01. Tidak ditampilkan ke publik." error={apiErr?.field('address')}>
+              <input id="agent-address" name="address" className="input" defaultValue={profile?.address ?? ''} required autoComplete="street-address" />
+            </Field>
+          </div>
+          <Field id="agent-postal" label="Kode pos" optional error={apiErr?.field('postal_code')}>
+            <input id="agent-postal" name="postal_code" className="input num" inputMode="numeric" maxLength={5} pattern="[0-9]{5}" defaultValue={profile?.postal_code ?? ''} autoComplete="postal-code" />
+          </Field>
+        </>} />
+      </div>
       <div className="md:col-span-2 border-t border-border-subtle pt-4">
         <p className="font-bold">Rekening pencairan komisi</p>
         <p className="text-sm text-ink-600">Komisi dari PPIU mitra ditransfer ke rekening ini atas nama Anda sendiri.</p>

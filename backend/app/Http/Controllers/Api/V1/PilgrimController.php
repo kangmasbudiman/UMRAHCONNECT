@@ -10,6 +10,7 @@ use App\Models\Pilgrim;
 use App\Services\PilgrimService;
 use App\Support\AgentPresenter;
 use App\Support\OffsetCursor;
+use App\Support\Regions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -24,6 +25,7 @@ class PilgrimController extends Controller
             'birth_place' => $p->birth_place, 'birth_date' => $p->birth_date?->toDateString(), 'gender' => $p->gender,
             'passport_no_masked' => AgentPresenter::mask($p->passport_no_enc, 0, 3), 'passport_expires_on' => $p->passport_expires_on?->toDateString(),
             'phone' => $p->phone, 'emergency_contact' => $p->emergency_contact, 'mahram_pilgrim_id' => $p->mahram_pilgrim_id,
+            'address' => $p->address_enc, 'postal_code' => $p->postal_code, 'region' => Regions::describe($p),
         ];
     }
 

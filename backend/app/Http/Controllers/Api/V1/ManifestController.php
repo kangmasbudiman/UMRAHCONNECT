@@ -9,6 +9,7 @@ use App\Models\Departure;
 use App\Models\Tenant;
 use App\Services\BillingService;
 use App\Support\Audit;
+use App\Support\Regions;
 use App\Services\ReportService;
 
 /**
@@ -31,9 +32,12 @@ class ManifestController extends Controller
             ->sortBy(fn ($p) => [array_search($p->room_type, array_keys(self::ROOM)), $p->booking->code, $p->pilgrim->gender, $p->pilgrim->full_name])->values();
 
         if ($type === 'manifest') {
-            $head = ['No', 'Nama lengkap', 'L/P', 'Tempat lahir', 'Tanggal lahir', 'NIK', 'No. paspor', 'Paspor berlaku s.d.', 'Tipe kamar', 'Kode booking', 'Status booking', 'Pemesan', 'HP pemesan', 'Agen'];
+            $head = ['No', 'Nama lengkap', 'L/P', 'Tempat lahir', 'Tanggal lahir', 'NIK', 'No. paspor', 'Paspor berlaku s.d.', 'Alamat', 'Kelurahan/Desa', 'Kecamatan', 'Kab/Kota', 'Provinsi', 'Kode pos', 'Tipe kamar', 'Kode booking', 'Status booking', 'Pemesan', 'HP pemesan', 'Agen'];
+            $rn = Regions::names($rows->flatMap(fn ($p) => [$p->pilgrim->village_code, $p->pilgrim->district_code, $p->pilgrim->regency_code, $p->pilgrim->province_code])->all());
             $data = $rows->map(fn ($p, $i) => [$i + 1, $p->pilgrim->full_name, $p->pilgrim->gender, $p->pilgrim->birth_place, $p->pilgrim->birth_date?->toDateString(),
-                $p->pilgrim->nik_enc, $p->pilgrim->passport_no_enc, $p->pilgrim->passport_expires_on?->toDateString(), self::ROOM[$p->room_type] ?? $p->room_type,
+                $p->pilgrim->nik_enc, $p->pilgrim->passport_no_enc, $p->pilgrim->passport_expires_on?->toDateString(),
+                $p->pilgrim->address_enc, $rn[$p->pilgrim->village_code] ?? '', $rn[$p->pilgrim->district_code] ?? '', $rn[$p->pilgrim->regency_code] ?? '', $rn[$p->pilgrim->province_code] ?? '', $p->pilgrim->postal_code,
+                self::ROOM[$p->room_type] ?? $p->room_type,
                 $p->booking->code, $p->booking->status, $p->booking->booker?->name, $p->booking->booker?->phone, $p->booking->agent ? "{$p->booking->agent->user?->name} ({$p->booking->agent->code})" : '']);
         } else {
             // Rooming list: jamaah satu booking & satu tipe kamar dikelompokkan; kamar diisi sampai kapasitas.

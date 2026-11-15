@@ -42,6 +42,8 @@ class Present
             'address' => $t->address,
             'city' => $t->city,
             'province' => $t->province,
+            'postal_code' => $t->postal_code,
+            'region' => Regions::describe($t),
             'phone' => $t->phone,
             'whatsapp' => $t->whatsapp,
             'email' => $t->email,

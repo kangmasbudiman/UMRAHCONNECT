@@ -10,6 +10,9 @@ import { PUBLISH_ITEMS, type DepartureManaged, type ItineraryDay, type PackageMa
 import { IconHeading } from '@/components/stat-card';
 import { IconActivity, IconCalendarDays, IconChecklist, IconFile, IconHotel, IconRoute } from '@/components/icons';
 
+/** Saran kota keberangkatan umrah (bandara internasional); PPIU tetap bisa mengetik kota lain. */
+const EMBARKASI = ['Jakarta', 'Surabaya', 'Medan', 'Makassar', 'Solo', 'Yogyakarta', 'Semarang', 'Bandung', 'Batam', 'Padang', 'Palembang', 'Pekanbaru', 'Jambi', 'Banda Aceh', 'Balikpapan', 'Banjarmasin', 'Lombok', 'Denpasar', 'Manado', 'Pontianak'];
+
 type Err = ApiClientError | string | null;
 const msgOf = (e: Err) => (typeof e === 'string' ? e : e?.message);
 const lines = (v: FormDataEntryValue | null) => String(v ?? '').split('\n').map((x) => x.trim()).filter(Boolean);
@@ -217,7 +220,7 @@ export function PackageDetailsForm({ tenantId, pkg, readOnly }: { tenantId: stri
                 <span className="flex h-12 items-center font-extrabold text-primary-700">Hari {i + 1}</span>
                 <div className="space-y-2">
                   <label className="sr-only" htmlFor={`it-title-${i}`}>Judul hari {i + 1}</label>
-                  <input id={`it-title-${i}`} className="input" placeholder="Contoh: Jambi – Jakarta – Jeddah" value={d.title} onChange={(e) => setDay(i, { title: e.target.value })} />
+                  <input id={`it-title-${i}`} className="input" placeholder="Contoh: Jakarta – Jeddah" value={d.title} onChange={(e) => setDay(i, { title: e.target.value })} />
                   <label className="sr-only" htmlFor={`it-act-${i}`}>Kegiatan hari {i + 1}</label>
                   <textarea id={`it-act-${i}`} className="input" rows={2} placeholder="Kegiatan, satu per baris" value={d.activities.join('\n')} onChange={(e) => setDay(i, { activities: e.target.value.split('\n') })} />
                 </div>
@@ -382,10 +385,10 @@ function DepartureForm({ tenantId, packageId, dep, onDone }: { tenantId: string;
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field id="d-date" label="Tanggal berangkat" error={f('departure_date')}><input id="d-date" name="departure_date" type="date" className="input" defaultValue={dep?.departure_date} required /></Field>
         <Field id="d-ret" label="Tanggal pulang" error={f('return_date')}><input id="d-ret" name="return_date" type="date" className="input" defaultValue={dep?.return_date} required /></Field>
-        <Field id="d-city" label="Berangkat dari" error={f('departure_city')}><input id="d-city" name="departure_city" className="input" defaultValue={dep?.departure_city ?? 'Jambi'} list="kota" required /></Field>
+        <Field id="d-city" label="Berangkat dari" error={f('departure_city')}><input id="d-city" name="departure_city" className="input" defaultValue={dep?.departure_city ?? ''} list="kota" required /></Field>
         <Field id="d-quota" label="Kuota kursi" error={f('quota')}><input id="d-quota" name="quota" type="number" min={1} className="input num" defaultValue={dep?.quota ?? 45} required /></Field>
       </div>
-      <datalist id="kota">{['Jambi', 'Jakarta', 'Palembang', 'Padang', 'Pekanbaru'].map((k) => <option key={k} value={k} />)}</datalist>
+      <datalist id="kota">{EMBARKASI.map((k) => <option key={k} value={k} />)}</datalist>
       <fieldset>
         <legend className="mb-1.5 font-semibold">Harga per orang (rupiah)</legend>
         <p className="mb-2 text-sm text-ink-600">Kosongkan tipe kamar yang tidak dijual. Harga ini harga resmi, sama di semua kanal.</p>

@@ -59,7 +59,7 @@ export default function AuditPage(props: PageProps<'/admin/audit'>) {
   return (
     <>
       <AdminHeader active="audit" title="Audit log" sub="Jejak tindakan sensitif: verifikasi, pembayaran, pembatalan, akses identitas, dan akses dukungan." />
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Logs {...props} /></Suspense></div>
+      <div className="space-y-4 px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Logs {...props} /></Suspense></div>
     </>
   );
 }

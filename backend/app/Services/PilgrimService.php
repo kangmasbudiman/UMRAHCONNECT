@@ -7,6 +7,7 @@ use App\Models\Agent;
 use App\Models\Pilgrim;
 use App\Models\User;
 use App\Support\Otp\OtpService;
+use App\Support\Regions;
 
 /** Data jamaah (FR-JMH-01): satu NIK per pengelola; NIK dan paspor terenkripsi, NIK diindeks HMAC. */
 class PilgrimService
@@ -51,6 +52,18 @@ class PilgrimService
         if (isset($out['full_name'])) {
             $out['full_name'] = trim(preg_replace('/\s+/', ' ', $out['full_name']));
         }
+        // Alamat (opsional): baris jalan terenkripsi + kode wilayah dari dropdown bertingkat.
+        if (array_key_exists('address', $d)) {
+            $out['address_enc'] = $d['address'] ? trim(preg_replace('/\s+/', ' ', $d['address'])) : null;
+        }
+        if (array_key_exists('postal_code', $d)) {
+            $out['postal_code'] = $d['postal_code'] ?: null;
+        }
+        if (array_key_exists('region_code', $d)) {
+            $out += $d['region_code']
+                ? Regions::columns(Regions::resolveVillage($d['region_code']))
+                : ['province_code' => null, 'regency_code' => null, 'district_code' => null, 'village_code' => null];
+        }
 
         return $out;
     }
@@ -74,6 +87,9 @@ class PilgrimService
             $prefix.'emergency_contact.relation' => ['nullable', 'string', 'max:50'],
             $prefix.'emergency_contact.phone' => ['nullable', 'string', 'max:20'],
             $prefix.'mahram_pilgrim_id' => ['nullable', 'uuid'],
+            $prefix.'address' => ['nullable', 'string', 'max:300'],
+            $prefix.'region_code' => ['nullable', 'string', 'max:13'],
+            $prefix.'postal_code' => ['nullable', 'regex:/^[0-9]{5}$/'],
         ];
     }
 
@@ -83,6 +99,7 @@ class PilgrimService
             $prefix.'nik.regex' => 'NIK terdiri dari 16 angka.',
             $prefix.'birth_date.before' => 'Tanggal lahir tidak valid.',
             $prefix.'passport_no.regex' => 'Nomor paspor 6–12 huruf/angka.',
+            $prefix.'postal_code.regex' => 'Kode pos terdiri dari 5 angka.',
         ];
     }
 }

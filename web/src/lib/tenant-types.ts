@@ -1,8 +1,11 @@
+import type { Region } from '@/components/region-select';
+
 /** Bentuk respons API konteks tenant & platform (api/openapi.yaml: Tenant, TenantDocument, BankAccount, Member). */
 export type Onboarding = { profile_complete: boolean; license_valid: boolean; documents_missing: string[]; has_bank_account: boolean; can_submit: boolean };
 export type TenantFull = {
   id: string; code: string; slug: string; legal_name: string; brand_name: string; ppiu_license_no: string; license_expires_on: string | null;
   nib: string | null; npwp: string | null; address: string | null; city: string | null; province: string | null;
+  postal_code: string | null; region: Region;
   phone: string | null; whatsapp: string | null; email: string | null;
   verification_status: string; verified_at: string | null; status_note: string | null; created_at: string | null;
   onboarding: Onboarding;

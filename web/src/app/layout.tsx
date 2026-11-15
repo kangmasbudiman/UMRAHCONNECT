@@ -9,7 +9,7 @@ const jakarta = Plus_Jakarta_Sans({ variable: '--font-jakarta', subsets: ['latin
 
 export const metadata: Metadata = {
   title: { default: 'UMRAH CONNECT — Paket umrah dari PPIU terverifikasi', template: '%s · UMRAH CONNECT' },
-  description: 'Bandingkan paket umrah dari PPIU terverifikasi di Jambi. Harga resmi PPIU, pembayaran langsung ke rekening resmi travel.',
+  description: 'Bandingkan paket umrah dari PPIU terverifikasi di seluruh Indonesia. Harga resmi PPIU, pembayaran langsung ke rekening resmi travel.',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {

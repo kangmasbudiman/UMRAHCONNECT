@@ -11,9 +11,9 @@ export default function Home() {
   return (
     <>
       <section className="bg-hero text-white">
-        <div className="mx-auto max-w-6xl px-4 pb-28 pt-10 md:pb-32 md:pt-14">
+        <div className="px-5 sm:px-8 lg:px-16 xl:px-24 pb-28 pt-10 md:pb-32 md:pt-14">
           <p className="inline-flex items-center gap-2 rounded-full border border-gold-500/50 bg-white/10 px-3 py-1 text-sm font-semibold text-gold-100">
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-gold-500" />Marketplace umrah Jambi
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-gold-500" />Marketplace umrah Indonesia
           </p>
           <h1 className="mt-4 max-w-3xl text-[30px] font-extrabold leading-[38px] md:text-5xl md:leading-[58px]">
             Cari &amp; bandingkan paket umrah dari <span className="text-gold-500">PPIU terverifikasi</span>
@@ -22,13 +22,13 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="mx-auto -mt-20 max-w-6xl px-4 md:-mt-24">
+      <div className="-mt-20 px-5 sm:px-8 lg:px-16 xl:px-24 md:-mt-24">
         <Suspense fallback={<div className="card h-56 animate-pulse" aria-busy="true" aria-label="Memuat pencarian" />}>
           <SearchCard />
         </Suspense>
       </div>
 
-      <section id="cara-kerja" aria-label="Keunggulan" className="mx-auto mt-8 max-w-6xl scroll-mt-20 px-4">
+      <section id="cara-kerja" aria-label="Keunggulan" className="mt-8 scroll-mt-20 px-5 sm:px-8 lg:px-16 xl:px-24">
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Usp icon={<IconShield className="h-6 w-6" />} title="PPIU terverifikasi" text="Izin dan legalitas diperiksa tim kami." />
           <Usp icon={<IconTag className="h-6 w-6" />} title="Harga resmi" text="Sama lewat agen maupun langsung." />
@@ -37,7 +37,7 @@ export default function Home() {
         </ul>
       </section>
 
-      <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-beda">
+      <section className="mt-14 px-5 sm:px-8 lg:px-16 xl:px-24" aria-labelledby="h-beda">
         <SectionHeading title="Kenapa umrah lewat UMRAH CONNECT" sub="Transparan sampai hari berangkat, bukan hanya sampai Anda membayar." />
         <ul id="h-beda" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Feature href="/lacak" icon={<IconRoute className="h-6 w-6" />} title="Lacak Umrah" text="Pantau DP, dokumen, visa, tiket, manasik sampai berangkat, seperti melacak paket." />
@@ -50,32 +50,32 @@ export default function Home() {
 
       <Suspense fallback={null}><FeaturedPackages /></Suspense>
 
-      <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-terdekat">
+      <section className="mt-14 px-5 sm:px-8 lg:px-16 xl:px-24" aria-labelledby="h-terdekat">
         <SectionHeading title="Keberangkatan terdekat" sub="Kursi terbatas, cek sisa kursinya." href="/jadwal" linkLabel="Semua jadwal" />
         <Suspense fallback={<RowSkeleton />}>
           <NearestDepartures />
         </Suspense>
       </section>
 
-      <section className="mx-auto mt-14 max-w-6xl px-4">
+      <section className="mt-14 px-5 sm:px-8 lg:px-16 xl:px-24">
         <SectionHeading title="Paket termurah" sub="Diurutkan dari harga mulai per orang." href="/paket?sort=price" />
         <Suspense fallback={<RowSkeleton />}>
           <Cheapest />
         </Suspense>
       </section>
 
-      <section className="mx-auto mt-14 max-w-6xl px-4">
+      <section className="mt-14 px-5 sm:px-8 lg:px-16 xl:px-24">
         <SectionHeading title="PPIU terverifikasi" sub="Travel berizin yang sudah lolos pemeriksaan dokumen." href="/ppiu" />
         <Suspense fallback={<RowSkeleton />}>
           <Tenants />
         </Suspense>
       </section>
 
-      <section className="mx-auto mt-14 grid max-w-6xl gap-4 px-4 md:grid-cols-2">
+      <section className="mt-14 grid gap-4 px-5 sm:px-8 lg:px-16 xl:px-24 md:grid-cols-2">
         <Cta tone="green" icon={<IconBriefcase className="h-7 w-7" />} title="Jadi agen umrah"
           text="Bagikan link paket dari PPIU mitra dan dapatkan komisi resmi untuk setiap jamaah." href="/daftar?peran=agen" cta="Daftar sebagai agen" />
         <Cta tone="gold" icon={<IconBuilding className="h-7 w-7" />} title="Daftarkan PPIU Anda"
-          text="Tampilkan paket ke jamaah Jambi, kelola booking, pembayaran, dan agen dalam satu dasbor." href="/daftar?peran=ppiu" cta="Daftarkan PPIU" />
+          text="Tampilkan paket ke jamaah di seluruh Indonesia, kelola booking, pembayaran, dan agen dalam satu dasbor. Gratis untuk mulai." href="/daftar?peran=ppiu" cta="Daftarkan PPIU" />
       </section>
     </>
   );
@@ -97,7 +97,7 @@ async function NearestDepartures() {
   const items = data.slice(0, 4);
   if (!items.length) return <Empty text="Belum ada keberangkatan yang dibuka." />;
   return (
-    <div className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+    <div className="no-scrollbar -mx-5 flex snap-x gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
       {items.map((d) => <DepartureCard key={d.id} d={d} />)}
     </div>
   );
@@ -177,9 +177,9 @@ async function FeaturedPackages() {
   const list = await getPackages({ featured: '1', limit: '6' });
   if (list.data.length === 0) return null;
   return (
-    <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-pilihan">
+    <section className="mt-14 px-5 sm:px-8 lg:px-16 xl:px-24" aria-labelledby="h-pilihan">
       <SectionHeading title="Paket pilihan" sub="Dipromosikan PPIU terverifikasi. Ditandai &quot;Promosi&quot;." />
-      <ul id="h-pilihan" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul id="h-pilihan" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {list.data.map((p) => <li key={p.id}><PackageCard p={p} /></li>)}
       </ul>
     </section>

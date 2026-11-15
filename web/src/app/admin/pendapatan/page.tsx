@@ -33,7 +33,7 @@ async function Revenue({ searchParams }: PageProps<'/admin/pendapatan'>) {
   const list = tab ? inv : inv.filter((i) => i.status === 'unpaid' || i.status === 'awaiting_confirmation');
   return (
     <>
-      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 min-[1400px]:grid-cols-4">
         <li className="card p-4"><StatCard icon={IconTrend} tone="gold" label="Pendapatan berulang/bulan" value={rupiah(r.mrr)} sub="Langganan + Paket pilihan aktif" /></li>
         <li className="card p-4"><StatCard icon={IconReceipt} tone={r.invoices.outstanding ? 'warning' : 'primary'} label="Belum dibayar" value={rupiah(r.invoices.outstanding)} sub={`${r.invoices.awaiting_confirmation} menunggu konfirmasi · ${r.invoices.overdue} lewat jatuh tempo`} /></li>
         <li className="card p-4"><StatCard icon={IconCommission} label="Biaya transaksi terkumpul" value={rupiah(r.fees_accrued.amount)} sub={`${r.fees_accrued.count} booking, ditagih tgl 1`} /></li>
@@ -101,7 +101,7 @@ export default function RevenuePage(props: PageProps<'/admin/pendapatan'>) {
   return (
     <>
       <AdminHeader active="pendapatan" title="Pendapatan" sub="Langganan, Paket pilihan, dan biaya per transaksi. Semua ditagih ke PPIU/agen, tidak pernah ke jamaah." />
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Revenue {...props} /></Suspense></div>
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Revenue {...props} /></Suspense></div>
     </>
   );
 }

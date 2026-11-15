@@ -8,12 +8,13 @@ import { ROOM_LABEL, rupiah, tanggal } from '@/lib/format';
 import type { SavedPilgrim, WizardDeparture } from '@/lib/booking-types';
 import { IconHeading } from '@/components/stat-card';
 import { IconCalendarDays, IconCircleCheck, IconTeam } from '@/components/icons';
+import { RegionSelect } from '@/components/region-select';
 
 type Room = 'quad' | 'triple' | 'double';
-type NewPilgrim = { full_name: string; nik: string; birth_place: string; birth_date: string; gender: '' | 'L' | 'P'; phone: string; passport_no: string };
+type NewPilgrim = { full_name: string; nik: string; birth_place: string; birth_date: string; gender: '' | 'L' | 'P'; phone: string; passport_no: string; address: string; region_code: string; postal_code: string };
 type Slot = { room_type: Room; pilgrim_id: string | null; pilgrim: NewPilgrim };
 
-const EMPTY: NewPilgrim = { full_name: '', nik: '', birth_place: '', birth_date: '', gender: '', phone: '', passport_no: '' };
+const EMPTY: NewPilgrim = { full_name: '', nik: '', birth_place: '', birth_date: '', gender: '', phone: '', passport_no: '', address: '', region_code: '', postal_code: '' };
 const STEPS = ['Keberangkatan & kamar', 'Data jamaah', 'Tinjau & konfirmasi'];
 const STEPS_SHORT = ['Kamar', 'Jamaah', 'Konfirmasi'];
 
@@ -93,6 +94,7 @@ export function BookingWizard(props: WizardProps) {
           pilgrim: {
             full_name: s.pilgrim.full_name.trim(), nik: s.pilgrim.nik.replace(/\D/g, ''), birth_place: s.pilgrim.birth_place.trim(),
             birth_date: s.pilgrim.birth_date, gender: s.pilgrim.gender, phone: s.pilgrim.phone.trim() || null, passport_no: s.pilgrim.passport_no.trim() || null,
+            address: s.pilgrim.address.trim() || null, region_code: s.pilgrim.region_code || null, postal_code: s.pilgrim.postal_code.trim() || null,
           },
         }),
       };
@@ -242,6 +244,22 @@ export function BookingWizard(props: WizardProps) {
                     <Field id={`pp-${i}`} label="Nomor paspor" optional hint="Bisa dilengkapi nanti." error={fieldErr(i, 'passport_no')}>
                       <input id={`pp-${i}`} className="input uppercase" value={s.pilgrim.passport_no} onChange={(e) => setP(i, { passport_no: e.target.value })} />
                     </Field>
+                    <div className="sm:col-span-2 border-t border-border-subtle pt-3">
+                      <p className="font-semibold">Alamat sesuai KTP <span className="font-normal text-ink-600">(opsional, bisa dilengkapi nanti)</span></p>
+                      <p className="text-sm text-ink-600">Dipakai PPIU untuk manifes keberangkatan.</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <RegionSelect name={`region_code_${i}`} idPrefix={`rg-${i}`} required={false} error={fieldErr(i, 'region_code')} onChange={(code) => setP(i, { region_code: code })} after={<>
+                        <div className="sm:col-span-2">
+                          <Field id={`ad-${i}`} label="Nama jalan, nomor rumah, RT/RW" optional hint="Contoh: Jl. Sultan Thaha No. 12, RT 05/RW 02" error={fieldErr(i, 'address')}>
+                            <input id={`ad-${i}`} className="input" value={s.pilgrim.address} onChange={(e) => setP(i, { address: e.target.value })} autoComplete="off" />
+                          </Field>
+                        </div>
+                        <Field id={`pc-${i}`} label="Kode pos" optional error={fieldErr(i, 'postal_code')}>
+                          <input id={`pc-${i}`} className="input num" inputMode="numeric" maxLength={5} value={s.pilgrim.postal_code} onChange={(e) => setP(i, { postal_code: e.target.value.replace(/\D/g, '') })} />
+                        </Field>
+                      </>} />
+                    </div>
                   </div>
                 )}
               </div>

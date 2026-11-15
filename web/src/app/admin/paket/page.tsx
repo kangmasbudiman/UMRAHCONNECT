@@ -72,7 +72,7 @@ export default function ModerationPage(props: PageProps<'/admin/paket'>) {
   return (
     <>
       <AdminHeader active="paket" title="Moderasi paket" sub="Turunkan paket yang menyesatkan atau melanggar aturan. PPIU diberi tahu beserta alasannya." />
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Moderation {...props} /></Suspense></div>
+      <div className="space-y-4 px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Moderation {...props} /></Suspense></div>
     </>
   );
 }

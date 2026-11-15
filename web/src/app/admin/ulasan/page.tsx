@@ -42,7 +42,7 @@ export default function AdminReviewsPage() {
   return (
     <>
       <AdminHeader active="ulasan" title="Moderasi ulasan" sub="Ulasan berasal dari jamaah yang sudah berangkat; sembunyikan hanya yang melanggar aturan." />
-      <div className="mx-auto max-w-4xl space-y-4 px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><List /></Suspense></div>
+      <div className="space-y-4 px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><List /></Suspense></div>
     </>
   );
 }

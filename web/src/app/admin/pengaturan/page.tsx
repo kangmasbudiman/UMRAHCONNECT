@@ -32,7 +32,7 @@ export default function SettingsPage() {
   return (
     <>
       <AdminHeader active="pengaturan" title="Pengaturan platform" sub="Nilai bawaan yang berlaku untuk seluruh platform." />
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><SettingsList /></Suspense></div>
+      <div className="space-y-4 px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><SettingsList /></Suspense></div>
     </>
   );
 }

@@ -21,6 +21,7 @@ class Agent extends Model
         return [
             'nik_enc' => 'encrypted',
             'payout_account_no_enc' => 'encrypted',
+            'address_enc' => 'encrypted',
         ];
     }
 

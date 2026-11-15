@@ -33,7 +33,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
   } catch (e) {
     if (e instanceof ServerApiError && e.status === 404) notFound();
     if (e instanceof ServerApiError && e.code === 'two_factor_required') {
-      return <div className="mx-auto max-w-3xl px-4 py-10"><Alert tone="warning" title="Aktifkan 2FA">Staf platform wajib memakai 2FA. <Link href="/akun#keamanan" className="font-bold text-primary-700 underline">Atur di halaman Akun</Link></Alert></div>;
+      return <div className="px-4 sm:px-6 lg:px-8 py-10"><Alert tone="warning" title="Aktifkan 2FA">Staf platform wajib memakai 2FA. <Link href="/akun#keamanan" className="font-bold text-primary-700 underline">Atur di halaman Akun</Link></Alert></div>;
     }
     throw e;
   }
@@ -53,7 +53,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
   return (
     <>
       <section className="bg-hero text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-4 px-4 py-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 px-4 sm:px-6 lg:px-8 py-8">
           <div>
             <Link href="/admin/ppiu" className="text-sm font-semibold text-gold-500 hover:underline">← Antrean verifikasi</Link>
             <h1 className="mt-1 text-3xl font-extrabold">{t.brand_name}</h1>
@@ -62,7 +62,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
           <div className="rounded-[10px] bg-white px-3 py-2"><StatusPill status={t.verification_status} /></div>
         </div>
       </section>
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 px-4 sm:px-6 lg:px-8 py-8 lg:grid-cols-[1fr_360px]">
         <ReviewPanel tenantId={t.id} status={t.verification_status} docs={t.documents} banks={t.bank_accounts}
           canVerify={allows('platform.tenant.verify')} canSuspend={allows('platform.tenant.suspend')} />
         <aside className="space-y-6">
@@ -108,7 +108,7 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
 
 export default function AdminTenantPage(props: PageProps<'/admin/ppiu/[id]'>) {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-6xl px-4 py-10"><div className="h-96 animate-pulse rounded-[12px] bg-white" /></div>}>
+    <Suspense fallback={<div className="px-4 sm:px-6 lg:px-8 py-10"><div className="h-96 animate-pulse rounded-[12px] bg-white" /></div>}>
       <Review {...props} />
     </Suspense>
   );

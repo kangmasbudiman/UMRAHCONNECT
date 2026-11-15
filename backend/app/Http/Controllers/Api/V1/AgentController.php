@@ -15,6 +15,7 @@ use App\Support\Commission;
 use App\Support\OffsetCursor;
 use BaconQrCode\Renderer\GDLibRenderer;
 use BaconQrCode\Writer;
+use App\Support\Regions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ class AgentController extends Controller
             'nik_enc' => $data['nik'],
             'nik_hash' => $hash,
             'ktp_file_id' => $file->id,
-            'domicile_city' => $data['domicile_city'],
+            ...$data['region'],
             'payout_bank_name' => $data['payout_bank_name'],
             'payout_account_no_enc' => $data['payout_account_no'],
             'payout_account_holder' => $data['payout_account_holder'],
@@ -69,7 +70,6 @@ class AgentController extends Controller
             throw new ApiException(422, 'nik_immutable', 'NIK tidak bisa diubah. Hubungi tim UMRAH CONNECT bila ada kesalahan.', errors: ['nik' => ['Tidak bisa diubah.']]);
         }
         $update = array_filter([
-            'domicile_city' => $data['domicile_city'] ?? null,
             'payout_bank_name' => $data['payout_bank_name'] ?? null,
             'payout_account_no_enc' => $data['payout_account_no'] ?? null,
             'payout_account_holder' => $data['payout_account_holder'] ?? null,
@@ -77,6 +77,7 @@ class AgentController extends Controller
         if (isset($data['ktp_file_id'])) {
             $update['ktp_file_id'] = FileController::claimPersonal($request, $data['ktp_file_id'], 'ktp')->id;
         }
+        $update += $data['region'] ?? [];
         $agent->update($update);
         Audit::log('agent.profile_updated', $agent, null, array_keys($update), context: 'agent');
 
@@ -189,17 +190,37 @@ class AgentController extends Controller
         ], fn ($v) => $v !== null));
         $req = $creating ? 'required' : 'sometimes';
 
-        return $request->validate([
+        $data = $request->validate([
             'nik' => [$req, 'regex:/^[0-9]{16}$/'],
             'ktp_file_id' => [$req, 'uuid'],
-            'domicile_city' => [$req, 'string', 'max:100'],
+            // Domisili nasional: kode kelurahan/desa dari dropdown (lihat Regions) + nama jalan.
+            'region_code' => [$req, 'string', 'max:13'],
+            'address' => [$req, 'string', 'min:5', 'max:300'],
+            'postal_code' => ['nullable', 'regex:/^[0-9]{5}$/'],
             'payout_bank_name' => [$req, 'string', 'max:50'],
             'payout_account_no' => [$req, 'regex:/^[0-9]{6,20}$/'],
             'payout_account_holder' => [$req, 'string', 'max:150'],
         ], [
             'nik.regex' => 'NIK terdiri dari 16 angka sesuai KTP.',
             'payout_account_no.regex' => 'Nomor rekening hanya angka, 6–20 digit.',
+            'region_code.required' => 'Pilih domisili sampai kelurahan/desa.',
+            'address.required' => 'Isi nama jalan, nomor rumah, dan RT/RW.',
+            'address.min' => 'Isi nama jalan, nomor rumah, dan RT/RW.',
+            'postal_code.regex' => 'Kode pos terdiri dari 5 angka.',
         ]);
+        if (isset($data['region_code'])) {
+            $r = Regions::resolveVillage($data['region_code']);
+            // domicile_city tetap diisi nama kab/kota untuk tampilan (kartu agen, halaman agen).
+            $data['region'] = Regions::columns($r) + ['domicile_city' => $r['regency_name']];
+        }
+        if (array_key_exists('address', $data)) {
+            $data['region'] = ($data['region'] ?? []) + ['address_enc' => trim(preg_replace('/\s+/', ' ', (string) $data['address']))];
+        }
+        if (array_key_exists('postal_code', $data)) {
+            $data['region'] = ($data['region'] ?? []) + ['postal_code' => $data['postal_code'] ?: null];
+        }
+
+        return $data;
     }
 
     /** Kode agen 6–8 karakter: huruf nama + 2 angka, mis. BUDI24 (AgentRef.code). */

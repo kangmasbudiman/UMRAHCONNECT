@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Services\CancellationService;
 use App\Support\Audit;
 use App\Support\BookingPresenter as BP;
+use App\Support\Regions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -120,6 +121,7 @@ class BookingOpsController extends Controller
         return response()->json(['data' => [
             'pilgrim_id' => $p->id, 'full_name' => $p->full_name, 'nik' => $p->nik_enc, 'passport_no' => $p->passport_no_enc,
             'passport_expires_on' => $p->passport_expires_on?->toDateString(), 'birth_place' => $p->birth_place, 'birth_date' => $p->birth_date?->toDateString(),
+            'address' => $p->address_enc, 'postal_code' => $p->postal_code, 'region' => Regions::describe($p),
         ]]);
     }
 

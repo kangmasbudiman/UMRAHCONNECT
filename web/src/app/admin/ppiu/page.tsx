@@ -89,7 +89,7 @@ export default function AdminTenantsPage(props: PageProps<'/admin/ppiu'>) {
   return (
     <>
       <AdminHeader active="ppiu" title="Verifikasi PPIU" sub="Hanya PPIU terverifikasi yang tampil di marketplace (BR-01)." />
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
         <Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Queue {...props} /></Suspense>
       </div>
     </>

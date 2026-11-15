@@ -1,3 +1,4 @@
+import type { Region } from '@/components/region-select';
 /** Bentuk respons API konteks agen (api/openapi.yaml: AgentProfile, Partnership, CommissionScheme, ReferralLink). */
 export type Scheme = {
   id: string; scope: 'default' | 'package' | 'agent' | 'agent_package'; package_id: string | null; agent_id: string | null;
@@ -7,7 +8,7 @@ export type Scheme = {
 };
 export type AgentRef = { id: string; code: string; display_name: string; domicile_city: string | null; phone?: string | null; email?: string | null };
 export type AgentProfile = {
-  id: string; code: string; display_name: string; nik_masked: string; ktp_file_id: string | null; domicile_city: string | null;
+  id: string; code: string; display_name: string; nik_masked: string; ktp_file_id: string | null; domicile_city: string | null; region: Region; address: string | null; postal_code: string | null;
   payout_bank_name: string | null; payout_account_no_masked: string | null; payout_account_holder: string | null;
   status: 'active' | 'suspended'; whatsapp: string | null;
 };

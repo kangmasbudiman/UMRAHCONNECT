@@ -63,6 +63,7 @@ class AccountPrivacyService
             'pilgrims' => $pilgrims->map(fn ($p) => [
                 'full_name' => $p->full_name, 'nik' => $p->nik_enc, 'birth_place' => $p->birth_place, 'birth_date' => $p->birth_date?->toDateString(),
                 'gender' => $p->gender, 'passport_no' => $p->passport_no_enc, 'passport_expires_on' => $p->passport_expires_on?->toDateString(), 'phone' => $p->phone,
+                'address' => $p->address_enc, 'postal_code' => $p->postal_code, 'region' => \App\Support\Regions::describe($p),
                 'documents' => PilgrimDocument::where('pilgrim_id', $p->id)->get(['type', 'status', 'created_at'])->toArray(),
             ])->values()->all(),
             'bookings' => $bookings->map(fn ($b) => [
@@ -83,7 +84,7 @@ class AccountPrivacyService
         ];
         if ($agent) {
             $data['agent'] = [
-                'code' => $agent->code, 'nik' => $agent->nik_enc, 'domicile_city' => $agent->domicile_city, 'status' => $agent->status,
+                'code' => $agent->code, 'nik' => $agent->nik_enc, 'domicile_city' => $agent->domicile_city, 'address' => $agent->address_enc, 'postal_code' => $agent->postal_code, 'region' => \App\Support\Regions::describe($agent), 'status' => $agent->status,
                 'payout_bank_name' => $agent->payout_bank_name, 'payout_account_no' => $agent->payout_account_no_enc, 'payout_account_holder' => $agent->payout_account_holder,
                 'commissions' => Commission::withoutTenantScope()->where('agent_id', $agent->id)->get(['amount', 'status', 'created_at'])->toArray(),
                 'prospects' => Prospect::where('agent_id', $agent->id)->get(['name', 'phone', 'notes', 'follow_up_status', 'next_follow_up_on'])->toArray(),

@@ -11,6 +11,7 @@ use App\Models\TenantMember;
 use App\Support\Audit;
 use App\Support\Otp\OtpService;
 use App\Support\Present;
+use App\Support\Regions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,7 +100,7 @@ class TenantController extends Controller
             ->orderByDesc('created_at')->orderByDesc('id')->get()->unique('type')->keyBy('type');
         $missing = array_values(array_filter(TenantDocument::REQUIRED_TYPES, fn ($t) => ! isset($latest[$t]) || $latest[$t]->status === 'rejected'));
         $hasBank = BankAccount::withoutTenantScope()->where('tenant_id', $tenant->id)->where('status', '!=', 'inactive')->exists();
-        $profile = $tenant->legal_name && $tenant->ppiu_license_no && $tenant->license_expires_on && $tenant->address && $tenant->phone && $tenant->email;
+        $profile = $tenant->legal_name && $tenant->ppiu_license_no && $tenant->license_expires_on && $tenant->address && $tenant->village_code && $tenant->phone && $tenant->email;
         $licenseValid = $tenant->license_expires_on && $tenant->license_expires_on->isAfter(now('Asia/Jakarta')->startOfDay());
 
         return [
@@ -132,8 +133,9 @@ class TenantController extends Controller
             'nib' => ['nullable', 'string', 'max:30'],
             'npwp' => ['nullable', 'string', 'max:30'],
             'address' => [$req, 'string', 'max:500'],
-            'city' => [$req, 'string', 'max:100'],
-            'province' => [$req, 'string', 'max:100'],
+            // Alamat nasional: kode kelurahan/desa dari dropdown; provinsi–kab/kota–kecamatan diturunkan di server.
+            'region_code' => [$req, 'string', 'max:13'],
+            'postal_code' => ['nullable', 'regex:/^[0-9]{5}$/'],
             'phone' => [$req, 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'whatsapp' => ['nullable', 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'email' => [$req, 'email:rfc', 'max:254'],
@@ -142,7 +144,15 @@ class TenantController extends Controller
             'license_expires_on.after' => 'Izin PPIU sudah tidak berlaku. Perbarui izin terlebih dahulu.',
             'phone.regex' => 'Nomor telepon tidak valid. Contoh: 0741123456 atau 081234567890.',
             'whatsapp.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890.',
+            'region_code.required' => 'Pilih alamat sampai kelurahan/desa.',
+            'postal_code.regex' => 'Kode pos terdiri dari 5 angka.',
         ]);
+        if (isset($data['region_code'])) {
+            $r = Regions::resolveVillage($data['region_code']);
+            unset($data['region_code']);
+            // Kolom teks lama tetap diisi untuk tampilan & pencarian sederhana.
+            $data += Regions::columns($r) + ['city' => $r['regency_name'], 'province' => $r['province_name']];
+        }
 
         return $data;
     }

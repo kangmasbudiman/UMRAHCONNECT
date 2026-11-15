@@ -37,7 +37,7 @@ async function Dash() {
 
   return (
     <div className="space-y-6">
-      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-3 min-[1400px]:grid-cols-4">
         {stats.map(([l, v, s, href, I]) => {
           const body = <StatCard icon={I} label={l} value={v} sub={s} tone={I === IconCash ? 'gold' : 'primary'} />;
           return <li key={l} className="card p-4">{href ? <Link href={href} className="block hover:text-primary-700">{body}</Link> : body}</li>;
@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
   return (
     <>
       <AdminHeader active="dasbor" title="Dasbor platform" />
-      <div className="mx-auto max-w-6xl px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Dash /></Suspense></div>
+      <div className="px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><Dash /></Suspense></div>
     </>
   );
 }

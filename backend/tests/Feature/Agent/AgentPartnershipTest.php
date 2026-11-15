@@ -47,7 +47,7 @@ class AgentPartnershipTest extends TestCase
         $this->actingAs($u);
         $ktp = $this->postJson('/api/v1/files', ['purpose' => 'ktp', 'file' => UploadedFile::fake()->create('ktp.pdf', 80, 'application/pdf')])->assertCreated()->json('data.id');
         $this->postJson('/api/v1/agent/profile', [
-            'nik' => $nik, 'ktp_file_id' => $ktp, 'domicile_city' => 'Kota Jambi',
+            'nik' => $nik, 'ktp_file_id' => $ktp, 'region_code' => '15.71.02.1002', 'address' => 'Jl. Kapten Pattimura No. 12',
             'payout_bank_name' => 'BSI', 'payout_account_no' => '7001 2345 67', 'payout_account_holder' => $name,
         ])->assertCreated();
 
@@ -67,7 +67,7 @@ class AgentPartnershipTest extends TestCase
         $other = User::create(['name' => 'Lain', 'phone' => '+6281399990000', 'password_hash' => 'rahasia123', 'status' => 'active', 'phone_verified_at' => now()]);
         $this->actingAs($other);
         $ktp = $this->postJson('/api/v1/files', ['purpose' => 'ktp', 'file' => UploadedFile::fake()->create('ktp.pdf', 80, 'application/pdf')])->json('data.id');
-        $this->postJson('/api/v1/agent/profile', ['nik' => '1571-0101-0190-0001', 'ktp_file_id' => $ktp, 'domicile_city' => 'Jambi', 'payout_bank_name' => 'BSI', 'payout_account_no' => '123456', 'payout_account_holder' => 'Lain'])
+        $this->postJson('/api/v1/agent/profile', ['nik' => '1571-0101-0190-0001', 'ktp_file_id' => $ktp, 'region_code' => '15.71.02.1002', 'address' => 'Jl. Kapten Pattimura No. 12', 'payout_bank_name' => 'BSI', 'payout_account_no' => '123456', 'payout_account_holder' => 'Lain'])
             ->assertStatus(409)->assertJsonPath('error.code', 'nik_registered');
         // Belum terdaftar sebagai agen → rute agen ditolak
         $this->getJson('/api/v1/agent/partnerships')->assertForbidden()->assertJsonPath('error.code', 'agent_required');

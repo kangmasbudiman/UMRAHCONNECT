@@ -38,6 +38,10 @@
   --font-display: var(--font-fraunces), Georgia, serif;
 }
 
+/* Penanda data-no-navbar / data-no-footer (halaman masuk, panel admin) menyembunyikan navbar / footer situs. */
+body:has([data-no-navbar]) [data-site-header] { display: none; }
+body:has([data-no-footer]) [data-site-footer] { display: none; }
+
 html { color-scheme: light; scroll-behavior: smooth; }
 body { background: var(--color-surface); color: var(--color-ink-900); }
 :focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 2px; }

@@ -34,6 +34,8 @@ class PublicCatalogController extends Controller
             'hotel_stars' => 'nullable|integer|between:1,5',
             'tenant' => 'nullable|string|max:100',
             'departure_city' => 'nullable|string|max:100',
+            'province' => ['nullable', 'regex:/^\d{2}$/'],            // lokasi kantor PPIU (kode wilayah)
+            'regency' => ['nullable', 'regex:/^\d{2}\.\d{2}$/'],
             'q' => 'nullable|string|max:100',
             'elderly' => 'nullable|boolean',
             'featured' => 'nullable|boolean',
@@ -101,6 +103,12 @@ class PublicCatalogController extends Controller
         if (! empty($v['tenant'])) {
             $query->whereHas('tenant', fn ($t) => $t->where('slug', $v['tenant']));
         }
+        // Cari per lokasi PPIU (skala nasional): provinsi dan/atau kab/kota kantor travel.
+        if (! empty($v['regency'])) {
+            $query->whereHas('tenant', fn ($t) => $t->where('regency_code', $v['regency']));
+        } elseif (! empty($v['province'])) {
+            $query->whereHas('tenant', fn ($t) => $t->where('province_code', $v['province']));
+        }
         if (! empty($v['q'])) {
             $term = '%'.addcslashes($v['q'], '%_\\').'%';
             $query->where(function (Builder $w) use ($term) {
@@ -152,10 +160,20 @@ class PublicCatalogController extends Controller
     /** GET /public/tenants — FR-MKT-06 */
     public function tenants(Request $request): JsonResponse
     {
-        $request->validate(['city' => 'nullable|string|max:100', 'limit' => 'nullable|integer|min:1|max:100', 'cursor' => 'nullable|string']);
+        $request->validate([
+            'city' => 'nullable|string|max:100',
+            'province' => ['nullable', 'regex:/^\d{2}$/'],
+            'regency' => ['nullable', 'regex:/^\d{2}\.\d{2}$/'],
+            'limit' => 'nullable|integer|min:1|max:100', 'cursor' => 'nullable|string',
+        ]);
         $query = Tenant::verified()->orderBy('brand_name')->orderBy('id');
         if ($city = $request->query('city')) {
             $query->where('city', 'ilike', $city);
+        }
+        if ($regency = $request->query('regency')) {
+            $query->where('regency_code', $regency);
+        } elseif ($province = $request->query('province')) {
+            $query->where('province_code', $province);
         }
         [$rows, $meta] = OffsetCursor::paginate($query, $request);
 
@@ -221,7 +239,25 @@ class PublicCatalogController extends Controller
                 ->where('departure_date', '>=', $today)->selectRaw("distinct to_char(departure_date, 'YYYY-MM') as m")->orderBy('m')->pluck('m')->values(),
             'price_min_amount' => (int) ($prices->lo ?? 0),
             'price_max_amount' => (int) ($prices->hi ?? 0),
+            'ppiu_regions' => $this->ppiuRegions(),
         ]]);
+    }
+
+    /** Provinsi & kab/kota yang punya PPIU terverifikasi — isi dropdown "Lokasi PPIU" (tidak menampilkan daerah kosong). */
+    private function ppiuRegions(): array
+    {
+        $rows = DB::table('tenants as t')
+            ->join('regions as p', 'p.code', '=', 't.province_code')
+            ->leftJoin('regions as r', 'r.code', '=', 't.regency_code')
+            ->where('t.verification_status', 'verified')->whereNull('t.deleted_at')
+            ->groupBy('p.code', 'p.name', 'r.code', 'r.name')
+            ->orderBy('p.name')->orderBy('r.name')
+            ->get(['p.code as pc', 'p.name as pn', 'r.code as rc', 'r.name as rn', DB::raw('count(*) as n')]);
+
+        return $rows->groupBy('pc')->map(fn ($g) => [
+            'code' => $g->first()->pc, 'name' => $g->first()->pn, 'count' => (int) $g->sum('n'),
+            'regencies' => $g->whereNotNull('rc')->map(fn ($r) => ['code' => $r->rc, 'name' => $r->rn, 'count' => (int) $r->n])->values()->all(),
+        ])->values()->all();
     }
 
     /** GET /public/referrals/{code} — FR-MKT-08, FR-MKT-10 */
@@ -276,6 +312,7 @@ class PublicCatalogController extends Controller
             'id' => $t->id, 'slug' => $t->slug, 'brand_name' => $t->brand_name, 'legal_name' => $t->legal_name,
             'ppiu_license_no' => $t->ppiu_license_no, 'verified' => $t->verification_status === 'verified',
             'city' => $t->city, 'province' => $t->province, 'address' => $t->address,
+            'province_code' => $t->province_code, 'regency_code' => $t->regency_code, 'postal_code' => $t->postal_code,
             'phone' => $t->phone, 'whatsapp' => $t->whatsapp, 'email' => $t->email, 'logo_url' => null,
         ];
     }

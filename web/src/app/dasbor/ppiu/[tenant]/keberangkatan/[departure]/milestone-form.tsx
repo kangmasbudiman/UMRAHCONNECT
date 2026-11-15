@@ -48,7 +48,7 @@ export function MilestoneForm({ tenantId, departureId, m, canEdit, activeBooking
           </div>
           <div>
             <label htmlFor={`n-${m.type}`} className="mb-1 block text-sm font-semibold">Catatan untuk jamaah <span className="font-normal text-ink-600">(opsional)</span></label>
-            <input id={`n-${m.type}`} name="note" className="input" defaultValue={m.note ?? ''} maxLength={500} placeholder={m.type === 'manasik' ? 'Tempat dan jam, mis. Masjid Agung Jambi, 08.00 WIB' : 'Mis. nomor penerbangan, nama hotel'} />
+            <input id={`n-${m.type}`} name="note" className="input" defaultValue={m.note ?? ''} maxLength={500} placeholder={m.type === 'manasik' ? 'Tempat dan jam, mis. Masjid Raya kota Anda, 08.00 WIB' : 'Mis. nomor penerbangan, nama hotel'} />
           </div>
           <button className="btn btn-primary" disabled={busy}>{busy && <Spinner />}{done ? 'Perbarui' : 'Tandai selesai'}</button>
         </div>

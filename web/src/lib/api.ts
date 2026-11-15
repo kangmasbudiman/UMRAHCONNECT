@@ -16,6 +16,7 @@ export type DeparturePublic = {
 export type TenantPublic = {
   id: string; slug: string; brand_name: string; legal_name: string; ppiu_license_no: string; verified: boolean;
   city: string | null; province: string | null; address: string | null; phone: string | null; whatsapp: string | null; email: string | null;
+  province_code?: string | null; regency_code?: string | null;
 };
 export type PackageSummary = {
   id: string; slug: string; name: string;
@@ -56,7 +57,30 @@ export type ScheduleItem = DeparturePublic & {
   package: { slug: string; name: string; duration_days: number; airline: string };
   tenant: { slug: string; brand_name: string };
 };
-export type Facets = { airlines: string[]; departure_cities: string[]; months: string[]; price_min_amount: number; price_max_amount: number };
+export type RegionFacet = { code: string; name: string; count: number };
+export type Facets = {
+  airlines: string[]; departure_cities: string[]; months: string[]; price_min_amount: number; price_max_amount: number;
+  /** Provinsi & kab/kota yang punya PPIU terverifikasi (untuk filter "Lokasi PPIU"). */
+  ppiu_regions: (RegionFacet & { regencies: RegionFacet[] })[];
+};
+
+/** `lokasi` di URL: kode provinsi (15) atau kab/kota (15.71) → parameter API. */
+export function lokasiParams(lokasi: string | undefined): { province?: string; regency?: string } {
+  if (lokasi && /^\d{2}$/.test(lokasi)) return { province: lokasi };
+  if (lokasi && /^\d{2}\.\d{2}$/.test(lokasi)) return { regency: lokasi };
+  return {};
+}
+
+/** Nama wilayah untuk chip filter, dari facet. */
+export function lokasiLabel(lokasi: string | undefined, regions: Facets['ppiu_regions']): string | null {
+  if (!lokasi) return null;
+  for (const p of regions) {
+    if (p.code === lokasi) return p.name;
+    const r = p.regencies.find((x) => x.code === lokasi);
+    if (r) return r.name;
+  }
+  return null;
+}
 export type Referral = {
   agent: { id: string; code: string; display_name: string; whatsapp: string | null; domicile_city: string | null };
   tenant: { id: string; slug: string; brand_name: string; whatsapp: string | null };
@@ -102,10 +126,10 @@ export async function getPackage(tenantSlug: string, packageSlug: string): Promi
   }
 }
 
-export async function getTenants(): Promise<List<TenantPublic>> {
+export async function getTenants(lokasi?: string): Promise<List<TenantPublic>> {
   'use cache';
   cacheLife('minutes');
-  return get('/public/tenants?limit=100');
+  return get(`/public/tenants${qs({ limit: '100', ...lokasiParams(lokasi) })}`);
 }
 
 export async function getTenant(slug: string): Promise<(TenantPublic & { packages: PackageSummary[]; rating?: Rating }) | null> {

@@ -29,6 +29,9 @@ class AgentPresenter
             'nik_masked' => self::mask($a->nik_enc),
             'ktp_file_id' => $a->ktp_file_id,
             'domicile_city' => $a->domicile_city,
+            'region' => Regions::describe($a),
+            'address' => $a->address_enc,           // hanya untuk profil agen sendiri (tidak dipakai di halaman publik)
+            'postal_code' => $a->postal_code,
             'payout_bank_name' => $a->payout_bank_name,
             'payout_account_no_masked' => self::mask($a->payout_account_no_enc, 0, 4),
             'payout_account_holder' => $a->payout_account_holder,

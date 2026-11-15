@@ -20,6 +20,7 @@ class Pilgrim extends Model
         return [
             'nik_enc' => 'encrypted',
             'passport_no_enc' => 'encrypted',
+            'address_enc' => 'encrypted',
             'birth_date' => 'date',
             'passport_expires_on' => 'date',
             'emergency_contact' => 'array',

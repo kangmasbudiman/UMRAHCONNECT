@@ -55,7 +55,7 @@ export default function SupportViewPage(props: PageProps<'/admin/ppiu/[id]/dukun
   return (
     <>
       <AdminHeader active="ppiu" title="Akses dukungan" sub="Data PPIU dibuka atas tiket dukungan, baca-saja, maksimal 60 menit." />
-      <div className="mx-auto max-w-6xl px-4 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><SupportView {...props} /></Suspense></div>
+      <div className="px-4 sm:px-6 lg:px-8 py-6"><Suspense fallback={<div className="h-96 animate-pulse rounded-[12px] bg-white" />}><SupportView {...props} /></Suspense></div>
     </>
   );
 }

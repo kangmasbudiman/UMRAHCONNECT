@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
         Route::get('departures', 'departures');
         Route::get('facets', 'facets');
         Route::get('config', 'config');
+        Route::get('regions', \App\Http\Controllers\Api\V1\RegionController::class); // dropdown alamat bertingkat
         Route::get('agents/{code}', \App\Http\Controllers\Api\V1\AgentPageController::class)->where('code', '[A-Za-z0-9]{4,8}');
         Route::get('packages/{tenantSlug}/{packageSlug}/reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'publicIndex']);
         Route::get('track', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'track'])->middleware('throttle:track');

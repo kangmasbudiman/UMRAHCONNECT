@@ -2,15 +2,16 @@ import Form from 'next/form';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { getFacets, getPackages, type Facets } from '@/lib/api';
+import { getFacets, getPackages, lokasiLabel, lokasiParams, type Facets } from '@/lib/api';
 import { bulanTahun, budgetSteps, rupiah } from '@/lib/format';
 import { PackageRow } from '@/components/ui';
+import { LokasiSelect } from '@/components/lokasi-select';
 import { IconFilter, IconSearch, IconUsers, IconX } from '@/components/icons';
 
 export const metadata: Metadata = { title: 'Cari paket umrah' };
 
 type SP = Record<string, string | string[] | undefined>;
-type Params = { q?: string; month?: string; airline?: string; departure_city?: string; price_max?: string; elderly?: string; sort: string; cursor?: string };
+type Params = { q?: string; month?: string; airline?: string; departure_city?: string; lokasi?: string; price_max?: string; elderly?: string; sort: string; cursor?: string };
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() || undefined;
 
 const SORTS = [
@@ -44,12 +45,13 @@ export default function SearchPage({ searchParams }: PageProps<'/paket'>) {
 async function Results({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const params: Params = {
-    q: one(sp.q), month: one(sp.month), airline: one(sp.airline), departure_city: one(sp.departure_city),
+    q: one(sp.q), month: one(sp.month), airline: one(sp.airline), departure_city: one(sp.departure_city), lokasi: one(sp.lokasi),
     price_max: one(sp.price_max), elderly: one(sp.elderly) === '1' ? '1' : undefined, sort: SORTS.some((s) => s.value === one(sp.sort)) ? one(sp.sort)! : 'departure_date', cursor: one(sp.cursor),
   };
-  const [facets, list] = await Promise.all([getFacets(), getPackages({ ...params })]);
+  const { lokasi, ...apiParams } = params;
+  const [facets, list] = await Promise.all([getFacets(), getPackages({ ...apiParams, ...lokasiParams(lokasi) })]);
 
-  const filters = { q: params.q, month: params.month, airline: params.airline, departure_city: params.departure_city, price_max: params.price_max, elderly: params.elderly };
+  const filters = { q: params.q, month: params.month, airline: params.airline, departure_city: params.departure_city, lokasi: params.lokasi, price_max: params.price_max, elderly: params.elderly };
   const href = (over: Partial<Params>) => {
     const merged: Record<string, string | undefined> = { ...filters, sort: params.sort === 'departure_date' ? undefined : params.sort, ...over };
     const query = Object.fromEntries(Object.entries(merged).filter(([, v]) => v)) as Record<string, string>;
@@ -59,6 +61,7 @@ async function Results({ searchParams }: { searchParams: Promise<SP> }) {
     params.q && { key: 'q', label: `“${params.q}”` },
     params.month && { key: 'month', label: bulanTahun(params.month) },
     params.departure_city && { key: 'departure_city', label: `Dari ${params.departure_city}` },
+    params.lokasi && { key: 'lokasi', label: `PPIU di ${lokasiLabel(params.lokasi, facets.ppiu_regions) ?? params.lokasi}` },
     params.airline && { key: 'airline', label: params.airline },
     params.price_max && { key: 'price_max', label: `≤ ${rupiah(Number(params.price_max))}` },
     params.elderly && { key: 'elderly', label: 'Ramah lansia' },
@@ -148,6 +151,9 @@ function FilterForm({ idp, params, facets }: { idp: string; params: Params; face
           <option value="">Semua kota</option>
           {facets.departure_cities.map((c) => <option key={c}>{c}</option>)}
         </select>
+      </Field>
+      <Field label="Lokasi PPIU" htmlFor={`${idp}-lokasi`}>
+        <LokasiSelect id={`${idp}-lokasi`} value={params.lokasi} regions={facets.ppiu_regions} />
       </Field>
       <Field label="Budget per orang" htmlFor={`${idp}-price`}>
         <select id={`${idp}-price`} name="price_max" defaultValue={params.price_max ?? ''} className="input">

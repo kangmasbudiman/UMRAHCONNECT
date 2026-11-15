@@ -38,6 +38,7 @@ const POINTS: { text: string; icon: React.ReactNode }[] = [
 ];
 
 /** Panel kiri: motif bintang, bulan sabit, siluet masjid (dekoratif, aria-hidden).
+ *  Siluet memakai "meet" + rasio tetap agar tidak pernah terpotong di layar lebar-pendek.
  *  Busur bulan sabit memakai jari-jari > setengah tali busur; versi desain asli berimpit sehingga tak terlihat. */
 function Hero() {
   return (
@@ -61,7 +62,7 @@ function Hero() {
         </g>
       </svg>
 
-      <svg aria-hidden="true" viewBox="0 60 640 300" preserveAspectRatio="xMaxYMax slice" className="absolute bottom-0 left-0 h-[96px] w-full sm:h-[150px] lg:h-[300px]">
+      <svg aria-hidden="true" viewBox="0 60 640 300" preserveAspectRatio="xMidYMax meet" className="pointer-events-none absolute bottom-0 left-0 aspect-[640/300] h-auto max-h-[300px] w-full lg:max-h-[min(300px,36vh)]">
         <g fill={GOLD} fillOpacity="0.08" stroke={GOLD} strokeOpacity="0.45" strokeWidth="1.4">
           <path d="M34 360 V330 A36 36 0 0 1 106 330 V360" />
           <path d="M142 360 V336 A28 28 0 0 1 198 336 V360" />
@@ -90,7 +91,7 @@ function Hero() {
 
       <Brand />
 
-      <div className="relative max-w-[480px] pb-20 pt-6 sm:pb-32 sm:pt-10 lg:pb-[280px] lg:pt-[72px]">
+      <div className="relative max-w-[480px] pb-[min(40vw,250px)] pt-6 sm:pt-10 lg:pb-[min(260px,30vh)] lg:pt-10">
         <p className="text-[13px] font-semibold tracking-[0.14em] text-[#E3C37E]">ASSALAMU&apos;ALAIKUM</p>
         <h1 className="mt-3 font-display text-[30px] sm:text-[34px] font-medium leading-[1.1] text-[#FBF7EE] lg:text-[52px]">Mulai perjalanan ibadah Anda</h1>
         <p className="mt-5 hidden text-base leading-relaxed sm:block text-[#E9E3D2] lg:text-[17px]">
@@ -113,7 +114,7 @@ function Hero() {
 
 export default function LoginPage(props: PageProps<'/masuk'>) {
   return (
-    <div className={`${fraunces.variable} grid min-h-[calc(100vh-4rem)] bg-[#FBF7EE] text-[#16302D] lg:grid-cols-2`}>
+    <div data-no-navbar className={`${fraunces.variable} grid min-h-screen bg-[#FBF7EE] text-[#16302D] lg:grid-cols-2`}>
       <Hero />
       <section className="flex min-w-0 items-center justify-center px-6 py-10 sm:px-8 lg:py-12">
         <div className="flex w-full max-w-[420px] flex-col gap-4">

@@ -35,7 +35,7 @@ class OnboardingTest extends TestCase
         return $over + [
             'legal_name' => 'PT Amanah Baitullah Jambi', 'brand_name' => 'Amanah Baitullah',
             'ppiu_license_no' => 'U.777 Tahun 2025', 'license_expires_on' => now()->addYears(2)->toDateString(),
-            'address' => 'Jl. Sultan Thaha No. 1', 'city' => 'Kota Jambi', 'province' => 'Jambi',
+            'address' => 'Jl. Sultan Thaha No. 1', 'region_code' => '15.71.01.1001', 'postal_code' => '36122',
             'phone' => '0741 123456', 'whatsapp' => '081277778888', 'email' => 'cs@amanah.test',
         ];
     }

@@ -67,8 +67,8 @@ const NAV = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border-subtle bg-white/95 shadow-[0_1px_8px_rgb(16_24_40/0.06)] backdrop-blur">
-      <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-2 px-4">
+    <header data-site-header className="sticky top-0 z-40 border-b border-border-subtle bg-white/95 shadow-[0_1px_8px_rgb(16_24_40/0.06)] backdrop-blur">
+      <div className="relative flex h-16 items-center gap-2 px-5 sm:px-8 lg:px-16 xl:px-24">
         <Logo />
         <nav aria-label="Menu utama" className="ml-6 hidden items-center gap-1 lg:flex">
           {NAV.map((n) => (
@@ -89,13 +89,13 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 bg-primary-900 text-white">
+    <footer data-site-footer className="mt-16 bg-primary-900 text-white">
       <div className="h-1 bg-gradient-to-r from-gold-500 via-gold-100 to-gold-500" aria-hidden="true" />
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="grid gap-8 px-5 sm:px-8 lg:px-16 xl:px-24 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo onDark />
           <p className="mt-4 max-w-sm text-white/80">
-            Marketplace umrah yang mempertemukan jamaah, agen, dan PPIU berizin. Pilot di Kota Jambi.
+            Marketplace umrah yang mempertemukan jamaah, agen, dan PPIU berizin di seluruh Indonesia.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-white/85">
             <li className="flex items-center gap-2"><IconShieldCheck className="h-5 w-5 text-gold-500" />Hanya PPIU berizin yang terverifikasi</li>
@@ -108,7 +108,7 @@ export function SiteFooter() {
         <FooterCol title="Untuk Mitra" links={[['Daftarkan PPIU', '/daftar?peran=ppiu', IconOffice], ['Jadi agen', '/daftar?peran=agen', IconHandshake], ['Masuk', '/masuk', IconUser]]} />
       </div>
       <div className="border-t border-white/15">
-        <div className="mx-auto grid max-w-6xl gap-3 px-4 py-6 text-sm text-white/80 md:grid-cols-2">
+        <div className="grid gap-3 px-5 sm:px-8 lg:px-16 xl:px-24 py-6 text-sm text-white/80 md:grid-cols-2">
           <p>
             UMRAH CONNECT adalah platform teknologi dan pemasaran. Penyelenggara perjalanan adalah PPIU berizin yang tercantum di setiap paket,
             dan pembayaran selalu ditransfer ke rekening resmi PPIU.
