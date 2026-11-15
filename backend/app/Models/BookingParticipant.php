@@ -19,4 +19,6 @@ class BookingParticipant extends Model
     }
 
     public function pilgrim(): BelongsTo { return $this->belongsTo(Pilgrim::class)->withTrashed(); }
+
+    public function booking(): BelongsTo { return $this->belongsTo(Booking::class)->withoutGlobalScopes(); }
 }

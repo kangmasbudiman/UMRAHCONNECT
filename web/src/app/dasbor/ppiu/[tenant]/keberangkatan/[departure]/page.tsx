@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { Alert } from '@/components/form';
+import { IconDownload, IconSparkles } from '@/components/icons';
 import { tanggal } from '@/lib/format';
 import { serverApi, ServerApiError } from '@/lib/session';
 import { isTenantPage, loadTenantPage, TenantHeader } from '../../../tenant-shell';
@@ -9,7 +10,7 @@ import { MilestoneForm, type Milestone } from './milestone-form';
 
 export const metadata = { title: 'Lacak Umrah · keberangkatan' };
 
-type Resp = { departure: { id: string; departure_date: string; return_date: string; departure_city: string; status: string; package: { id: string; name: string } }; active_bookings: number; milestones: Milestone[] };
+type Resp = { manifest_export: boolean; departure: { id: string; departure_date: string; return_date: string; departure_city: string; status: string; package: { id: string; name: string } }; active_bookings: number; milestones: Milestone[] };
 
 /** Lacak Umrah sisi PPIU: perbarui tahap persiapan satu keberangkatan; semua pemesan aktif melihatnya di booking mereka. */
 async function Milestones({ params }: PageProps<'/dasbor/ppiu/[tenant]/keberangkatan/[departure]'>) {
@@ -35,6 +36,22 @@ async function Milestones({ params }: PageProps<'/dasbor/ppiu/[tenant]/keberangk
           Jamaah melihat tahap ini di halaman booking dan di <Link href="/lacak" className="font-bold underline">halaman Lacak Umrah</Link>. Saat sebuah tahap ditandai selesai, setiap pemesan aktif diberi tahu lewat notifikasi dan email.
           Tahap DP, dokumen, dan lunas dihitung otomatis per booking.
         </Alert>
+        {page.membership.permissions.includes('pilgrim.identity.view') && (
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <p className="font-bold">Manifest & rooming list</p>
+              <p className="text-sm text-ink-600">{d.manifest_export ? 'CSV siap Excel untuk visa, maskapai, dan hotel. Memuat NIK & paspor; setiap unduhan tercatat.' : 'Tersedia di paket PPIU Business.'}</p>
+            </div>
+            {d.manifest_export ? (
+              <div className="flex flex-wrap gap-2">
+                <a href={`/api/v1/tenants/${id}/departures/${d.departure.id}/manifest`} className="btn btn-outline min-h-10 px-3 text-sm"><IconDownload className="h-4 w-4" />Manifest</a>
+                <a href={`/api/v1/tenants/${id}/departures/${d.departure.id}/manifest?type=rooming`} className="btn btn-outline min-h-10 px-3 text-sm"><IconDownload className="h-4 w-4" />Rooming list</a>
+              </div>
+            ) : (
+              <Link href={`/dasbor/ppiu/${id}/langganan`} className="btn btn-gold min-h-10 px-3 text-sm"><IconSparkles className="h-4 w-4" />Lihat PPIU Business</Link>
+            )}
+          </div>
+        )}
         <div className="space-y-3">
           {d.milestones.map((m) => <MilestoneForm key={m.type} tenantId={id} departureId={d.departure.id} m={m} canEdit={canEdit} activeBookings={d.active_bookings} />)}
         </div>

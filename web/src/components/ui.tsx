@@ -4,7 +4,7 @@ import { rupiah, tanggal } from '@/lib/format';
 import type { PackageSummary, ScheduleItem, TenantPublic } from '@/lib/api';
 import { IconArrowRight, IconCalendar, IconClock, IconPin, IconPlane, IconShield } from './icons';
 import { CompareToggle } from './compare';
-import { ElderlyBadge, RatingBadge, TransparencyBadge } from './trust';
+import { ElderlyBadge, PromoBadge, RatingBadge, TransparencyBadge } from './trust';
 
 /** Lencana PPIU terverifikasi (UI/UX Design §2: VerifiedBadge). */
 export function VerifiedBadge({ brand, license }: { brand: string; license?: string }) {
@@ -77,7 +77,7 @@ export function PackageCard({ p }: { p: PackageSummary }) {
           <Link href={pkgHref(p)} className="after:absolute after:inset-0 group-hover:text-primary-700 focus-visible:outline-none">{p.name}</Link>
         </h3>
         <div><VerifiedBadge brand={p.tenant.brand_name} license={p.tenant.ppiu_license_no} /></div>
-        <div className="flex flex-wrap items-center gap-1.5"><RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
+        <div className="flex flex-wrap items-center gap-1.5">{p.featured && <PromoBadge />}<RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
         <p className="flex items-center gap-1.5 text-sm text-ink-600"><IconPlane className="h-4 w-4" />{p.airline} · Hotel <Stars n={p.hotel_makkah_stars} /></p>
         {p.next_departure && (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
@@ -107,7 +107,7 @@ export function PackageRow({ p }: { p: PackageSummary }) {
           <Link href={pkgHref(p)} className="after:absolute after:inset-0 hover:text-primary-700 focus-visible:outline-none">{p.name}</Link>
         </h3>
         <div><VerifiedBadge brand={p.tenant.brand_name} license={p.tenant.ppiu_license_no} /></div>
-        <div className="flex flex-wrap items-center gap-1.5"><RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
+        <div className="flex flex-wrap items-center gap-1.5">{p.featured && <PromoBadge />}<RatingBadge rating={p.rating} /><TransparencyBadge score={p.transparency_score} /><ElderlyBadge show={p.elderly_friendly} /></div>
         <ul className="mt-1 grid gap-1.5 text-sm text-ink-600">
           <li className="flex items-center gap-2"><IconPlane className="h-4 w-4 text-primary-700" />{p.airline}</li>
           <li className="flex items-center gap-2"><IconShield className="h-4 w-4 text-primary-700" />Hotel Makkah <Stars n={p.hotel_makkah_stars} /></li>

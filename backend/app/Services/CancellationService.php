@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 /** BP-08 Pembatalan dan refund (FR-JMH-10, FR-FIN-13). Nominal refund diputuskan PPIU sesuai kebijakan paket. */
 class CancellationService
 {
-    public function __construct(private PaymentService $payments, private CommissionService $commissions, private NotificationService $notify) {}
+    public function __construct(private PaymentService $payments, private CommissionService $commissions, private NotificationService $notify, private BillingService $billing) {}
 
     public function request(Booking $booking, string $reason): Booking
     {
@@ -81,6 +81,7 @@ class CancellationService
                 'cancel_request_status' => $b->cancel_request_status === 'pending' ? 'approved' : $b->cancel_request_status,
             ]);
             $this->commissions->onBookingVoided($b);
+            $this->billing->waiveTransactionFee($b);
             $booker = User::find($b->booker_user_id);
             if ($booker && $booker->status !== 'unclaimed') {
                 $this->notify->send($booker, 'booking.cancelled', ['body' => "Booking {$b->code} dibatalkan. Refund yang diputuskan: Rp".number_format($refund, 0, ',', '.')." ({$basis}).", 'url' => "/akun/booking/{$b->id}"], $b->tenant_id, true);

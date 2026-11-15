@@ -25,7 +25,7 @@ class PaymentService
 {
     private const OPEN_BOOKING = ['awaiting_dp', 'dp_verified'];
 
-    public function __construct(private CommissionService $commissions, private NotificationService $notify) {}
+    public function __construct(private CommissionService $commissions, private NotificationService $notify, private BillingService $billing) {}
 
     public function submitProof(Invoice $invoice, array $d, User $actor): Payment
     {
@@ -178,6 +178,9 @@ class PaymentService
         }
         $booking->save();
         $this->commissions->onPaymentProgress($booking);
+        if ($booking->status === 'fully_paid') {
+            $this->billing->accrueTransactionFee($booking);
+        }
         $booker = \App\Models\User::find($booking->booker_user_id);
         if ($booker && $booker->status !== 'unclaimed') {
             $this->notify->send($booker, 'payment.verified', ['body' => 'Pembayaran Rp'.number_format($amount, 0, ',', '.')." untuk booking {$booking->code} terverifikasi. Kwitansi bisa diunduh di halaman booking.", 'url' => "/akun/booking/{$booking->id}"], $booking->tenant_id, true);

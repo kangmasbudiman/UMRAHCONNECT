@@ -19,6 +19,7 @@ return [
         'invoice.view', 'payment.view', 'payment.verify', 'payment.record',
         'commission.view', 'commission.approve', 'payout.pay', 'refund.record',
         'report.sales.view', 'report.finance.view', 'report.export:sales', 'report.export:finance',
+        'billing.view', 'billing.manage', 'billing.pay',
     ],
 
     'tenant' => [
@@ -31,7 +32,7 @@ return [
         'finance' => ['tenant.profile.view', 'member.view', 'bank_account.view', 'package.view',
             'partnership.view', 'commission_scheme.view', 'booking.view',
             'invoice.view', 'payment.*', 'commission.*', 'payout.pay', 'refund.record', 'booking.note',
-            'report.*'],
+            'report.*', 'billing.view', 'billing.pay'],
         // Staf platform lewat akses dukungan (baca-saja, 60 menit, X-Support-Session).
         'support' => ['tenant.profile.view', 'member.view', 'bank_account.view', 'package.view', 'partnership.view', 'commission_scheme.view',
             'booking.view', 'invoice.view', 'payment.view', 'commission.view', 'report.sales.view', 'report.finance.view'],

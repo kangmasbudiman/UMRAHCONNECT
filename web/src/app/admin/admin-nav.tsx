@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { getContexts } from '@/lib/session';
-import { IconDashboard, IconLog, IconPackageX, IconSettings, IconShieldCheck, IconStar, IconTeam, IconUserCog } from '@/components/icons';
+import { IconDashboard, IconLog, IconPackageX, IconSettings, IconShieldCheck, IconStar, IconTeam, IconTrend, IconUserCog } from '@/components/icons';
 
-export type AdminTab = 'dasbor' | 'ppiu' | 'paket' | 'ulasan' | 'pengguna' | 'audit' | 'staf' | 'pengaturan';
+export type AdminTab = 'dasbor' | 'ppiu' | 'paket' | 'ulasan' | 'pengguna' | 'audit' | 'staf' | 'pengaturan' | 'pendapatan';
 
 const BASE: { key: AdminTab; href: string; label: string; Icon: typeof IconDashboard }[] = [
   { key: 'dasbor', href: '/admin', label: 'Dasbor', Icon: IconDashboard },
@@ -14,6 +14,7 @@ const BASE: { key: AdminTab; href: string; label: string; Icon: typeof IconDashb
   { key: 'audit', href: '/admin/audit', label: 'Audit log', Icon: IconLog },
 ];
 const SUPER: typeof BASE = [
+  { key: 'pendapatan', href: '/admin/pendapatan', label: 'Pendapatan', Icon: IconTrend },
   { key: 'staf', href: '/admin/staf', label: 'Staf platform', Icon: IconUserCog },
   { key: 'pengaturan', href: '/admin/pengaturan', label: 'Pengaturan', Icon: IconSettings },
 ];

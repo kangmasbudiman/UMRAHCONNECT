@@ -19,8 +19,8 @@ async function SettingsList() {
       {rows.map((s) => (
         <li key={s.key} className="card space-y-2 p-5">
           <p className="font-bold">{s.label}</p>
-          <p className="text-sm text-ink-600">{s.help} Bawaan: <span className="num">{s.default === 'fully_paid' ? 'saat lunas' : s.default === 'dp_verified' ? 'saat DP terverifikasi' : s.default}</span>.</p>
-          <SettingForm settingKey={s.key} value={s.value} kind={typeof s.default === 'number' ? 'number' : 'earn_on'} />
+          <p className="text-sm text-ink-600">{s.help} Bawaan: <span className="num">{s.default === 'fully_paid' ? 'saat lunas' : s.default === 'dp_verified' ? 'saat DP terverifikasi' : String(s.default)}</span>.</p>
+          <SettingForm settingKey={s.key} value={s.value} kind={typeof s.default === 'number' ? 'number' : s.key === 'commission.earn_on_default' ? 'earn_on' : 'text'} />
           {s.updated_at && <p className="text-xs text-ink-600">Terakhir diubah {wib(s.updated_at)}{s.updated_by && ` oleh ${s.updated_by}`}</p>}
         </li>
       ))}

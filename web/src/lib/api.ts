@@ -24,7 +24,7 @@ export type PackageSummary = {
   price_from_amount: number;
   next_departure: { departure_date: string; departure_city: string; seats_remaining: number } | null;
   hotel_makkah_distance_m?: number | null; hotel_madinah_distance_m?: number | null;
-  elderly_friendly?: boolean; transparency_score?: number; rating?: Rating | null;
+  elderly_friendly?: boolean; transparency_score?: number; rating?: Rating | null; featured?: boolean;
 };
 export type Rating = { avg: number | null; count: number };
 export type TransparencyItem = { key: string; label: string; ok: boolean; weight: number };
@@ -159,6 +159,25 @@ export async function trackBooking(code: string, phone: string): Promise<Trackin
     return (await get<{ data: Tracking }>(`/public/track?code=${encodeURIComponent(code)}&phone=${encodeURIComponent(phone)}`)).data;
   } catch (e) {
     if (e instanceof ApiError && (e.status === 404 || e.status === 422)) return null;
+    throw e;
+  }
+}
+
+export type AgentPage = {
+  code: string; display_name: string | null; domicile_city: string | null; whatsapp: string | null;
+  partners: { slug: string; brand_name: string; ppiu_license_no: string; city: string | null }[];
+  packages: { slug: string; name: string; duration_days: number; airline: string; tenant: { slug: string; brand_name: string }; cover_image_url: string | null;
+    price_from_amount: number; next_departure: { departure_date: string; departure_city: string } | null; referral_code: string | null }[];
+};
+
+/** Halaman agen publik (Agen Premium). null bila agen tidak ada atau tidak berlangganan premium. */
+export async function getAgentPage(code: string): Promise<AgentPage | null> {
+  'use cache';
+  cacheLife('minutes');
+  try {
+    return (await get<{ data: AgentPage }>(`/public/agents/${encodeURIComponent(code)}`)).data;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
 }

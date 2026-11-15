@@ -3880,6 +3880,97 @@ paths:
       summary: Keluarkan semua perangkat lain dan cabut token aplikasi
       responses:
         '200': { description: OK }
+  /public/agents/{code}:
+    get:
+      tags: [Public]
+      operationId: getAgentPage
+      summary: Halaman agen publik (Agen Premium) — paket mitra dengan kode referral agen
+      security: []
+      parameters:
+        - { name: code, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/Error' }
+  /tenants/{tenant}/billing:
+    get:
+      tags: [Billing]
+      operationId: getTenantBilling
+      summary: Paket langganan, pemakaian, Paket pilihan, dan tagihan platform PPIU
+      x-permission: billing.view
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      responses: { '200': { description: OK } }
+  /tenants/{tenant}/billing/plan:
+    post:
+      tags: [Billing]
+      operationId: changeTenantPlan
+      summary: Ganti paket (ppiu_free, ppiu_business); ditagih pascabayar prorata
+      x-permission: billing.manage
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [plan_code], properties: { plan_code: { type: string } } } } } }
+      responses: { '200': { description: OK }, '4XX': { $ref: '#/components/responses/Error' } }
+  /tenants/{tenant}/featured:
+    post:
+      tags: [Billing]
+      operationId: startFeatured
+      summary: Promosikan paket terbit sebagai Paket pilihan (slot terbatas, berlabel Promosi)
+      x-permission: billing.manage
+      parameters: [{ $ref: '#/components/parameters/TenantId' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [package_id], properties: { package_id: { $ref: '#/components/schemas/Uuid' } } } } } }
+      responses: { '200': { description: OK }, '4XX': { $ref: '#/components/responses/Error' } }
+  /tenants/{tenant}/featured/{placement}/end:
+    post:
+      tags: [Billing]
+      operationId: endFeatured
+      summary: Hentikan promosi (ditagih sampai hari ini)
+      x-permission: billing.manage
+      parameters: [{ $ref: '#/components/parameters/TenantId' }, { name: placement, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }]
+      responses: { '200': { description: OK } }
+  /tenants/{tenant}/platform-invoices/{invoice}/confirm:
+    post:
+      tags: [Billing]
+      operationId: confirmTenantInvoice
+      summary: Konfirmasi pembayaran tagihan platform dengan bukti transfer
+      x-permission: billing.pay
+      parameters: [{ $ref: '#/components/parameters/TenantId' }, { name: invoice, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }]
+      responses: { '200': { description: OK }, '4XX': { $ref: '#/components/responses/Error' } }
+  /tenants/{tenant}/departures/{departure}/manifest:
+    get:
+      tags: [Catalog]
+      operationId: exportManifest
+      summary: Manifest jamaah atau rooming list (?type=rooming) CSV — fitur PPIU Business, 402 bila paket gratis
+      x-permission: pilgrim.identity.view
+      parameters: [{ $ref: '#/components/parameters/TenantId' }, { name: departure, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }, { name: type, in: query, schema: { type: string, enum: [manifest, rooming] } }]
+      responses: { '200': { description: text/csv }, '402': { $ref: '#/components/responses/Error' } }
+  /agent/billing:
+    get: { tags: [Billing], operationId: getAgentBilling, summary: Paket & tagihan agen, responses: { '200': { description: OK } } }
+  /agent/billing/plan:
+    post: { tags: [Billing], operationId: changeAgentPlan, summary: Ganti paket agen (agent_free, agent_premium), responses: { '200': { description: OK } } }
+  /agent/platform-invoices/{invoice}/confirm:
+    post:
+      tags: [Billing]
+      operationId: confirmAgentInvoice
+      summary: Konfirmasi pembayaran tagihan agen
+      parameters: [{ name: invoice, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }]
+      responses: { '200': { description: OK } }
+  /platform/revenue:
+    get: { tags: [Platform], operationId: getRevenue, summary: Dasbor pendapatan (MRR, tagihan, biaya transaksi), x-permission: platform.billing.manage, responses: { '200': { description: OK } } }
+  /platform/invoices:
+    get: { tags: [Platform], operationId: listPlatformInvoices, summary: Semua tagihan platform, x-permission: platform.billing.manage, responses: { '200': { description: OK } } }
+  /platform/invoices/{invoice}/mark-paid:
+    post: { tags: [Platform], operationId: markInvoicePaid, summary: Tandai lunas (fitur yang dinonaktifkan karena telat bayar aktif lagi), x-permission: platform.billing.manage, parameters: [{ name: invoice, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }], responses: { '200': { description: OK } } }
+  /platform/invoices/{invoice}/reject:
+    post: { tags: [Platform], operationId: rejectInvoicePayment, summary: Tolak bukti pembayaran (catatan wajib), x-permission: platform.billing.manage, parameters: [{ name: invoice, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }], responses: { '200': { description: OK } } }
+  /platform/invoices/{invoice}/void:
+    post: { tags: [Platform], operationId: voidInvoice, summary: Batalkan tagihan (catatan wajib), x-permission: platform.billing.manage, parameters: [{ name: invoice, in: path, required: true, schema: { $ref: '#/components/schemas/Uuid' } }], responses: { '200': { description: OK } } }
+  /platform/plans:
+    get: { tags: [Platform], operationId: listPlans, summary: Daftar paket langganan, x-permission: platform.billing.manage, responses: { '200': { description: OK } } }
+  /platform/plans/{code}:
+    put: { tags: [Platform], operationId: updatePlan, summary: Ubah harga dan fitur paket, x-permission: platform.billing.manage, parameters: [{ name: code, in: path, required: true, schema: { type: string } }], responses: { '200': { description: OK } } }
+  /platform/tenants/{tenant}/billing:
+    get: { tags: [Platform], operationId: getTenantContract, summary: Kontrak PPIU (paket, harga khusus, tarif per transaksi), x-permission: platform.billing.manage, parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '200': { description: OK } } }
+    put: { tags: [Platform], operationId: updateTenantContract, summary: Atur kontrak PPIU (termasuk Enterprise), x-permission: platform.billing.manage, parameters: [{ $ref: '#/components/parameters/TenantId' }], responses: { '200': { description: OK } } }
+  /platform/billing/run:
+    post: { tags: [Platform], operationId: runBilling, summary: Buat tagihan untuk periode yang sudah selesai (aman diulang), x-permission: platform.billing.manage, responses: { '200': { description: OK } } }
   /me/savings-plans:
     get:
       tags: [Me]

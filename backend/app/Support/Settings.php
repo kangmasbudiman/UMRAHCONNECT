@@ -22,6 +22,14 @@ class Settings
             'Kapan komisi agen dianggap diperoleh: saat DP terverifikasi atau saat lunas. Hanya untuk PPIU baru.'],
         'support_access.max_minutes' => ['Lama sesi akses dukungan (menit)', ['required', 'integer', 'min:15', 'max:120'], 60,
             'Batas waktu akses baca-saja staf platform ke data PPIU.'],
+        'billing.transaction_fee_amount' => ['Biaya teknologi per booking lunas (Rp)', ['required', 'integer', 'min:0', 'max:5000000'], 0,
+            'Ditagihkan ke PPIU setiap bulan, tidak pernah ke jamaah. 0 = gratis (masa pilot). Tarif kontrak per PPIU bisa diatur terpisah.'],
+        'featured.price_monthly' => ['Harga Paket pilihan per bulan (Rp)', ['required', 'integer', 'min:0', 'max:100000000'], 300000,
+            'Harga promosi satu paket di beranda dan urutan teratas pencarian, ditagih prorata per hari.'],
+        'featured.max_slots' => ['Jumlah slot Paket pilihan', ['required', 'integer', 'min:1', 'max:50'], 6,
+            'Batas paket yang bisa dipromosikan bersamaan agar tetap bermakna bagi jamaah.'],
+        'billing.bank_account' => ['Rekening penerimaan tagihan platform', ['required', 'string', 'min:5', 'max:200'], 'Belum diatur',
+            'Ditampilkan di tagihan ke PPIU/agen, mis. "BSI 7123456789 a.n. PT UMRAH CONNECT Indonesia".'],
     ];
 
     public static function get(string $key): mixed

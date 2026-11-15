@@ -7,6 +7,7 @@ import { requireContexts, serverApi, ServerApiError } from '@/lib/session';
 import type { BankAccount, Member, TenantDoc, TenantFull } from '@/lib/tenant-types';
 import { ReviewPanel } from './review-panel';
 import { SupportPanel, type SupportSession } from './support-panel';
+import { ContractForm } from '../../pendapatan/revenue-actions';
 import { IconHeading } from '@/components/stat-card';
 import { IconHistory, IconOffice, IconSupport } from '@/components/icons';
 
@@ -39,6 +40,8 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
   const perms = ctx.platform_permissions;
   const allows = (p: string) => perms.includes('platform.*') || perms.includes(p);
   const sessions = allows('platform.support_access') ? (await serverApi<{ data: SupportSession[] }>('/platform/support-sessions')).data : [];
+  type Contract = { plan: { code: string; name: string }; subscription: { status: string; price_override: number | null } | null; transaction_fee_amount: number | null; default_transaction_fee_amount: number };
+  const contract = ctx.platform_role === 'super_admin' ? await serverApi<{ data: Contract }>(`/platform/tenants/${id}/billing`).then((r) => r.data).catch(() => null) : null;
   const owner = t.members.find((m) => m.role === 'owner');
   const rows: [string, string | null][] = [
     ['Nama badan usaha', t.legal_name], ['Nomor izin PPIU', t.ppiu_license_no],
@@ -63,6 +66,13 @@ async function Review({ params }: PageProps<'/admin/ppiu/[id]'>) {
         <ReviewPanel tenantId={t.id} status={t.verification_status} docs={t.documents} banks={t.bank_accounts}
           canVerify={allows('platform.tenant.verify')} canSuspend={allows('platform.tenant.suspend')} />
         <aside className="space-y-6">
+          {contract && (
+            <section className="card p-5" aria-labelledby="ct-h">
+              <h2 id="ct-h" className="text-lg font-extrabold">Kontrak &amp; langganan</h2>
+              <p className="mt-1 text-sm text-ink-600">Saat ini: <strong>{contract.plan.name}</strong>{contract.subscription?.status === 'past_due' && <span className="text-danger"> (telat bayar)</span>}</p>
+              <div className="mt-3"><ContractForm tenantId={t.id} plan={contract.plan.code} priceOverride={contract.subscription?.price_override ?? null} fee={contract.transaction_fee_amount} defaultFee={contract.default_transaction_fee_amount} /></div>
+            </section>
+          )}
           {allows('platform.support_access') && (
             <section className="card p-5" aria-labelledby="sp-h">
               <IconHeading icon={IconSupport} id="sp-h" className="text-lg font-extrabold">Akses dukungan</IconHeading>

@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { IconChart, IconCommission, IconDashboard, IconHandshake, IconMoney, IconPackage, IconStar, IconTicket } from '@/components/icons';
+import { IconChart, IconCommission, IconDashboard, IconHandshake, IconMoney, IconPackage, IconStar, IconTicket, IconWork } from '@/components/icons';
 
-export type TenantTab = 'ringkasan' | 'paket' | 'booking' | 'pembayaran' | 'komisi' | 'laporan' | 'agen' | 'ulasan';
+export type TenantTab = 'ringkasan' | 'paket' | 'booking' | 'pembayaran' | 'komisi' | 'laporan' | 'agen' | 'ulasan' | 'langganan';
 
 /** Navigasi area PPIU; setiap tab hanya untuk peran yang punya permission-nya. */
 export function TenantNav({ tenantId, active, permissions }: { tenantId: string; active: TenantTab; permissions: string[] }) {
@@ -15,6 +15,7 @@ export function TenantNav({ tenantId, active, permissions }: { tenantId: string;
     { key: 'laporan', href: `${base}/laporan`, label: 'Laporan', show: permissions.includes('report.sales.view') || permissions.includes('report.finance.view'), Icon: IconChart },
     { key: 'agen', href: `${base}/agen`, label: 'Agen', show: permissions.includes('partnership.view'), Icon: IconHandshake },
     { key: 'ulasan', href: `${base}/ulasan`, label: 'Ulasan', show: permissions.includes('package.view'), Icon: IconStar },
+    { key: 'langganan', href: `${base}/langganan`, label: 'Langganan', show: permissions.includes('billing.view'), Icon: IconWork },
   ];
   return (
     <nav aria-label="Menu PPIU" className="no-scrollbar mt-5 -mb-px flex gap-1 overflow-x-auto">

@@ -59,7 +59,7 @@ export function ConfirmAction({ label, path, method = 'POST', confirmText, json,
 }
 
 /** Ubah satu pengaturan platform (Super Admin). */
-export function SettingForm({ settingKey, value, kind }: { settingKey: string; value: number | string; kind: 'number' | 'earn_on' }) {
+export function SettingForm({ settingKey, value, kind }: { settingKey: string; value: number | string; kind: 'number' | 'earn_on' | 'text' }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiClientError | string | null>(null);
@@ -81,7 +81,9 @@ export function SettingForm({ settingKey, value, kind }: { settingKey: string; v
     }}>
       <label htmlFor={`set-${settingKey}`} className="sr-only">Nilai</label>
       {kind === 'number' ? (
-        <input id={`set-${settingKey}`} name="value" type="number" inputMode="numeric" className="input num w-32" defaultValue={value} />
+        <input id={`set-${settingKey}`} name="value" type="number" inputMode="numeric" className="input num w-40" defaultValue={value} />
+      ) : kind === 'text' ? (
+        <input id={`set-${settingKey}`} name="value" className="input w-full sm:w-96" defaultValue={value} maxLength={200} />
       ) : (
         <select id={`set-${settingKey}`} name="value" className="input w-auto" defaultValue={String(value)}>
           <option value="fully_paid">Saat lunas</option>

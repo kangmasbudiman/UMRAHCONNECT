@@ -38,3 +38,14 @@ Artisan::command('commissions:backfill', function (App\Services\CommissionServic
 Schedule::call(fn () => \Illuminate\Support\Facades\Cache::forever('scheduler:heartbeat', now()->toIso8601String()))->everyMinute()->name('scheduler-heartbeat');
 Schedule::command('app:backup')->dailyAt('02:00')->timezone('Asia/Jakarta')->withoutOverlapping();
 Schedule::command('app:backup-verify')->weeklyOn(0, '03:00')->timezone('Asia/Jakarta')->withoutOverlapping();
+
+// Pendapatan platform: tagihan bulan lalu setiap tanggal 1 pukul 06.00 WIB; penegakan telat bayar setiap hari.
+Artisan::command('billing:run {period? : YYYY-MM, bawaan bulan lalu}', function (App\Services\BillingService $billing) {
+    $period = $this->argument('period') ?? now('Asia/Jakarta')->subMonth()->format('Y-m');
+    $this->info("Periode {$period}: ".$billing->runPeriod($period).' tagihan dibuat.');
+})->purpose('Buat tagihan platform (langganan, Paket pilihan, biaya per transaksi) untuk satu periode');
+Artisan::command('billing:overdue', function (App\Services\BillingService $billing) {
+    $this->info($billing->enforceOverdue().' langganan dipindah ke past_due.');
+})->purpose('Nonaktifkan fitur berbayar bagi tagihan yang lewat masa tenggang');
+Schedule::command('billing:run')->monthlyOn(1, '06:00')->timezone('Asia/Jakarta')->withoutOverlapping();
+Schedule::command('billing:overdue')->dailyAt('06:30')->timezone('Asia/Jakarta')->withoutOverlapping();

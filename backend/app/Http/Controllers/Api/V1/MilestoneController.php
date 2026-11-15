@@ -123,6 +123,7 @@ class MilestoneController extends Controller
             'departure' => ['id' => $dep->id, 'departure_date' => $dep->departure_date->toDateString(), 'return_date' => $dep->return_date->toDateString(),
                 'departure_city' => $dep->departure_city, 'status' => $dep->status, 'package' => ['id' => $dep->package->id, 'name' => $dep->package->name]],
             'active_bookings' => $active,
+            'manifest_export' => (bool) app(\App\Services\BillingService::class)->feature('tenant', $dep->tenant_id, 'manifest_export'),
             'milestones' => collect(DepartureMilestone::TYPES)->map(function ($label, $type) use ($rows) {
                 $m = $rows->get($type);
 

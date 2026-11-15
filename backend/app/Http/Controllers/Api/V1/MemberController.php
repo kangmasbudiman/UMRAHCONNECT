@@ -36,6 +36,10 @@ class MemberController extends Controller
         $user = User::where('email', Str::lower($data['email']))->first()
             ?? throw new ApiException(422, 'invitee_not_registered', 'Email ini belum terdaftar. Minta yang bersangkutan membuat akun UMRAH CONNECT dengan email ini, lalu undang lagi.', errors: ['email' => ['Belum terdaftar.']]);
 
+        $max = (int) (app(\App\Services\BillingService::class)->feature('tenant', $tenant->id, 'max_members') ?? 3);
+        if (TenantMember::where('tenant_id', $tenant->id)->whereIn('status', ['active', 'invited'])->count() >= $max) {
+            throw new ApiException(402, 'plan_required', "Paket Anda dibatasi {$max} anggota tim (termasuk Owner). Tingkatkan ke PPIU Business di tab Langganan, atau nonaktifkan anggota yang tidak aktif.");
+        }
         $member = TenantMember::where('tenant_id', $tenant->id)->where('user_id', $user->id)->first();
         if ($member && $member->status !== 'deactivated') {
             throw ApiException::conflict('already_member', $member->status === 'invited' ? 'Pengguna ini sudah diundang dan belum menjawab.' : 'Pengguna ini sudah menjadi anggota tim.');

@@ -36,6 +36,7 @@ class PublicCatalogController extends Controller
             'departure_city' => 'nullable|string|max:100',
             'q' => 'nullable|string|max:100',
             'elderly' => 'nullable|boolean',
+            'featured' => 'nullable|boolean',
             'sort' => 'nullable|in:price,-price,departure_date,-published_at,-rating',
             'limit' => 'nullable|integer|min:1|max:100',
             'cursor' => 'nullable|string',
@@ -86,6 +87,10 @@ class PublicCatalogController extends Controller
         if (! empty($v['airline'])) {
             $query->where('airline', 'ilike', $v['airline']);
         }
+        $featuredIds = \App\Services\BillingService::featuredPackageIds();
+        if (! empty($v['featured'])) {
+            $query->whereIn('packages.id', $featuredIds ?: ['00000000-0000-0000-0000-000000000000']);
+        }
         if (! empty($v['elderly'])) {
             $query->where('hotel_makkah_distance_m', '<=', \App\Support\CatalogPresenter::ELDERLY_MAX_DISTANCE_M)
                 ->where('hotel_madinah_distance_m', '<=', \App\Support\CatalogPresenter::ELDERLY_MAX_DISTANCE_M);
@@ -107,6 +112,10 @@ class PublicCatalogController extends Controller
             });
         }
 
+        // Paket pilihan (promosi berbayar) disematkan di atas hanya pada urutan bawaan, selalu berlabel "Promosi".
+        if (($v['sort'] ?? 'departure_date') === 'departure_date' && $featuredIds) {
+            $query->orderByRaw('CASE WHEN packages.id IN ('.implode(',', array_fill(0, count($featuredIds), '?')).') THEN 0 ELSE 1 END', $featuredIds);
+        }
         match ($v['sort'] ?? 'departure_date') {
             'price' => $query->orderBy('price_from_amount'),
             '-price' => $query->orderByDesc('price_from_amount'),
@@ -119,7 +128,7 @@ class PublicCatalogController extends Controller
         [$rows, $meta] = OffsetCursor::paginate($query, $request);
         $ratings = \App\Support\Ratings::forPackages($rows->pluck('id')->all());
 
-        return response()->json(['data' => $rows->map(fn (Package $p) => $this->packageSummary($p, $ratings))->values(), 'meta' => $meta]);
+        return response()->json(['data' => $rows->map(fn (Package $p) => $this->packageSummary($p, $ratings) + ['featured' => in_array($p->id, $featuredIds, true)])->values(), 'meta' => $meta]);
     }
 
     /** GET /public/packages/{tenantSlug}/{packageSlug} — FR-MKT-04, FR-MKT-05, FR-MKT-10 */

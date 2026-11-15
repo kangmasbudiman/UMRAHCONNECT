@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { IconClipboard, IconCommission, IconDashboard, IconHandshake, IconLink, IconTicket, IconUser } from '@/components/icons';
+import { IconClipboard, IconCommission, IconDashboard, IconHandshake, IconLink, IconTicket, IconUser, IconWork } from '@/components/icons';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { requireContexts, type Contexts } from '@/lib/session';
@@ -18,6 +18,7 @@ const TABS = [
   { key: 'prospek', href: '/agen/prospek', label: 'Prospek', Icon: IconClipboard },
   { key: 'booking', href: '/agen/booking', label: 'Booking', Icon: IconTicket },
   { key: 'komisi', href: '/agen/komisi', label: 'Komisi', Icon: IconCommission },
+  { key: 'langganan', href: '/agen/langganan', label: 'Langganan', Icon: IconWork },
   { key: 'profil', href: '/agen/profil', label: 'Profil', Icon: IconUser },
 ] as const;
 

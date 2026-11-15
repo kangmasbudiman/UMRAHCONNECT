@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
         Route::get('departures', 'departures');
         Route::get('facets', 'facets');
         Route::get('config', 'config');
+        Route::get('agents/{code}', \App\Http\Controllers\Api\V1\AgentPageController::class)->where('code', '[A-Za-z0-9]{4,8}');
         Route::get('packages/{tenantSlug}/{packageSlug}/reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'publicIndex']);
         Route::get('track', [\App\Http\Controllers\Api\V1\MilestoneController::class, 'track'])->middleware('throttle:track');
         Route::get('referrals/{code}', 'referral');
@@ -135,6 +136,9 @@ Route::prefix('v1')->group(function () {
                 Route::get('commissions', [CommissionController::class, 'agentIndex']);
                 Route::get('payout-requests', [CommissionController::class, 'agentPayouts']);
                 Route::post('payout-requests', [CommissionController::class, 'agentRequestPayout'])->middleware('idempotent');
+                Route::get('billing', [\App\Http\Controllers\Api\V1\BillingController::class, 'agentShow']);
+                Route::post('billing/plan', [\App\Http\Controllers\Api\V1\BillingController::class, 'agentChangePlan']);
+                Route::post('platform-invoices/{invoice}/confirm', [\App\Http\Controllers\Api\V1\BillingController::class, 'agentConfirm'])->whereUuid('invoice');
                 Route::get('prospects', [\App\Http\Controllers\Api\V1\ProspectController::class, 'index']);
                 Route::post('prospects', [\App\Http\Controllers\Api\V1\ProspectController::class, 'store']);
                 Route::patch('prospects/{prospect}', [\App\Http\Controllers\Api\V1\ProspectController::class, 'update'])->whereUuid('prospect');
@@ -178,6 +182,12 @@ Route::prefix('v1')->group(function () {
             Route::get('receipts/{receipt}/pdf', [PaymentController::class, 'receiptPdf'])->middleware('perm:invoice.view');
             Route::post('bookings/{booking}/cancel', [BookingOpsController::class, 'cancel'])->middleware(['perm:booking.cancel', 'idempotent']);
             Route::patch('bookings/{booking}/attribution', [BookingOpsController::class, 'changeAttribution'])->middleware('perm:booking.attribution.change');
+            Route::get('billing', [\App\Http\Controllers\Api\V1\BillingController::class, 'tenantShow'])->middleware('perm:billing.view');
+            Route::post('billing/plan', [\App\Http\Controllers\Api\V1\BillingController::class, 'tenantChangePlan'])->middleware('perm:billing.manage');
+            Route::post('featured', [\App\Http\Controllers\Api\V1\BillingController::class, 'startFeatured'])->middleware('perm:billing.manage');
+            Route::post('featured/{placement}/end', [\App\Http\Controllers\Api\V1\BillingController::class, 'endFeatured'])->whereUuid('placement')->middleware('perm:billing.manage');
+            Route::post('platform-invoices/{invoice}/confirm', [\App\Http\Controllers\Api\V1\BillingController::class, 'tenantConfirm'])->whereUuid('invoice')->middleware('perm:billing.pay');
+            Route::get('departures/{departure}/manifest', \App\Http\Controllers\Api\V1\ManifestController::class)->whereUuid('departure')->middleware('perm:pilgrim.identity.view');
             Route::get('reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'tenantIndex'])->middleware('perm:package.view');
             Route::post('reviews/{review}/reply', [\App\Http\Controllers\Api\V1\ReviewController::class, 'reply'])->whereUuid('review')->middleware('perm:package.manage');
             Route::post('bookings/{booking}/cancel-request/reject', [BookingOpsController::class, 'rejectCancelRequest'])->middleware('perm:booking.cancel');
@@ -258,6 +268,16 @@ Route::prefix('v1')->group(function () {
             Route::get('packages', 'packages')->middleware('platform:platform.tenant.view');
             Route::post('packages/{package}/take-down', 'takeDown')->whereUuid('package')->middleware('platform:platform.package.take_down');
             Route::post('packages/{package}/restore', 'restorePackage')->whereUuid('package')->middleware('platform:platform.package.take_down');
+            Route::get('revenue', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'revenue'])->middleware('platform:platform.billing.manage');
+            Route::get('invoices', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'invoices'])->middleware('platform:platform.billing.manage');
+            Route::post('invoices/{invoice}/mark-paid', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'markPaid'])->whereUuid('invoice')->middleware('platform:platform.billing.manage');
+            Route::post('invoices/{invoice}/reject', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'reject'])->whereUuid('invoice')->middleware('platform:platform.billing.manage');
+            Route::post('invoices/{invoice}/void', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'void'])->whereUuid('invoice')->middleware('platform:platform.billing.manage');
+            Route::get('plans', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'plans'])->middleware('platform:platform.billing.manage');
+            Route::put('plans/{code}', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'updatePlan'])->middleware('platform:platform.billing.manage');
+            Route::get('tenants/{tenant}/billing', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'tenantContractShow'])->whereUuid('tenant')->middleware('platform:platform.billing.manage');
+            Route::put('tenants/{tenant}/billing', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'tenantContract'])->whereUuid('tenant')->middleware('platform:platform.billing.manage');
+            Route::post('billing/run', [\App\Http\Controllers\Api\V1\Platform\PlatformBillingController::class, 'run'])->middleware('platform:platform.billing.manage');
             Route::get('reviews', [\App\Http\Controllers\Api\V1\ReviewController::class, 'platformIndex'])->middleware('platform:platform.tenant.view');
             Route::post('reviews/{review}/hide', [\App\Http\Controllers\Api\V1\ReviewController::class, 'hide'])->whereUuid('review')->middleware('platform:platform.package.take_down');
             Route::post('reviews/{review}/unhide', [\App\Http\Controllers\Api\V1\ReviewController::class, 'unhide'])->whereUuid('review')->middleware('platform:platform.package.take_down');

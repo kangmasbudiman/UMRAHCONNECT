@@ -48,6 +48,8 @@ export default function Home() {
         </ul>
       </section>
 
+      <Suspense fallback={null}><FeaturedPackages /></Suspense>
+
       <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-terdekat">
         <SectionHeading title="Keberangkatan terdekat" sub="Kursi terbatas, cek sisa kursinya." href="/jadwal" linkLabel="Semua jadwal" />
         <Suspense fallback={<RowSkeleton />}>
@@ -167,5 +169,19 @@ function Feature({ href, icon, title, text }: { href: string; icon: React.ReactN
         <span className="text-sm text-ink-600">{text}</span>
       </Link>
     </li>
+  );
+}
+
+/** Paket pilihan: promosi berbayar PPIU, selalu berlabel "Promosi" di setiap kartu. */
+async function FeaturedPackages() {
+  const list = await getPackages({ featured: '1', limit: '6' });
+  if (list.data.length === 0) return null;
+  return (
+    <section className="mx-auto mt-14 max-w-6xl px-4" aria-labelledby="h-pilihan">
+      <SectionHeading title="Paket pilihan" sub="Dipromosikan PPIU terverifikasi. Ditandai &quot;Promosi&quot;." />
+      <ul id="h-pilihan" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {list.data.map((p) => <li key={p.id}><PackageCard p={p} /></li>)}
+      </ul>
+    </section>
   );
 }
