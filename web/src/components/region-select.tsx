@@ -35,7 +35,7 @@ export function RegionSelect({
   name = 'region_code', initial = null, required = true, error, idPrefix = 'reg', disabled = false, onChange, after,
 }: {
   name?: string; initial?: Region; required?: boolean; error?: string; idPrefix?: string; disabled?: boolean;
-  onChange?: (villageCode: string) => void;
+  onChange?: (villageCode: string, names: string[]) => void;
   /** Isian lanjutan di bawah kelurahan (nama jalan, kode pos), agar urutan alamat sama di semua formulir. */
   after?: ReactNode;
 }) {
@@ -66,7 +66,9 @@ export function RegionSelect({
     const next = codes.map((c, i) => (i < level ? c : i === level ? code : ''));
     setCodes(next);
     setLists((prev) => prev.map((l, i) => (i <= level ? l : null)));
-    onChange?.(next[3]);
+    // Nama wilayah terpilih, dari yang paling rinci (kelurahan → provinsi), mis. untuk mengarahkan peta.
+    const names = next.map((c, i) => lists[i]?.find((o) => o.code === c)?.name ?? '').filter(Boolean).reverse();
+    onChange?.(next[3], names);
   }
 
   return (

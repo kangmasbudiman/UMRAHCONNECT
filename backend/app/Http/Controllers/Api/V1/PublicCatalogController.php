@@ -164,8 +164,14 @@ class PublicCatalogController extends Controller
             'city' => 'nullable|string|max:100',
             'province' => ['nullable', 'regex:/^\d{2}$/'],
             'regency' => ['nullable', 'regex:/^\d{2}\.\d{2}$/'],
+            'near' => ['nullable', 'string', 'max:40'],                 // "lat,lng" — PPIU terdekat (aplikasi ponsel/peta)
+            'radius' => ['nullable', 'numeric', 'min:1', 'max:500'],   // km, bawaan 50
             'limit' => 'nullable|integer|min:1|max:100', 'cursor' => 'nullable|string',
         ]);
+        $near = null;
+        if ($request->filled('near') && ! ($near = \App\Support\Geo::parsePoint($request->query('near')))) {
+            throw new \App\Exceptions\ApiException(422, 'validation_failed', 'Titik lokasi tidak valid.', errors: ['near' => ['Format "lat,lng" di wilayah Indonesia, mis. -1.61,103.61.']]);
+        }
         $query = Tenant::verified()->orderBy('brand_name')->orderBy('id');
         if ($city = $request->query('city')) {
             $query->where('city', 'ilike', $city);
@@ -175,9 +181,13 @@ class PublicCatalogController extends Controller
         } elseif ($province = $request->query('province')) {
             $query->where('province_code', $province);
         }
+        if ($near) {
+            $query->select('tenants.*');
+            \App\Support\Geo::nearest($query, 'tenants', $near[0], $near[1], (float) ($request->query('radius') ?: 50))->orderBy('tenants.id');
+        }
         [$rows, $meta] = OffsetCursor::paginate($query, $request);
 
-        return response()->json(['data' => $rows->map(fn (Tenant $t) => $this->tenantPublic($t))->values(), 'meta' => $meta]);
+        return response()->json(['data' => $rows->map(fn (Tenant $t) => $this->tenantPublic($t) + ($near ? ['distance_km' => (float) $t->distance_km] : []))->values(), 'meta' => $meta]);
     }
 
     /** GET /public/tenants/{tenantSlug} — FR-MKT-06 */
@@ -313,6 +323,7 @@ class PublicCatalogController extends Controller
             'ppiu_license_no' => $t->ppiu_license_no, 'verified' => $t->verification_status === 'verified',
             'city' => $t->city, 'province' => $t->province, 'address' => $t->address,
             'province_code' => $t->province_code, 'regency_code' => $t->regency_code, 'postal_code' => $t->postal_code,
+            'latitude' => $t->latitude !== null ? (float) $t->latitude : null, 'longitude' => $t->longitude !== null ? (float) $t->longitude : null,
             'phone' => $t->phone, 'whatsapp' => $t->whatsapp, 'email' => $t->email, 'logo_url' => null,
         ];
     }

@@ -5,7 +5,7 @@ export type Onboarding = { profile_complete: boolean; license_valid: boolean; do
 export type TenantFull = {
   id: string; code: string; slug: string; legal_name: string; brand_name: string; ppiu_license_no: string; license_expires_on: string | null;
   nib: string | null; npwp: string | null; address: string | null; city: string | null; province: string | null;
-  postal_code: string | null; region: Region;
+  postal_code: string | null; region: Region; latitude: number | null; longitude: number | null;
   phone: string | null; whatsapp: string | null; email: string | null;
   verification_status: string; verified_at: string | null; status_note: string | null; created_at: string | null;
   onboarding: Onboarding;

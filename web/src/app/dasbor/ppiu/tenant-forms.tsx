@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Alert, Field, Spinner, StatusPill } from '@/components/form';
 import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { RegionSelect } from '@/components/region-select';
+import { MapPicker } from '@/components/map/map-picker';
 import { DOC_LABEL, DOC_TYPES, type BankAccount, type Member, type TenantDoc, type TenantFull } from '@/lib/tenant-types';
 
 const FIELDS: { name: keyof TenantFull; label: string; type?: string; hint?: string; optional?: boolean; span?: boolean; locked?: boolean; autoComplete?: string }[] = [
@@ -25,6 +26,7 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
   const [error, setError] = useState<ApiClientError | string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mapFocus, setMapFocus] = useState<string[]>([]);
   const licenseLocked = tenant ? ['verified', 'suspended'].includes(tenant.verification_status) : false;
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -36,7 +38,7 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
       const v = String(fd.get(f.name) ?? '').trim();
       body[f.name] = v === '' ? null : v;
     }
-    for (const k of ['region_code', 'address', 'postal_code']) {
+    for (const k of ['region_code', 'address', 'postal_code', 'latitude', 'longitude']) {
       const v = String(fd.get(k) ?? '').trim();
       body[k] = v === '' ? null : v;
     }
@@ -81,7 +83,7 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
           <p className="text-sm text-ink-600">Sesuai alamat di izin PPIU. Dipakai jamaah untuk mencari travel di daerahnya.</p>
         </div>
         <div className="md:col-span-2">
-          <RegionSelect idPrefix="t-region" initial={tenant?.region ?? null} error={apiErr?.field('region_code')} disabled={readOnly} after={<>
+          <RegionSelect idPrefix="t-region" initial={tenant?.region ?? null} error={apiErr?.field('region_code')} disabled={readOnly} onChange={(_, names) => setMapFocus(names)} after={<>
             <div className="sm:col-span-2">
               <Field id="t-address" label="Nama jalan, nomor, RT/RW" hint="Contoh: Jl. Sultan Thaha No. 12, RT 05/RW 02" error={apiErr?.field('address')}>
                 <textarea id="t-address" name="address" rows={2} className="input" defaultValue={tenant?.address ?? ''} required autoComplete="street-address" />
@@ -91,6 +93,11 @@ export function TenantProfileForm({ tenant, readOnly = false }: { tenant: Tenant
               <input id="t-postal_code" name="postal_code" className="input num" inputMode="numeric" maxLength={5} pattern="[0-9]{5}" defaultValue={tenant?.postal_code ?? ''} autoComplete="postal-code" />
             </Field>
           </>} />
+        </div>
+        <div className="md:col-span-2">
+          <MapPicker idPrefix="t-map" disabled={readOnly} focus={mapFocus}
+            initial={tenant?.latitude != null && tenant?.longitude != null ? { lat: tenant.latitude, lng: tenant.longitude } : null}
+            error={apiErr?.field('latitude') ?? apiErr?.field('longitude')} />
         </div>
       </fieldset>
       {!readOnly && (

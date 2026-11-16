@@ -32,6 +32,8 @@ class AgentPresenter
             'region' => Regions::describe($a),
             'address' => $a->address_enc,           // hanya untuk profil agen sendiri (tidak dipakai di halaman publik)
             'postal_code' => $a->postal_code,
+            'latitude' => $a->latitude !== null ? (float) $a->latitude : null,
+            'longitude' => $a->longitude !== null ? (float) $a->longitude : null,
             'payout_bank_name' => $a->payout_bank_name,
             'payout_account_no_masked' => self::mask($a->payout_account_no_enc, 0, 4),
             'payout_account_holder' => $a->payout_account_holder,

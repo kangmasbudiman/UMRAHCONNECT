@@ -5,7 +5,9 @@ import { getTenant } from '@/lib/api';
 import { waLink } from '@/lib/format';
 import { PackageCard, SectionHeading, VerifiedBadge, WhatsAppButton } from '@/components/ui';
 import { RatingBadge } from '@/components/trust';
-import { IconBuilding, IconPin, IconShield } from '@/components/icons';
+import { IconBuilding, IconMapPin, IconPin, IconRoute, IconShield } from '@/components/icons';
+import { MapView } from '@/components/map/map-view';
+import { directionsUrl } from '@/components/map/map-config';
 
 export async function generateMetadata({ params }: PageProps<'/ppiu/[slug]'>): Promise<Metadata> {
   const t = await getTenant((await params).slug);
@@ -42,9 +44,20 @@ async function Body({ params }: { params: PageProps<'/ppiu/[slug]'>['params'] })
           </div>
           <dl className="mt-6 grid gap-4 border-t border-border-subtle pt-5 sm:grid-cols-3">
             <Info icon={<IconShield />} label="Nomor izin PPIU" value={t.ppiu_license_no} />
-            <Info icon={<IconPin />} label="Alamat kantor" value={[t.address, t.province].filter(Boolean).join(', ')} />
+            <Info icon={<IconPin />} label="Alamat kantor" value={[t.address, t.city, t.province].filter(Boolean).join(', ')} />
             <Info icon={<IconBuilding />} label="Kontak resmi" value={[t.phone, t.email].filter(Boolean).join(' · ')} />
           </dl>
+          {t.latitude != null && t.longitude != null && (
+            <div className="mt-6 border-t border-border-subtle pt-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-lg font-extrabold"><IconMapPin className="h-5 w-5 text-primary-700" />Lokasi kantor</h2>
+                <a href={directionsUrl({ lat: t.latitude, lng: t.longitude })} target="_blank" rel="noopener noreferrer" className="btn btn-outline min-h-10 px-4">
+                  <IconRoute className="h-5 w-5" />Petunjuk arah
+                </a>
+              </div>
+              <MapView point={{ lat: t.latitude, lng: t.longitude }} label={t.brand_name} />
+            </div>
+          )}
         </div>
         <div className="mt-10">
           <SectionHeading title={`Paket aktif (${t.packages.length})`} sub="Harga resmi per orang dari PPIU ini." />

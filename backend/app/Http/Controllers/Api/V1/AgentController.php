@@ -11,6 +11,7 @@ use App\Models\ReferralLink;
 use App\Models\Tenant;
 use App\Support\AgentPresenter as AP;
 use App\Support\Audit;
+use App\Support\Geo;
 use App\Support\Commission;
 use App\Support\OffsetCursor;
 use BaconQrCode\Renderer\GDLibRenderer;
@@ -197,6 +198,7 @@ class AgentController extends Controller
             'region_code' => [$req, 'string', 'max:13'],
             'address' => [$req, 'string', 'min:5', 'max:300'],
             'postal_code' => ['nullable', 'regex:/^[0-9]{5}$/'],
+            ...Geo::rules('nullable'),   // titik domisili (opsional) untuk "agen terdekat"
             'payout_bank_name' => [$req, 'string', 'max:50'],
             'payout_account_no' => [$req, 'regex:/^[0-9]{6,20}$/'],
             'payout_account_holder' => [$req, 'string', 'max:150'],
@@ -207,7 +209,14 @@ class AgentController extends Controller
             'address.required' => 'Isi nama jalan, nomor rumah, dan RT/RW.',
             'address.min' => 'Isi nama jalan, nomor rumah, dan RT/RW.',
             'postal_code.regex' => 'Kode pos terdiri dari 5 angka.',
+            ...Geo::messages(),
         ]);
+        $data = Geo::round($data);
+        foreach (['latitude', 'longitude'] as $k) {
+            if (array_key_exists($k, $data)) {
+                $data['region'] = ($data['region'] ?? []) + [$k => $data[$k]];
+            }
+        }
         if (isset($data['region_code'])) {
             $r = Regions::resolveVillage($data['region_code']);
             // domicile_city tetap diisi nama kab/kota untuk tampilan (kartu agen, halaman agen).

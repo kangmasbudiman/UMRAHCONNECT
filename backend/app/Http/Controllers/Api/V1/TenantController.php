@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\TenantDocument;
 use App\Models\TenantMember;
 use App\Support\Audit;
+use App\Support\Geo;
 use App\Support\Otp\OtpService;
 use App\Support\Present;
 use App\Support\Regions;
@@ -100,7 +101,7 @@ class TenantController extends Controller
             ->orderByDesc('created_at')->orderByDesc('id')->get()->unique('type')->keyBy('type');
         $missing = array_values(array_filter(TenantDocument::REQUIRED_TYPES, fn ($t) => ! isset($latest[$t]) || $latest[$t]->status === 'rejected'));
         $hasBank = BankAccount::withoutTenantScope()->where('tenant_id', $tenant->id)->where('status', '!=', 'inactive')->exists();
-        $profile = $tenant->legal_name && $tenant->ppiu_license_no && $tenant->license_expires_on && $tenant->address && $tenant->village_code && $tenant->phone && $tenant->email;
+        $profile = $tenant->legal_name && $tenant->ppiu_license_no && $tenant->license_expires_on && $tenant->address && $tenant->village_code && $tenant->latitude !== null && $tenant->phone && $tenant->email;
         $licenseValid = $tenant->license_expires_on && $tenant->license_expires_on->isAfter(now('Asia/Jakarta')->startOfDay());
 
         return [
@@ -136,6 +137,7 @@ class TenantController extends Controller
             // Alamat nasional: kode kelurahan/desa dari dropdown; provinsi–kab/kota–kecamatan diturunkan di server.
             'region_code' => [$req, 'string', 'max:13'],
             'postal_code' => ['nullable', 'regex:/^[0-9]{5}$/'],
+            ...Geo::rules($req),   // titik kantor di peta (wajib saat daftar)
             'phone' => [$req, 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'whatsapp' => ['nullable', 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'email' => [$req, 'email:rfc', 'max:254'],
@@ -146,7 +148,9 @@ class TenantController extends Controller
             'whatsapp.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890.',
             'region_code.required' => 'Pilih alamat sampai kelurahan/desa.',
             'postal_code.regex' => 'Kode pos terdiri dari 5 angka.',
+            ...Geo::messages(),
         ]);
+        $data = Geo::round($data);
         if (isset($data['region_code'])) {
             $r = Regions::resolveVillage($data['region_code']);
             unset($data['region_code']);

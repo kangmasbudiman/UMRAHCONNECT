@@ -17,6 +17,7 @@ export type TenantPublic = {
   id: string; slug: string; brand_name: string; legal_name: string; ppiu_license_no: string; verified: boolean;
   city: string | null; province: string | null; address: string | null; phone: string | null; whatsapp: string | null; email: string | null;
   province_code?: string | null; regency_code?: string | null;
+  latitude?: number | null; longitude?: number | null; distance_km?: number;
 };
 export type PackageSummary = {
   id: string; slug: string; name: string;

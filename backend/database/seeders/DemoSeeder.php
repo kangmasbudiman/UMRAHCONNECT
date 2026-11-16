@@ -30,10 +30,10 @@ class DemoSeeder extends Seeder
         $super = User::create(['name' => 'Super Admin', 'email' => 'superadmin@umrahconnect.test', 'password_hash' => $password, 'platform_role' => 'super_admin', 'email_verified_at' => now()]);
 
         // PPIU A dan B terverifikasi; C menunggu verifikasi; D ditangguhkan (tidak boleh tampil di marketplace).
-        $a = $this->tenant('PPIUA', 'ppiu-a-jambi', 'PPIU A', 'PT PPIU A Jambi (data contoh)', 'U.123 Tahun 2023 (contoh)', '15.71.01.1001', 'verified', $super);   // Kota Jambi
-        $b = $this->tenant('PPIUB', 'ppiu-b-jambi', 'PPIU B', 'PT PPIU B (data contoh)', 'U.456 Tahun 2022 (contoh)', '16.71.01.1001', 'verified', $super);         // Kota Palembang (contoh lintas provinsi)
-        $c = $this->tenant('PPIUC', 'ppiu-c-jambi', 'PPIU C', 'PT PPIU C (data contoh)', 'U.789 Tahun 2024 (contoh)', '31.74.01.1001', 'pending_review');             // Jakarta Selatan
-        $d = $this->tenant('PPIUD', 'ppiu-d-jambi', 'PPIU D', 'PT PPIU D (data contoh)', 'U.321 Tahun 2021 (contoh)', '15.05.01.1003', 'suspended');                 // Kab. Muaro Jambi
+        $a = $this->tenant('PPIUA', 'ppiu-a-jambi', 'PPIU A', 'PT PPIU A Jambi (data contoh)', 'U.123 Tahun 2023 (contoh)', '15.71.01.1001', 'verified', $super, [-1.6125, 103.5930]);   // Kota Jambi
+        $b = $this->tenant('PPIUB', 'ppiu-b-jambi', 'PPIU B', 'PT PPIU B (data contoh)', 'U.456 Tahun 2022 (contoh)', '16.71.01.1001', 'verified', $super, [-2.9850, 104.7465]);   // Kota Palembang (contoh lintas provinsi)
+        $c = $this->tenant('PPIUC', 'ppiu-c-jambi', 'PPIU C', 'PT PPIU C (data contoh)', 'U.789 Tahun 2024 (contoh)', '31.74.01.1001', 'pending_review', null, [-6.2300, 106.8575]);   // Jakarta Selatan
+        $d = $this->tenant('PPIUD', 'ppiu-d-jambi', 'PPIU D', 'PT PPIU D (data contoh)', 'U.321 Tahun 2021 (contoh)', '15.05.01.1003', 'suspended', null, [-1.6420, 103.5160]);       // Kab. Muaro Jambi
 
         foreach ([$a, $b, $c, $d] as $t) {
             $owner = User::create(['name' => 'Owner '.$t->brand_name, 'email' => strtolower($t->code).'.owner@umrahconnect.test', 'password_hash' => $password, 'email_verified_at' => now()]);
@@ -98,7 +98,7 @@ class DemoSeeder extends Seeder
         ReferralLink::create(['tenant_id' => $b->id, 'partnership_id' => $pb->id, 'agent_id' => $budi->id, 'package_id' => null, 'code' => 'B8PPIB', 'click_count' => 5]);
     }
 
-    private function tenant(string $code, string $slug, string $brand, string $legal, string $license, string $village, string $status, ?User $verifier = null): Tenant
+    private function tenant(string $code, string $slug, string $brand, string $legal, string $license, string $village, string $status, ?User $verifier = null, ?array $point = null): Tenant
     {
         $r = Regions::resolveVillage($village);
 
@@ -106,6 +106,7 @@ class DemoSeeder extends Seeder
             'code' => $code, 'slug' => $slug, 'brand_name' => $brand, 'legal_name' => $legal, 'ppiu_license_no' => $license,
             'license_expires_on' => '2028-12-31', 'city' => $r['regency_name'], 'province' => $r['province_name'],
             'address' => 'Jl. Contoh No. '.rand(1, 99).', '.$r['village_name'], 'postal_code' => null,
+            'latitude' => $point[0] ?? null, 'longitude' => $point[1] ?? null,
             'phone' => '+62741000'.rand(100, 999), 'whatsapp' => '+6281200001'.rand(100, 999), 'email' => strtolower($code).'@umrahconnect.test',
             'verification_status' => $status, 'verified_at' => $verifier ? now() : null, 'verified_by' => $verifier?->id,
             'settings' => ['dp_deadline_hours_default' => 48, 'commission_earn_on_default' => 'fully_paid'],

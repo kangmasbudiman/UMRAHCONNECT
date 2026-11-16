@@ -43,7 +43,7 @@ class RegionsTest extends TestCase
         $this->actingAs($owner);
         $base = [
             'legal_name' => 'PT Barokah Makassar', 'brand_name' => 'Barokah', 'ppiu_license_no' => 'U.900 Tahun 2025',
-            'license_expires_on' => now()->addYear()->toDateString(), 'address' => 'Jl. Perintis No. 9',
+            'license_expires_on' => now()->addYear()->toDateString(), 'address' => 'Jl. Perintis No. 9', 'latitude' => -5.1, 'longitude' => 119.5,
             'phone' => '0411 123456', 'email' => 'cs@barokah.test',
         ];
         $this->postJson('/api/v1/tenants', $base)->assertStatus(422)->assertJsonStructure(['error' => ['errors' => ['region_code']]]);

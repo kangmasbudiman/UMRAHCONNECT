@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Worker MapLibre (disalin oleh postinstall)
+/public/maplibre/

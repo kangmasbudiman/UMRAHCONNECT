@@ -44,6 +44,8 @@ class Present
             'province' => $t->province,
             'postal_code' => $t->postal_code,
             'region' => Regions::describe($t),
+            'latitude' => $t->latitude !== null ? (float) $t->latitude : null,
+            'longitude' => $t->longitude !== null ? (float) $t->longitude : null,
             'phone' => $t->phone,
             'whatsapp' => $t->whatsapp,
             'email' => $t->email,
