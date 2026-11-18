@@ -220,7 +220,8 @@ class AgentController extends Controller
         if (isset($data['region_code'])) {
             $r = Regions::resolveVillage($data['region_code']);
             // domicile_city tetap diisi nama kab/kota untuk tampilan (kartu agen, halaman agen).
-            $data['region'] = Regions::columns($r) + ['domicile_city' => $r['regency_name']];
+            // Digabung (bukan ditimpa) agar latitude/longitude yang dikirim bersamaan tidak hilang.
+            $data['region'] = Regions::columns($r) + ['domicile_city' => $r['regency_name']] + ($data['region'] ?? []);
         }
         if (array_key_exists('address', $data)) {
             $data['region'] = ($data['region'] ?? []) + ['address_enc' => trim(preg_replace('/\s+/', ' ', (string) $data['address']))];

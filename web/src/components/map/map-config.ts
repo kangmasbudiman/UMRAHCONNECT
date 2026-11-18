@@ -13,6 +13,21 @@ export type Point = { lat: number; lng: number };
 
 export const inIndonesia = (p: Point) => p.lat >= ID_BOUNDS.lat[0] && p.lat <= ID_BOUNDS.lat[1] && p.lng >= ID_BOUNDS.lng[0] && p.lng <= ID_BOUNDS.lng[1];
 
+/** Pilihan radius "PPIU terdekat" (km); server membatasi maksimal 500. */
+export const NEAR_RADII = [25, 50, 100, 250, 500] as const;
+export const NEAR_DEFAULT_RADIUS = 50;
+
+/**
+ * Titik "dekat" dari URL ("-1.61,103.59") → Point, atau null bila format/rentang salah.
+ * Dibulatkan 2 desimal (±1 km) di peramban sebelum masuk URL, agar lokasi persis pengguna tidak tersimpan di riwayat/log.
+ */
+export function parseNear(raw: string | undefined): Point | null {
+  const m = raw?.match(/^(-?\d{1,2}(?:\.\d{1,4})?),(-?\d{1,3}(?:\.\d{1,4})?)$/);
+  if (!m) return null;
+  const p = { lat: Number(m[1]), lng: Number(m[2]) };
+  return inIndonesia(p) ? p : null;
+}
+
 /** Tautan petunjuk arah (membuka aplikasi peta di ponsel). */
 export const directionsUrl = (p: Point) => `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
 

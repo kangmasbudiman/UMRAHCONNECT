@@ -127,10 +127,11 @@ export async function getPackage(tenantSlug: string, packageSlug: string): Promi
   }
 }
 
-export async function getTenants(lokasi?: string): Promise<List<TenantPublic>> {
+/** Daftar PPIU terverifikasi. `near` ("lat,lng") mengurutkan dari yang terdekat dalam `radius` km dan menambah distance_km. */
+export async function getTenants(lokasi?: string, near?: string, radius?: number): Promise<List<TenantPublic>> {
   'use cache';
   cacheLife('minutes');
-  return get(`/public/tenants${qs({ limit: '100', ...lokasiParams(lokasi) })}`);
+  return get(`/public/tenants${qs({ limit: '100', ...lokasiParams(lokasi), near, radius: near && radius ? String(radius) : undefined })}`);
 }
 
 export async function getTenant(slug: string): Promise<(TenantPublic & { packages: PackageSummary[]; rating?: Rating }) | null> {

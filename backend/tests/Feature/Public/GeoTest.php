@@ -91,5 +91,8 @@ class GeoTest extends TestCase
         $this->postJson('/api/v1/agent/profile', $base + ['latitude' => 40.7, 'longitude' => -74])->assertStatus(422);
         $this->postJson('/api/v1/agent/profile', $base)->assertCreated()->assertJsonPath('data.latitude', null);
         $this->patchJson('/api/v1/agent/profile', ['latitude' => -1.63, 'longitude' => 103.615])->assertOk()->assertJsonPath('data.longitude', 103.615);
+        // Kelurahan + titik dikirim bersamaan: titik tidak boleh hilang.
+        $this->patchJson('/api/v1/agent/profile', ['region_code' => '15.71.02.1002', 'latitude' => -1.64, 'longitude' => 103.62])->assertOk()
+            ->assertJsonPath('data.latitude', -1.64)->assertJsonPath('data.region.village.code', '15.71.02.1002');
     }
 }

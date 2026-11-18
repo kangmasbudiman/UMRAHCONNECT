@@ -162,7 +162,7 @@ export function DepartureCard({ d }: { d: ScheduleItem }) {
 }
 
 export function TenantCard({ t }: { t: TenantPublic }) {
-  const initials = t.brand_name.split(' ').map((w) => w[0]).join('').slice(0, 3).toUpperCase();
+  const initials = t.brand_name.split(/\s+/).filter((w) => /^\p{L}/u.test(w)).map((w) => w[0]).join('').slice(0, 3).toUpperCase(); // lewati "(uji)" dll.
   return (
     <Link href={`/ppiu/${t.slug}`} className="card group flex h-full items-start gap-4 p-5 hover:shadow-raised">
       <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gold-100 text-lg font-extrabold text-gold-700">{initials}</span>
@@ -171,6 +171,11 @@ export function TenantCard({ t }: { t: TenantPublic }) {
         <p className="text-sm text-ink-600">{t.legal_name}</p>
         <div className="mt-2"><VerifiedBadge brand={t.brand_name} license={t.ppiu_license_no} /></div>
         <p className="mt-2 text-sm text-ink-600">Izin {t.ppiu_license_no}{t.city ? ` · ${t.city}` : ''}</p>
+        {t.distance_km !== undefined && (
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-0.5 text-sm font-bold text-primary-700">
+            ± {t.distance_km.toLocaleString('id-ID', { maximumFractionDigits: 1 })} km dari Anda
+          </p>
+        )}
       </div>
     </Link>
   );

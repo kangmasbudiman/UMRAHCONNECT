@@ -8,6 +8,7 @@ import { api, ApiClientError, errorMessage } from '@/lib/client-api';
 import { PARTNERSHIP_TERMS_VERSION } from '@/lib/nav';
 import type { AgentProfile, ReferralLink } from '@/lib/agent-types';
 import { RegionSelect } from '@/components/region-select';
+import { MapPicker } from '@/components/map/map-picker';
 
 type Err = ApiClientError | string | null;
 const msgOf = (e: Err) => (typeof e === 'string' ? e : e?.message);
@@ -19,6 +20,7 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
   const [error, setError] = useState<Err>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mapFocus, setMapFocus] = useState<string[]>([]);
   const apiErr = error instanceof ApiClientError ? error : null;
   const creating = !profile;
 
@@ -50,6 +52,11 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
       const street = String(fd.get('address') ?? '').trim();
       if (street || creating) body.address = street || null;
       body.postal_code = String(fd.get('postal_code') ?? '').trim() || null;
+      // Titik domisili opsional; dikirim berpasangan (kosong = hapus titik).
+      const lat = String(fd.get('latitude') ?? '').trim();
+      const lng = String(fd.get('longitude') ?? '').trim();
+      body.latitude = lat ? Number(lat) : null;
+      body.longitude = lng ? Number(lng) : null;
       await api('/agent/profile', { method: creating ? 'POST' : 'PATCH', json: body });
       if (creating) { router.replace('/agen/mitra?baru=1'); router.refresh(); return; }
       setSaved(true);
@@ -77,7 +84,7 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
         <p className="text-sm text-ink-600">Dipakai calon jamaah untuk menemukan agen terdekat. Alamat lengkap tidak ditampilkan.</p>
       </div>
       <div className="md:col-span-2">
-        <RegionSelect idPrefix="agent-region" initial={profile?.region ?? null} error={apiErr?.field('region_code')} after={<>
+        <RegionSelect idPrefix="agent-region" initial={profile?.region ?? null} error={apiErr?.field('region_code')} onChange={(_, names) => setMapFocus(names)} after={<>
           <div className="sm:col-span-2">
             <Field id="agent-address" label="Nama jalan, nomor rumah, RT/RW" hint="Contoh: Jl. Kapten Pattimura No. 12, RT 03/RW 01. Tidak ditampilkan ke publik." error={apiErr?.field('address')}>
               <input id="agent-address" name="address" className="input" defaultValue={profile?.address ?? ''} required autoComplete="street-address" />
@@ -87,6 +94,12 @@ export function AgentProfileForm({ profile }: { profile?: AgentProfile }) {
             <input id="agent-postal" name="postal_code" className="input num" inputMode="numeric" maxLength={5} pattern="[0-9]{5}" defaultValue={profile?.postal_code ?? ''} autoComplete="postal-code" />
           </Field>
         </>} />
+      </div>
+      <div className="md:col-span-2">
+        <MapPicker idPrefix="agent-map" required={false} spot="rumah" focus={mapFocus}
+          note="Titik persis tidak ditampilkan ke publik."
+          initial={profile?.latitude != null && profile.longitude != null ? { lat: profile.latitude, lng: profile.longitude } : null}
+          error={apiErr?.field('latitude') ?? apiErr?.field('longitude')} />
       </div>
       <div className="md:col-span-2 border-t border-border-subtle pt-4">
         <p className="font-bold">Rekening pencairan komisi</p>

@@ -14,9 +14,13 @@ const fmt = (n: number) => n.toFixed(6);
  * Mengirim field `latitude` dan `longitude`. `focus` (nama wilayah) mengarahkan peta saat alamat dipilih.
  */
 export function MapPicker({
-  initial = null, focus = [], required = true, error, idPrefix = 'map', disabled = false,
+  initial = null, focus = [], required = true, error, idPrefix = 'map', disabled = false, spot = 'kantor', note: extraNote,
 }: {
   initial?: Point | null; focus?: string[]; required?: boolean; error?: string; idPrefix?: string; disabled?: boolean;
+  /** Kata benda tempat yang ditandai, mis. "kantor" (PPIU) atau "rumah" (agen). */
+  spot?: string;
+  /** Keterangan tambahan di bawah petunjuk, mis. soal privasi. */
+  note?: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
@@ -120,7 +124,8 @@ export function MapPicker({
         {!ready && <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-ink-600">Memuat peta…</div>}
       </div>
       <p className="text-sm text-ink-600">
-        {disabled ? 'Lokasi kantor terdaftar.' : point ? 'Geser pin bila belum tepat.' : 'Klik peta pada lokasi kantor, atau tekan "Pakai lokasi saya" saat berada di kantor.'}
+        {disabled ? `Lokasi ${spot} terdaftar.` : point ? 'Geser pin bila belum tepat.' : `Klik peta pada lokasi ${spot}, atau tekan "Pakai lokasi saya" saat berada di ${spot}.`}
+        {extraNote && <> {extraNote}</>}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
